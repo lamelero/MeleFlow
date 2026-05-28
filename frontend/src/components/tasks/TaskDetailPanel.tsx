@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import Markdown from "react-markdown";
+import toast from "react-hot-toast";
 import type { Task } from "../../store/taskStore";
 import { useTaskStore } from "../../store/taskStore";
 import { useTagStore, type Tag, randomTagColor } from "../../store/tagStore";
@@ -54,20 +55,33 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
   }
 
   async function handleAddTag(tag: Tag) {
-    const { data } = await client.post(`/tasks/${t.id}/tags`, { tagId: tag.id });
-    replaceTask(data);
-    setTagInput("");
-    setTagDropdownOpen(false);
+    try {
+      const { data } = await client.post(`/tasks/${t.id}/tags`, { tagId: tag.id });
+      replaceTask(data);
+      setTagInput("");
+      setTagDropdownOpen(false);
+      tagInputRef.current?.focus();
+    } catch {
+      toast.error("Failed to add tag");
+    }
   }
 
   async function handleRemoveTag(tagId: string) {
-    const { data } = await client.delete(`/tasks/${t.id}/tags/${tagId}`);
-    replaceTask(data);
+    try {
+      const { data } = await client.delete(`/tasks/${t.id}/tags/${tagId}`);
+      replaceTask(data);
+    } catch {
+      toast.error("Failed to remove tag");
+    }
   }
 
   async function handleCreateAndAddTag(name: string) {
-    const tag = await createTag({ name, color: randomTagColor() });
-    await handleAddTag(tag);
+    try {
+      const tag = await createTag({ name, color: randomTagColor() });
+      await handleAddTag(tag);
+    } catch {
+      toast.error("Failed to create tag");
+    }
   }
 
   async function handleTagKeyDown(e: React.KeyboardEvent) {
@@ -104,6 +118,8 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
   const exactMatch = tagInput
     ? tags.some((tg) => tg.name.toLowerCase() === tagInput.toLowerCase())
     : false;
+  const showCreate = tagDropdownOpen && tagInput && !exactMatch;
+  const showExisting = tagDropdownOpen && filteredAvailable.length > 0;
 
   return (
     <div className="fixed inset-0 z-50 flex">
@@ -164,13 +180,10 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
                 placeholder="Search or create tag..."
                 className="w-full rounded-xl border border-gray-200 px-4 py-2.5 font-urbanist text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
-              {tagDropdownOpen && tagInput && !exactMatch && (
+              {showCreate && (
                 <div className="absolute left-0 right-0 top-full z-10 mt-1 rounded-xl border border-gray-200 bg-white p-3 shadow-lg">
                   <button
-                    onClick={() => {
-                      setTagInput("");
-                      handleCreateAndAddTag(tagInput);
-                    }}
+                    onClick={() => handleCreateAndAddTag(tagInput)}
                     className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-sm text-primary transition-colors hover:bg-primary/5"
                   >
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -180,7 +193,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
                   </button>
                 </div>
               )}
-              {tagDropdownOpen && filteredAvailable.length > 0 && (
+              {showExisting && (
                 <div className="absolute left-0 right-0 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-xl border border-gray-200 bg-white p-2 shadow-lg">
                   {filteredAvailable.map((tag) => (
                     <button
@@ -195,6 +208,13 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
                       {tag.name}
                     </button>
                   ))}
+                </div>
+              )}
+              {tagDropdownOpen && !tagInput && availableTags.length === 0 && !showCreate && (
+                <div className="absolute left-0 right-0 top-full z-10 mt-1 rounded-xl border border-gray-200 bg-white p-3 shadow-lg">
+                  <p className="font-urbanist text-xs text-gray-400">
+                    All tags are already assigned
+                  </p>
                 </div>
               )}
             </div>
