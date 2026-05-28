@@ -1,0 +1,37 @@
+{
+  "auth": {
+    "welcomeBack": "Welcome back",
+    "signInToAccount": "Sign in to your account",
+    "signIn": "Sign in",
+    "signingIn": "Signing in...",
+    "createAccount": "Create account",
+    "startManaging": "Start managing your tasks",
+    "creatingAccount": "Creating account...",
+    "email": "Email",
+    "password": "Password",
+    "username": "Username",
+    "confirmPassword": "Confirm password",
+    "emailPlaceholder": "you@example.com",
+    "passwordPlaceholder": "Enter your password",
+    "usernamePlaceholder": "yourname",
+    "passwordMinPlaceholder": "At least 8 characters",
+    "confirmPasswordPlaceholder": "Repeat your password",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "signUp": "Sign up",
+    "passwordsDoNotMatch": "Passwords do not match",
+    "taskflow": "MeleNotes",
+    "taskflowTagline": "Self-hosted task management",
+    "errors": {
+      "loginFailed": "Login failed",
+      "registrationFailed": "Registration failed",
+      "invalidCredentials": "Invalid email or password",
+      "emailTaken": "Email already registered",
+      "usernameTaken": "Username already taken",
+      "unauthorized": "Unauthorized. Please log in again.",
+      "forbidden": "You don't have permission to do that",
+      "notFound": "Not found",
+      "unknown": "Something went wrong"
+    }
+  }
+}

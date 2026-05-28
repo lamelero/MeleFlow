@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Enums ────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  USER
+}
+
+// ── User ─────────────────────────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  username     String   @unique
+  passwordHash String
+  role         Role     @default(USER)
+  isActive     Boolean  @default(true)
+  language     String   @default("en")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tasks            Task[]
+  lists            List[]
+  habits           Habit[]
+  tags             Tag[]
+  pomodoroSessions PomodoroSession[]
+}
+
+// ── Task (with subtask self-reference) ───────────
+
+model Task {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  priority    Int       @default(4) // 1=Urgent 2=High 3=Medium 4=Low
+  dueDate     DateTime?
+  rrule       String?   // RRULE string for recurrence (RFC 5545)
+  isCompleted Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  listId String?
+  list   List?  @relation(fields: [listId], references: [id], onDelete: SetNull)
+
+  parentTaskId String?
+  parentTask   Task?  @relation("SubTask", fields: [parentTaskId], references: [id], onDelete: Cascade)
+  subTasks     Task[] @relation("SubTask")
+
+  tags             TaskTag[]
+  pomodoroSessions PomodoroSession[]
+
+  @@index([userId, isCompleted])
+  @@index([userId, dueDate])
+  @@index([listId])
+}
+
+// ── List (task group) ────────────────────────────
+
+model List {
+  id        String   @id @default(cuid())
+  name      String
+  color     String   @default("#14B8A6")
+  icon      String?
+  isSmart   Boolean  @default(false) // Today, Tomorrow, Inbox
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tasks Task[]
+
+  @@unique([userId, name])
+}
+
+// ── Tag (M:N with Task) ─────────────────────────
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String
+  color     String   @default("#14B8A6")
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tasks TaskTag[]
+
+  @@unique([userId, name])
+}
+
+model TaskTag {
+  taskId String
+  task   Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  tagId String
+  tag   Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, tagId])
+}
+
+// ── Habit ────────────────────────────────────────
+
+model Habit {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  streakCount Int      @default(0)
+  frequency   String   @default("daily") // daily | weekly | monthly
+  color       String   @default("#14B8A6")
+  icon        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  logs HabitLog[]
+}
+
+// ── HabitLog (daily check-in) ────────────────────
+
+model HabitLog {
+  id        String   @id @default(cuid())
+  date      DateTime @db.Date
+  note      String?
+  createdAt DateTime @default(now())
+
+  habitId String
+  habit   Habit  @relation(fields: [habitId], references: [id], onDelete: Cascade)
+
+  @@unique([habitId, date])
+  @@index([date])
+}
+
+// ── PomodoroSession (focus timer) ────────────────
+
+model PomodoroSession {
+  id            String    @id @default(cuid())
+  state         String    @default("RUNNING") // RUNNING | PAUSED | COMPLETED | CANCELLED
+  duration      Int       @default(25) // minutes
+  breakDuration Int       @default(5)  // minutes
+  startedAt     DateTime  @default(now())
+  pausedAt      DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  taskId String?
+  task   Task?  @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@index([userId, state])
+}

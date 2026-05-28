@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+@theme {
+  --font-outfit: "Outfit", sans-serif;
+  --font-urbanist: "Urbanist", sans-serif;
+
+  --color-primary: #14B8A6;
+  --color-priority-urgent: #EF4444;
+  --color-priority-high: #F59E0B;
+  --color-priority-medium: #3B82F6;
+  --color-priority-low: #9CA3AF;
+}

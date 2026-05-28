@@ -1,0 +1,37 @@
+{
+  "auth": {
+    "welcomeBack": "Bienvenido de nuevo",
+    "signInToAccount": "Inicia sesión en tu cuenta",
+    "signIn": "Iniciar sesión",
+    "signingIn": "Iniciando sesión...",
+    "createAccount": "Crear cuenta",
+    "startManaging": "Empieza a gestionar tus tareas",
+    "creatingAccount": "Creando cuenta...",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "username": "Nombre de usuario",
+    "confirmPassword": "Confirmar contraseña",
+    "emailPlaceholder": "tu@ejemplo.com",
+    "passwordPlaceholder": "Ingresa tu contraseña",
+    "usernamePlaceholder": "tunombre",
+    "passwordMinPlaceholder": "Mínimo 8 caracteres",
+    "confirmPasswordPlaceholder": "Repite tu contraseña",
+    "noAccount": "¿No tienes cuenta?",
+    "hasAccount": "¿Ya tienes cuenta?",
+    "signUp": "Registrarse",
+    "passwordsDoNotMatch": "Las contraseñas no coinciden",
+    "taskflow": "MeleNotes",
+    "taskflowTagline": "Gestión de tareas autoalojada",
+    "errors": {
+      "loginFailed": "Error al iniciar sesión",
+      "registrationFailed": "Error al registrarse",
+      "invalidCredentials": "Correo o contraseña inválidos",
+      "emailTaken": "El correo ya está registrado",
+      "usernameTaken": "El nombre de usuario ya existe",
+      "unauthorized": "No autorizado. Inicia sesión de nuevo.",
+      "forbidden": "No tienes permiso para hacer eso",
+      "notFound": "No encontrado",
+      "unknown": "Algo salió mal"
+    }
+  }
+}

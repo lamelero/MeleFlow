@@ -1,0 +1,58 @@
+import type { FastifyInstance } from "fastify";
+import {
+  createTaskSchema,
+  updateTaskSchema,
+  taskQuerySchema,
+  taskTagSchema,
+} from "./tasks.schema";
+import { TaskService } from "./tasks.service";
+
+const service = new TaskService();
+
+export async function taskRoutes(app: FastifyInstance) {
+  app.addHook("onRequest", app.authenticate);
+
+  app.get("/", async (req, reply) => {
+    const query = taskQuerySchema.parse(req.query);
+    const tasks = await service.findAll(req.user.sub, query);
+    return reply.send(tasks);
+  });
+
+  app.get("/:id", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const task = await service.findById(req.user.sub, id);
+    return reply.send(task);
+  });
+
+  app.post("/", async (req, reply) => {
+    const input = createTaskSchema.parse(req.body);
+    const task = await service.create(req.user.sub, input);
+    return reply.code(201).send(task);
+  });
+
+  app.patch("/:id", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const input = updateTaskSchema.parse(req.body);
+    const task = await service.update(req.user.sub, id, input);
+    return reply.send(task);
+  });
+
+  app.delete("/:id", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    await service.delete(req.user.sub, id);
+    return reply.code(204).send();
+  });
+
+  app.post("/:id/tags", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const { tagId } = taskTagSchema.parse(req.body);
+    const task = await service.addTag(req.user.sub, id, tagId);
+    return reply.send(task);
+  });
+
+  app.delete("/:id/tags/:tagId", async (req, reply) => {
+    const { id, tagId } = req.params as { id: string; tagId: string };
+    const task = await service.removeTag(req.user.sub, id, tagId);
+    return reply.send(task);
+  });
+}
