@@ -4,6 +4,7 @@ import Login from "./views/auth/Login";
 import Register from "./views/auth/Register";
 import Dashboard from "./views/app/Dashboard";
 import AdminPanel from "./views/app/AdminPanel";
+import TagManager from "./views/app/TagManager";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./i18n";
 
@@ -29,6 +30,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tags"
+          element={
+            <ProtectedRoute>
+              <TagManager />
             </ProtectedRoute>
           }
         />

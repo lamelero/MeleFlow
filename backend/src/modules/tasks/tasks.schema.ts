@@ -25,6 +25,7 @@ export const taskQuerySchema = z.object({
   listId: z.string().optional(),
   status: z.enum(["completed", "pending"]).optional(),
   priority: z.coerce.number().int().min(1).max(4).optional(),
+  tagId: z.string().optional(),
 });
 
 export const taskTagSchema = z.object({

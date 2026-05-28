@@ -7,6 +7,7 @@ interface TaskListProps {
   filter?: {
     listId?: string;
     status?: "completed" | "pending";
+    tagId?: string;
   };
   emptyMessage?: string;
   onTaskClick: (task: Task) => void;
@@ -21,7 +22,7 @@ export default function TaskList({
 
   useEffect(() => {
     fetchTasks(filter);
-  }, [filter?.listId, filter?.status, fetchTasks]);
+  }, [filter?.listId, filter?.status, filter?.tagId, fetchTasks]);
 
   if (isLoading) {
     return (

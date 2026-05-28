@@ -50,6 +50,9 @@ export class TaskService {
     if (query.status === "completed") where.isCompleted = true;
     if (query.status === "pending") where.isCompleted = false;
     if (query.priority) where.priority = query.priority;
+    if (query.tagId) {
+      where.tags = { some: { tagId: query.tagId } };
+    }
 
     const tasks = await prisma.task.findMany({
       where,

@@ -3,6 +3,7 @@ import { useAuthStore } from "../../store/authStore";
 import { useListStore } from "../../store/listStore";
 import { useTaskStore, type Task } from "../../store/taskStore";
 import { useHabitStore } from "../../store/habitStore";
+import { useTagStore } from "../../store/tagStore";
 import TaskList from "../../components/tasks/TaskList";
 import TaskDetailPanel from "../../components/tasks/TaskDetailPanel";
 import HabitCard from "../../components/habits/HabitCard";
@@ -14,7 +15,9 @@ export default function Dashboard() {
   const { lists, fetchLists, createList } = useListStore();
   const { createTask } = useTaskStore();
   const { habits, fetchHabits, createHabit } = useHabitStore();
+  const { tags, fetchTags } = useTagStore();
   const [activeListId, setActiveListId] = useState<string | undefined>();
+  const [activeTagId, setActiveTagId] = useState<string | undefined>();
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [showNewList, setShowNewList] = useState(false);
   const [newListName, setNewListName] = useState("");
@@ -26,7 +29,8 @@ export default function Dashboard() {
   useEffect(() => {
     fetchLists();
     fetchHabits();
-  }, [fetchLists, fetchHabits]);
+    fetchTags();
+  }, [fetchLists, fetchHabits, fetchTags]);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -54,6 +58,10 @@ export default function Dashboard() {
     await createHabit({ name: newHabitName.trim() });
     setNewHabitName("");
     setShowNewHabit(false);
+  }
+
+  function handleTagClick(tagId: string | undefined) {
+    setActiveTagId(activeTagId === tagId ? undefined : tagId);
   }
 
   return (
@@ -88,7 +96,7 @@ export default function Dashboard() {
       </header>
 
       <div className="mx-auto flex w-full max-w-6xl flex-1 gap-6 p-4">
-        <aside className="w-56 shrink-0">
+        <aside className="w-56 shrink-0 space-y-4">
           <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-100">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="font-outfit text-sm font-semibold text-gray-900">
@@ -119,9 +127,12 @@ export default function Dashboard() {
 
             <nav className="space-y-0.5">
               <button
-                onClick={() => setActiveListId(undefined)}
+                onClick={() => {
+                  setActiveListId(undefined);
+                  setActiveTagId(undefined);
+                }}
                 className={`w-full rounded-lg px-3 py-2 text-left font-urbanist text-sm transition-colors ${
-                  !activeListId
+                  !activeListId && !activeTagId
                     ? "bg-primary/10 font-medium text-primary"
                     : "text-gray-600 hover:bg-gray-50"
                 }`}
@@ -131,7 +142,10 @@ export default function Dashboard() {
               {lists.map((list) => (
                 <button
                   key={list.id}
-                  onClick={() => setActiveListId(list.id)}
+                  onClick={() => {
+                    setActiveListId(list.id);
+                    setActiveTagId(undefined);
+                  }}
                   className={`w-full rounded-lg px-3 py-2 text-left font-urbanist text-sm transition-colors ${
                     activeListId === list.id
                       ? "bg-primary/10 font-medium text-primary"
@@ -150,6 +164,44 @@ export default function Dashboard() {
               ))}
             </nav>
           </div>
+
+          {tags.length > 0 && (
+            <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-100">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="font-outfit text-sm font-semibold text-gray-900">
+                  Tags
+                </h2>
+                <a
+                  href="/tags"
+                  className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-primary"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </a>
+              </div>
+              <nav className="space-y-0.5">
+                {tags.map((tag) => (
+                  <button
+                    key={tag.id}
+                    onClick={() => handleTagClick(tag.id)}
+                    className={`w-full rounded-lg px-3 py-2 text-left font-urbanist text-sm transition-colors ${
+                      activeTagId === tag.id
+                        ? "bg-primary/10 font-medium text-primary"
+                        : "text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    <span
+                      className="mr-2 inline-block h-2 w-2 rounded-full"
+                      style={{ backgroundColor: tag.color }}
+                    />
+                    {tag.name}
+                  </button>
+                ))}
+              </nav>
+            </div>
+          )}
         </aside>
 
         <main className="min-w-0 flex-1 space-y-8">
@@ -168,12 +220,14 @@ export default function Dashboard() {
             </form>
 
             <TaskList
-              filter={{ listId: activeListId, status: "pending" }}
+              filter={{ listId: activeListId, tagId: activeTagId, status: "pending" }}
               onTaskClick={setSelectedTask}
               emptyMessage={
                 activeListId
                   ? "No tasks in this list"
-                  : "No tasks yet — create one above"
+                  : activeTagId
+                    ? "No tasks with this tag"
+                    : "No tasks yet — create one above"
               }
             />
           </section>

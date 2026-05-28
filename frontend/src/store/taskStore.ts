@@ -22,6 +22,7 @@ interface TaskFilters {
   listId?: string;
   status?: "completed" | "pending";
   priority?: number;
+  tagId?: string;
 }
 
 interface TaskState {
@@ -63,6 +64,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       if (filters?.listId) params.set("listId", filters.listId);
       if (filters?.status) params.set("status", filters.status);
       if (filters?.priority) params.set("priority", String(filters.priority));
+      if (filters?.tagId) params.set("tagId", filters.tagId);
       const qs = params.toString();
       const { data } = await client.get(`/tasks${qs ? `?${qs}` : ""}`);
       set({ tasks: data, isLoading: false });
