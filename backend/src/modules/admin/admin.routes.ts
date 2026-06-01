@@ -71,4 +71,38 @@ export async function adminRoutes(app: FastifyInstance) {
     }
     return reply.code(500).send({ error: "Failed to send test email. Check your SMTP settings." });
   });
+
+  app.post("/logo", async (req, reply) => {
+    const file = await req.file();
+    if (!file) {
+      return reply.code(400).send({ error: "No file uploaded" });
+    }
+
+    const allowedMimes = ["image/png", "image/svg+xml"];
+    if (!allowedMimes.includes(file.mimetype)) {
+      return reply.code(400).send({ error: "Only PNG and SVG files are allowed" });
+    }
+
+    const ext = file.mimetype === "image/png" ? ".png" : ".svg";
+    const maxSize = 2 * 1024 * 1024;
+    const chunks: Buffer[] = [];
+    let totalSize = 0;
+
+    for await (const chunk of file.file) {
+      totalSize += chunk.length;
+      if (totalSize > maxSize) {
+        return reply.code(400).send({ error: "File size exceeds 2MB limit" });
+      }
+      chunks.push(chunk);
+    }
+
+    const data = Buffer.concat(chunks);
+    const result = await service.uploadLogo(data, ext);
+    return reply.send(result);
+  });
+
+  app.delete("/logo", async (_req, reply) => {
+    const result = await service.removeLogo();
+    return reply.send(result);
+  });
 }

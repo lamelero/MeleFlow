@@ -1,3 +1,5 @@
+import path from "path";
+import fs from "fs/promises";
 import { prisma } from "../../config/database";
 import { env } from "../../config/env";
 import { AppError } from "../../lib/app-error";
@@ -72,7 +74,45 @@ export class AdminService {
       fromEmail: map.fromEmail || "",
       emailEnabled: map.emailEnabled === "true",
       emailSubject: map.emailSubject || "Reminder: {{title}} is due soon",
+      logoUrl: map.logoUrl || "",
     };
+  }
+
+  async uploadLogo(data: Buffer, ext: string) {
+    const filename = `logo-${Date.now()}${ext}`;
+    const uploadDir = path.resolve("uploads");
+    await fs.mkdir(uploadDir, { recursive: true });
+
+    // Remove old logo files
+    const existing = (await fs.readdir(uploadDir).catch(() => []))
+      .filter((f) => f.startsWith("logo-"));
+    await Promise.all(existing.map((f) => fs.unlink(path.join(uploadDir, f)).catch(() => {})));
+
+    await fs.writeFile(path.join(uploadDir, filename), data);
+
+    const logoUrl = `/uploads/${filename}`;
+    await prisma.systemSetting.upsert({
+      where: { key: "logoUrl" },
+      create: { key: "logoUrl", value: logoUrl },
+      update: { value: logoUrl },
+    });
+
+    return { logoUrl };
+  }
+
+  async removeLogo() {
+    const uploadDir = path.resolve("uploads");
+    const existing = (await fs.readdir(uploadDir).catch(() => []))
+      .filter((f) => f.startsWith("logo-"));
+    await Promise.all(existing.map((f) => fs.unlink(path.join(uploadDir, f)).catch(() => {})));
+
+    await prisma.systemSetting.upsert({
+      where: { key: "logoUrl" },
+      create: { key: "logoUrl", value: "" },
+      update: { value: "" },
+    });
+
+    return { logoUrl: null };
   }
 
   async updateSettings(input: UpdateSettingsInput) {

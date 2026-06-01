@@ -34,6 +34,7 @@ export interface SystemSettings {
   fromEmail: string;
   emailEnabled: boolean;
   emailSubject: string;
+  logoUrl: string;
 }
 
 interface AdminState {
@@ -48,6 +49,8 @@ interface AdminState {
   updateSettings: (data: Partial<SystemSettings>) => Promise<void>;
   updateUser: (id: string, data: { role?: string; isActive?: boolean }) => Promise<void>;
   testEmail: () => Promise<void>;
+  uploadLogo: (file: File) => Promise<string>;
+  removeLogo: () => Promise<void>;
   clearError: () => void;
 }
 
@@ -63,6 +66,7 @@ const defaultSettings: SystemSettings = {
   fromEmail: "",
   emailEnabled: false,
   emailSubject: "Reminder: {{title}} is due soon",
+  logoUrl: "",
 };
 
 export const useAdminStore = create<AdminState>((set, get) => ({
@@ -146,6 +150,27 @@ export const useAdminStore = create<AdminState>((set, get) => ({
           ?.error || "Failed to send test email";
       toast.error(msg);
     }
+  },
+
+  uploadLogo: async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const { data } = await client.post("/admin/logo", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    set((state) => ({
+      settings: { ...state.settings, logoUrl: data.logoUrl },
+    }));
+    toast.success("Logo uploaded");
+    return data.logoUrl;
+  },
+
+  removeLogo: async () => {
+    await client.delete("/admin/logo");
+    set((state) => ({
+      settings: { ...state.settings, logoUrl: "" },
+    }));
+    toast.success("Logo removed");
   },
 
   clearError: () => set({ error: null }),

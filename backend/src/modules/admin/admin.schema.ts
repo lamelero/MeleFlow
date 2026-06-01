@@ -18,6 +18,7 @@ export const updateSettingsSchema = z.object({
   fromEmail: z.string().email().optional().or(z.literal("")),
   emailEnabled: z.boolean().optional(),
   emailSubject: z.string().max(200).optional(),
+  logoUrl: z.string().optional(),
 });
 
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;

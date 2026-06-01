@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/authStore";
 import { useAdminStore } from "../../store/adminStore";
+import { useBrandingStore } from "../../store/brandingStore";
 import StatsCards from "../../components/admin/StatsCards";
 import UsersTable from "../../components/admin/UsersTable";
 import AppLayout from "../../components/AppLayout";
@@ -23,6 +24,34 @@ export default function AdminPanel() {
   const [localFromEmail, setLocalFromEmail] = useState(settings.fromEmail);
   const [localEmailSubject, setLocalEmailSubject] = useState(settings.emailSubject);
   const [localEmailEnabled, setLocalEmailEnabled] = useState(settings.emailEnabled);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const { fetchLogo } = useBrandingStore();
+
+  const handleLogoSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoUploading(true);
+    try {
+      await useAdminStore.getState().uploadLogo(file);
+      await fetchLogo();
+    } catch {
+      // error handled in store
+    }
+    setLogoUploading(false);
+    if (logoInputRef.current) logoInputRef.current.value = "";
+  }, [fetchLogo]);
+
+  const handleLogoRemove = useCallback(async () => {
+    setLogoUploading(true);
+    try {
+      await useAdminStore.getState().removeLogo();
+      await fetchLogo();
+    } catch {
+      // error handled in store
+    }
+    setLogoUploading(false);
+  }, [fetchLogo]);
 
   useEffect(() => {
     fetchStats();
@@ -347,6 +376,66 @@ export default function AdminPanel() {
               >
                 Send Test Email
               </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Branding */}
+        <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
+          <h2 className="mb-4 font-outfit text-lg font-semibold text-gray-900 dark:text-gray-100">
+            Branding
+          </h2>
+          <div className="space-y-4">
+            <div>
+              <p className="mb-2 font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
+                Corporate Logo
+              </p>
+              <p className="mb-3 font-urbanist text-xs text-gray-500 dark:text-gray-400">
+                Upload a PNG or SVG logo (max 2MB). It will replace the site name in the app header and login page.
+              </p>
+              {settings.logoUrl ? (
+                <div className="mb-3 flex items-center gap-4 rounded-xl bg-gray-50 p-4 ring-1 ring-gray-200 dark:bg-gray-800/50 dark:ring-gray-700">
+                  <img
+                    src={settings.logoUrl}
+                    alt="Logo preview"
+                    className="h-12 w-auto rounded-lg object-contain"
+                  />
+                  <span className="font-urbanist text-xs text-gray-500 dark:text-gray-400">
+                    Current logo
+                  </span>
+                </div>
+              ) : (
+                <div className="mb-3 flex items-center justify-center rounded-xl bg-gray-50 p-6 ring-1 ring-gray-200 dark:bg-gray-800/50 dark:ring-gray-700">
+                  <span className="font-urbanist text-sm text-gray-400 dark:text-gray-500">
+                    No logo uploaded
+                  </span>
+                </div>
+              )}
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept=".png,.svg"
+                className="hidden"
+                onChange={handleLogoSelect}
+              />
+              <div className="flex gap-3">
+                <button
+                  onClick={() => logoInputRef.current?.click()}
+                  disabled={logoUploading}
+                  className="rounded-xl bg-primary px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
+                >
+                  {logoUploading ? "Uploading..." : "Upload Logo"}
+                </button>
+                {settings.logoUrl && (
+                  <button
+                    onClick={handleLogoRemove}
+                    disabled={logoUploading}
+                    className="rounded-xl bg-red-100 px-4 py-2 font-urbanist text-sm font-medium text-red-600 transition-colors hover:bg-red-200 disabled:opacity-50 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
