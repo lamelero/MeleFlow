@@ -3,9 +3,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTagStore, type Tag } from "../../store/tagStore";
 import TagPill from "../../components/tags/TagPill";
-import { useAuthStore } from "../../store/authStore";
-import ThemeToggle from "../../components/ThemeToggle";
-import LanguageSwitcher from "../../components/LanguageSwitcher";
+import AppLayout from "../../components/AppLayout";
 
 const TAG_COLORS = [
   "#EF4444", "#F59E0B", "#10B981", "#3B82F6", "#8B5CF6",
@@ -14,7 +12,6 @@ const TAG_COLORS = [
 
 export default function TagManager() {
   const { tags, fetchTags, updateTag, deleteTag } = useTagStore();
-  const { user, logout } = useAuthStore();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
 
@@ -49,36 +46,34 @@ export default function TagManager() {
 
   if (tags.length === 0) {
     return (
+      <AppLayout title="Tags">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -12 }}
+          transition={{ duration: 0.2 }}
+        >
+          <div className="mx-auto mt-20 max-w-2xl px-4">
+            <div className="rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
+              <p className="font-urbanist text-sm text-gray-400">
+                No tags yet. Create one from the task detail panel.
+              </p>
+            </div>
+          </div>
+        </motion.div>
+      </AppLayout>
+    );
+  }
+
+  return (
+    <AppLayout title="Tags">
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -12 }}
         transition={{ duration: 0.2 }}
-        className="flex min-h-screen flex-col"
       >
-        <Header user={user} logout={logout} />
-        <div className="mx-auto mt-20 max-w-2xl px-4">
-          <div className="rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
-            <p className="font-urbanist text-sm text-gray-400">
-              No tags yet. Create one from the task detail panel.
-            </p>
-          </div>
-        </div>
-      </motion.div>
-    );
-  }
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -12 }}
-      transition={{ duration: 0.2 }}
-      className="min-h-screen"
-    >
-      <Header user={user} logout={logout} />
-
-      <div className="mx-auto max-w-2xl space-y-4 p-4">
+        <div className="mx-auto max-w-2xl space-y-4 p-4">
         <div className="flex items-center justify-between">
           <h2 className="font-outfit text-lg font-semibold text-gray-900 dark:text-gray-100">
             Manage Tags
@@ -176,35 +171,7 @@ export default function TagManager() {
           ))}
         </div>
       </div>
-    </motion.div>
-  );
-}
-
-function Header({
-  user,
-  logout,
-}: {
-  user: { username?: string } | null;
-  logout: () => Promise<void>;
-}) {
-  return (
-    <header className="sticky top-0 z-10 border-b border-gray-200 bg-white/80 backdrop-blur-sm dark:border-gray-800 dark:bg-gray-900/80">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-        <h1 className="font-outfit text-xl font-bold text-primary">MeleNotes</h1>
-        <div className="flex items-center gap-3">
-          <ThemeToggle />
-          <LanguageSwitcher />
-          <span className="font-urbanist text-sm text-gray-600 dark:text-gray-400">
-            {user?.username}
-          </span>
-          <button
-            onClick={logout}
-            className="rounded-xl bg-red-500 px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-red-600"
-          >
-            Logout
-          </button>
-        </div>
-      </div>
-    </header>
+      </motion.div>
+    </AppLayout>
   );
 }

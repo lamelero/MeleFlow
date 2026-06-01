@@ -4,8 +4,7 @@ import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../store/authStore";
 import { client } from "../../api/client";
-import ThemeToggle from "../../components/ThemeToggle";
-import LanguageSwitcher from "../../components/LanguageSwitcher";
+import AppLayout from "../../components/AppLayout";
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -171,83 +170,81 @@ export default function Profile() {
   ];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -12 }}
-      transition={{ duration: 0.2 }}
-    >
-      {/* Header */}
-      <div className="mb-8 flex items-start justify-between">
-        <div className="flex items-center gap-5">
-          <div className="relative">
-            <div
-              className="flex h-16 w-16 cursor-pointer items-center justify-center overflow-hidden rounded-2xl bg-primary/10 text-xl font-bold text-primary transition-all duration-200 hover:brightness-95"
-              onClick={() => fileRef.current?.click()}
-            >
-              {user?.avatarUrl ? (
-                <img
-                  src={user.avatarUrl}
-                  alt="avatar"
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                getInitials(user?.displayName || user?.username || "")
-              )}
-              {uploading && (
-                <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/40">
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                </div>
-              )}
+    <AppLayout title="Profile">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -12 }}
+        transition={{ duration: 0.2 }}
+        className="mx-auto max-w-2xl p-4"
+      >
+        {/* Header */}
+        <div className="mb-8 flex items-start justify-between">
+          <div className="flex items-center gap-5">
+            <div className="relative">
+              <div
+                className="flex h-16 w-16 cursor-pointer items-center justify-center overflow-hidden rounded-2xl bg-primary/10 text-xl font-bold text-primary transition-all duration-200 hover:brightness-95"
+                onClick={() => fileRef.current?.click()}
+              >
+                {user?.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt="avatar"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  getInitials(user?.displayName || user?.username || "")
+                )}
+                {uploading && (
+                  <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/40">
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => fileRef.current?.click()}
+                className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-primary text-white shadow-sm transition-colors hover:bg-teal-600 dark:border-gray-900"
+              >
+                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarUpload}
+                className="hidden"
+              />
             </div>
-            <button
-              onClick={() => fileRef.current?.click()}
-              className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-primary text-white shadow-sm transition-colors hover:bg-teal-600 dark:border-gray-900"
-            >
-              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            </button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              onChange={handleAvatarUpload}
-              className="hidden"
-            />
-          </div>
-          <div>
-            <h1 className="font-outfit text-xl font-bold text-gray-900 dark:text-gray-100">
-              {user?.displayName || user?.username}
-            </h1>
-            <p className="font-urbanist text-sm text-gray-500 dark:text-gray-400">
-              @{user?.username}
-            </p>
+            <div>
+              <h1 className="font-outfit text-xl font-bold text-gray-900 dark:text-gray-100">
+                {user?.displayName || user?.username}
+              </h1>
+              <p className="font-urbanist text-sm text-gray-500 dark:text-gray-400">
+                @{user?.username}
+              </p>
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <ThemeToggle />
-          <LanguageSwitcher />
-        </div>
-      </div>
 
-      {/* Tabs */}
-      <div className="mb-6 flex gap-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-800">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 rounded-lg px-4 py-2 font-urbanist text-sm font-medium transition-colors ${
-              activeTab === tab.id
-                ? "bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-gray-100"
-                : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+        {/* Tabs */}
+        <div className="mb-6 flex gap-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-800">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 rounded-lg px-4 py-2 font-urbanist text-sm font-medium transition-colors ${
+                activeTab === tab.id
+                  ? "bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-gray-100"
+                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
       {activeTab === "general" && (
         <div className="space-y-6">
@@ -499,6 +496,7 @@ export default function Profile() {
           </div>
         </div>
       )}
-    </motion.div>
+      </motion.div>
+    </AppLayout>
   );
 }

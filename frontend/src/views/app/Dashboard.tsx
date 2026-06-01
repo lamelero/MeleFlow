@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useAuthStore } from "../../store/authStore";
 import { useListStore } from "../../store/listStore";
 import { useTaskStore, type Task } from "../../store/taskStore";
 import { useHabitStore } from "../../store/habitStore";
@@ -9,13 +8,9 @@ import { useTagStore } from "../../store/tagStore";
 import TaskList from "../../components/tasks/TaskList";
 import TaskDetailPanel from "../../components/tasks/TaskDetailPanel";
 import HabitCard from "../../components/habits/HabitCard";
-import PomodoroTimer from "../../components/pomodoro/PomodoroTimer";
-import LanguageSwitcher from "../../components/LanguageSwitcher";
-import ThemeToggle from "../../components/ThemeToggle";
+import AppLayout from "../../components/AppLayout";
 
 export default function Dashboard() {
-  const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
   const { lists, fetchLists, createList } = useListStore();
   const { createTask } = useTaskStore();
   const { habits, fetchHabits, createHabit } = useHabitStore();
@@ -69,47 +64,14 @@ export default function Dashboard() {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -12 }}
-      transition={{ duration: 0.2 }}
-      className="flex min-h-screen flex-col"
-    >
-      <header className="sticky top-0 z-10 border-b border-gray-200 bg-white/80 backdrop-blur-sm dark:border-gray-800 dark:bg-gray-900/80">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-          <h1 className="font-outfit text-xl font-bold text-primary">
-            MeleNotes
-          </h1>
-          <div className="flex items-center gap-3">
-            <PomodoroTimer />
-            {user?.role === "ADMIN" && (
-              <Link
-                to="/admin"
-                className="rounded-xl bg-gray-100 px-4 py-2 font-urbanist text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-              >
-                Admin
-              </Link>
-            )}
-            <ThemeToggle />
-            <LanguageSwitcher />
-            <button
-              onClick={() => navigate("/app/profile")}
-              className="font-urbanist text-sm text-gray-600 hover:text-primary dark:text-gray-400"
-            >
-              {user?.username}
-            </button>
-            <button
-              onClick={logout}
-              className="rounded-xl bg-red-500 px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-red-600"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <div className="mx-auto flex w-full max-w-6xl flex-1 gap-6 p-4">
+    <AppLayout title="Dashboard">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -12 }}
+        transition={{ duration: 0.2 }}
+      >
+        <div className="mx-auto flex w-full max-w-6xl gap-6 p-4">
         <aside className="w-56 shrink-0 space-y-4">
           <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
             <div className="mb-3 flex items-center justify-between">
@@ -324,6 +286,7 @@ export default function Dashboard() {
           onClose={() => setSelectedTask(null)}
         />
       )}
-    </motion.div>
+      </motion.div>
+    </AppLayout>
   );
 }

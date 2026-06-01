@@ -6,11 +6,10 @@ import { useAuthStore } from "../../store/authStore";
 import { useAdminStore } from "../../store/adminStore";
 import StatsCards from "../../components/admin/StatsCards";
 import UsersTable from "../../components/admin/UsersTable";
-import LanguageSwitcher from "../../components/LanguageSwitcher";
-import ThemeToggle from "../../components/ThemeToggle";
+import AppLayout from "../../components/AppLayout";
 
 export default function AdminPanel() {
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
   const { stats, settings, fetchUsers, fetchStats, fetchSettings, updateSettings, testEmail, error, clearError } = useAdminStore();
   const [localUploadSize, setLocalUploadSize] = useState(settings.maxUploadSize);
   const [localMaxAttempts, setLocalMaxAttempts] = useState(settings.maxLoginAttempts);
@@ -68,41 +67,25 @@ export default function AdminPanel() {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -12 }}
-      transition={{ duration: 0.2 }}
-      className="min-h-screen"
-    >
-      <header className="sticky top-0 z-10 border-b border-gray-200 bg-white/80 backdrop-blur-sm dark:border-gray-800 dark:bg-gray-900/80">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-          <h1 className="font-outfit text-xl font-bold text-primary">
-            Admin Panel
-          </h1>
-          <div className="flex items-center gap-3">
-            <Link
-              to="/app"
-              className="rounded-xl bg-gray-100 px-4 py-2 font-urbanist text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-            >
-              Back to App
-            </Link>
-            <ThemeToggle />
-            <LanguageSwitcher />
-            <span className="font-urbanist text-sm text-gray-600 dark:text-gray-400">
-              {user?.username}
-            </span>
-            <button
-              onClick={logout}
-              className="rounded-xl bg-red-500 px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-red-600"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      </header>
+    <AppLayout title="Admin Panel">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -12 }}
+        transition={{ duration: 0.2 }}
+      >
 
       <div className="mx-auto max-w-6xl space-y-6 p-4">
+        <Link
+          to="/app"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-gray-100 px-4 py-2 font-urbanist text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to App
+        </Link>
+
         {error && (
           <div className="flex items-center justify-between rounded-2xl bg-red-50 px-5 py-3 ring-1 ring-red-200 dark:bg-red-900/20 dark:ring-red-800/30">
             <span className="font-urbanist text-sm text-red-700 dark:text-red-400">{error}</span>
@@ -376,5 +359,6 @@ export default function AdminPanel() {
         </div>
       </div>
     </motion.div>
+    </AppLayout>
   );
 }
