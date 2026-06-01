@@ -41,7 +41,7 @@ model Task {
   title       String
   description String?
   priority    Int       @default(4) // 1=Urgent 2=High 3=Medium 4=Low
-  dueDate     DateTime?
+  dueDate     DateTime? @default(now())
   rrule       String?   // RRULE string for recurrence (RFC 5545)
   isCompleted Boolean   @default(false)
   createdAt   DateTime  @default(now())
@@ -59,10 +59,22 @@ model Task {
 
   tags             TaskTag[]
   pomodoroSessions PomodoroSession[]
+  attachments      Attachment[]
 
   @@index([userId, isCompleted])
   @@index([userId, dueDate])
   @@index([listId])
+}
+
+model Attachment {
+  id         String   @id @default(cuid())
+  fileName   String
+  fileUrl    String
+  uploadDate DateTime @default(now())
+  taskId     String
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
 }
 
 // ── List (task group) ────────────────────────────

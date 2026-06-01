@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { motion } from "framer-motion";
 import { useAuthStore } from "../../store/authStore";
 import { useAdminStore } from "../../store/adminStore";
 import StatsCards from "../../components/admin/StatsCards";
@@ -27,7 +28,13 @@ export default function AdminPanel() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA]">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -12 }}
+      transition={{ duration: 0.2 }}
+      className="min-h-screen bg-[#FAFAFA]"
+    >
       <header className="sticky top-0 z-10 border-b border-gray-200 bg-white/80 backdrop-blur-sm">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
           <h1 className="font-outfit text-xl font-bold text-primary">
@@ -76,6 +83,6 @@ export default function AdminPanel() {
           <UsersTable />
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

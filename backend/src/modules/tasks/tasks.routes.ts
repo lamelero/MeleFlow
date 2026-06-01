@@ -6,8 +6,10 @@ import {
   taskTagSchema,
 } from "./tasks.schema";
 import { TaskService } from "./tasks.service";
+import { AttachmentService } from "./attachment.service";
 
 const service = new TaskService();
+const attachmentService = new AttachmentService();
 
 export async function taskRoutes(app: FastifyInstance) {
   app.addHook("onRequest", app.authenticate);
@@ -54,5 +56,37 @@ export async function taskRoutes(app: FastifyInstance) {
     const { id, tagId } = req.params as { id: string; tagId: string };
     const task = await service.removeTag(req.user.sub, id, tagId);
     return reply.send(task);
+  });
+
+  // ── Attachment routes ────────────────────────
+
+  app.get("/:id/attachments", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const attachments = await attachmentService.findByTask(req.user.sub, id);
+    return reply.send(attachments);
+  });
+
+  app.post("/:id/attachments", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const data = await req.file();
+
+    if (!data) {
+      return reply.code(400).send({ error: "No file uploaded" });
+    }
+
+    const buffer = await data.toBuffer();
+    const attachment = await attachmentService.upload(req.user.sub, id, {
+      filename: data.filename,
+      buffer,
+      mimetype: data.mimetype,
+    });
+
+    return reply.code(201).send(attachment);
+  });
+
+  app.delete("/:id/attachments/:attachmentId", async (req, reply) => {
+    const { id, attachmentId } = req.params as { id: string; attachmentId: string };
+    await attachmentService.delete(req.user.sub, id, attachmentId);
+    return reply.code(204).send();
   });
 }

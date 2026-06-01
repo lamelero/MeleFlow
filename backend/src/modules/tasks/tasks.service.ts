@@ -10,6 +10,7 @@ const taskInclude = {
     include: { tags: { include: { tag: true } } },
   },
   tags: { include: { tag: true } },
+  attachments: { orderBy: { uploadDate: "desc" as const } },
 };
 
 const taskSelect = {
@@ -28,14 +29,16 @@ const taskSelect = {
 
 type RawTask = Record<string, unknown>;
 type RawTaskTag = { tag: { id: string; name: string; color: string } };
+type RawAttachment = { id: string; fileName: string; fileUrl: string; uploadDate: string };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function formatTask(task: RawTask): any {
-  const { tags, subTasks, ...rest } = task;
+  const { tags, subTasks, attachments, ...rest } = task;
   return {
     ...rest,
     tags: (tags as RawTaskTag[] | undefined)?.map((t) => t.tag) ?? [],
     subTasks: (subTasks as RawTask[] | undefined)?.map(formatTask) ?? [],
+    attachments: (attachments as RawAttachment[] | undefined) ?? [],
   };
 }
 

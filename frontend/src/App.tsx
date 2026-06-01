@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
 import { Toaster } from "react-hot-toast";
 import Login from "./views/auth/Login";
 import Register from "./views/auth/Register";
@@ -9,6 +10,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import "./i18n";
 
 export default function App() {
+  const location = useLocation();
+
   return (
     <>
       <Toaster
@@ -22,35 +25,37 @@ export default function App() {
           },
         }}
       />
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route
-          path="/app"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/tags"
-          element={
-            <ProtectedRoute>
-              <TagManager />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute>
-              <AdminPanel />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="*" element={<Navigate to="/app" replace />} />
-      </Routes>
+      <AnimatePresence mode="wait">
+        <Routes location={location} key={location.pathname}>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route
+            path="/app"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tags"
+            element={
+              <ProtectedRoute>
+                <TagManager />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <AdminPanel />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={<Navigate to="/app" replace />} />
+        </Routes>
+      </AnimatePresence>
     </>
   );
 }

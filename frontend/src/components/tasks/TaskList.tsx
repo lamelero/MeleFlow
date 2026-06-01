@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import type { Task } from "../../store/taskStore";
 import { useTaskStore } from "../../store/taskStore";
 import TaskCard from "./TaskCard";
@@ -12,6 +13,12 @@ interface TaskListProps {
   emptyMessage?: string;
   onTaskClick: (task: Task) => void;
 }
+
+const containerVariants = {
+  animate: {
+    transition: { staggerChildren: 0.05 },
+  },
+};
 
 export default function TaskList({
   filter,
@@ -42,17 +49,41 @@ export default function TaskList({
 
   if (tasks.length === 0) {
     return (
-      <div className="rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-gray-100">
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-2xl bg-white p-10 text-center shadow-sm ring-1 ring-gray-100"
+      >
+        <svg
+          className="mx-auto mb-4 h-16 w-16"
+          viewBox="0 0 64 64"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <rect x="12" y="10" width="40" height="44" rx="4" stroke="#14B8A6" strokeWidth="2" strokeDasharray="4 3" fill="rgba(20,184,166,0.05)" />
+          <path d="M22 26h20" stroke="#14B8A6" strokeWidth="2" strokeLinecap="round" opacity="0.4" />
+          <path d="M22 34h14" stroke="#14B8A6" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
+          <path d="M22 42h8" stroke="#14B8A6" strokeWidth="2" strokeLinecap="round" opacity="0.3" />
+          <circle cx="48" cy="48" r="10" fill="rgba(20,184,166,0.1)" stroke="#14B8A6" strokeWidth="1.5" />
+          <path d="M45 48l2 2 4-4" stroke="#14B8A6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
         <p className="font-urbanist text-sm text-gray-400">{emptyMessage}</p>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="space-y-2">
-      {tasks.map((task: Task) => (
-        <TaskCard key={task.id} task={task} onClick={onTaskClick} />
-      ))}
-    </div>
+    <motion.div
+      className="space-y-2"
+      variants={containerVariants}
+      initial="initial"
+      animate="animate"
+    >
+      <AnimatePresence mode="popLayout">
+        {tasks.map((task: Task) => (
+          <TaskCard key={task.id} task={task} onClick={onTaskClick} />
+        ))}
+      </AnimatePresence>
+    </motion.div>
   );
 }

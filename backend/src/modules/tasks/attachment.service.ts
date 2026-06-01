@@ -1,0 +1,75 @@
+import path from "path";
+import fs from "fs/promises";
+import { randomUUID } from "crypto";
+import { prisma } from "../../config/database";
+import { AppError } from "../../lib/app-error";
+
+const UPLOAD_DIR = path.resolve("uploads");
+
+async function ensureUploadDir() {
+  try {
+    await fs.access(UPLOAD_DIR);
+  } catch {
+    await fs.mkdir(UPLOAD_DIR, { recursive: true });
+  }
+}
+
+export class AttachmentService {
+  async upload(userId: string, taskId: string, file: { filename: string; buffer: Buffer; mimetype: string }) {
+    const task = await prisma.task.findFirst({
+      where: { id: taskId, userId },
+    });
+    if (!task) throw new AppError(404, "Task not found");
+
+    await ensureUploadDir();
+
+    const ext = path.extname(file.filename) || "";
+    const safeName = `${randomUUID()}${ext}`;
+    const filePath = path.join(UPLOAD_DIR, safeName);
+
+    await fs.writeFile(filePath, file.buffer);
+
+    const attachment = await prisma.attachment.create({
+      data: {
+        fileName: file.filename,
+        fileUrl: `/uploads/${safeName}`,
+        taskId,
+      },
+    });
+
+    return attachment;
+  }
+
+  async findByTask(userId: string, taskId: string) {
+    const task = await prisma.task.findFirst({
+      where: { id: taskId, userId },
+    });
+    if (!task) throw new AppError(404, "Task not found");
+
+    return prisma.attachment.findMany({
+      where: { taskId },
+      orderBy: { uploadDate: "desc" },
+    });
+  }
+
+  async delete(userId: string, taskId: string, attachmentId: string) {
+    const task = await prisma.task.findFirst({
+      where: { id: taskId, userId },
+    });
+    if (!task) throw new AppError(404, "Task not found");
+
+    const attachment = await prisma.attachment.findFirst({
+      where: { id: attachmentId, taskId },
+    });
+    if (!attachment) throw new AppError(404, "Attachment not found");
+
+    const filePath = path.resolve(attachment.fileUrl.replace(/^\//, ""));
+    try {
+      await fs.unlink(filePath);
+    } catch {
+      // file might already be gone
+    }
+
+    await prisma.attachment.delete({ where: { id: attachmentId } });
+  }
+}

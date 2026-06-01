@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { motion } from "framer-motion";
 import { useAuthStore } from "../../store/authStore";
 import { useListStore } from "../../store/listStore";
 import { useTaskStore, type Task } from "../../store/taskStore";
@@ -65,7 +66,13 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#FAFAFA]">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -12 }}
+      transition={{ duration: 0.2 }}
+      className="flex min-h-screen flex-col bg-[#FAFAFA]"
+    >
       <header className="sticky top-0 z-10 border-b border-gray-200 bg-white/80 backdrop-blur-sm">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
           <h1 className="font-outfit text-xl font-bold text-primary">
@@ -269,11 +276,30 @@ export default function Dashboard() {
             )}
 
             {habits.length === 0 ? (
-              <div className="rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-gray-100">
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-2xl bg-white p-10 text-center shadow-sm ring-1 ring-gray-100"
+              >
+                <svg
+                  className="mx-auto mb-4 h-16 w-16"
+                  viewBox="0 0 64 64"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <rect x="10" y="14" width="44" height="36" rx="6" stroke="#14B8A6" strokeWidth="2" strokeDasharray="4 3" fill="rgba(20,184,166,0.05)" />
+                  <circle cx="22" cy="30" r="4" fill="#14B8A6" opacity="0.2" />
+                  <circle cx="34" cy="30" r="4" fill="#14B8A6" opacity="0.2" />
+                  <circle cx="46" cy="30" r="4" fill="#14B8A6" opacity="0.2" />
+                  <circle cx="22" cy="42" r="4" fill="#14B8A6" opacity="0.2" />
+                  <circle cx="34" cy="42" r="4" fill="#14B8A6" opacity="0.15" />
+                  <circle cx="46" cy="42" r="4" fill="#14B8A6" opacity="0.1" />
+                  <path d="M16 8l-2 4m16-4l2 4M36 6l-1 6M44 10l-3 2" stroke="#14B8A6" strokeWidth="1.5" strokeLinecap="round" opacity="0.3" />
+                </svg>
                 <p className="font-urbanist text-sm text-gray-400">
                   No habits yet — create one above
                 </p>
-              </div>
+              </motion.div>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2">
                 {habits.map((habit) => (
@@ -291,6 +317,6 @@ export default function Dashboard() {
           onClose={() => setSelectedTask(null)}
         />
       )}
-    </div>
+    </motion.div>
   );
 }

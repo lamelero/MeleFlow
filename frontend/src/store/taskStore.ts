@@ -2,6 +2,13 @@ import { create } from "zustand";
 import toast from "react-hot-toast";
 import { client } from "../api/client";
 
+export interface Attachment {
+  id: string;
+  fileName: string;
+  fileUrl: string;
+  uploadDate: string;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -16,6 +23,7 @@ export interface Task {
   updatedAt: string;
   subTasks?: Task[];
   tags?: { id: string; name: string; color: string }[];
+  attachments?: Attachment[];
 }
 
 interface TaskFilters {

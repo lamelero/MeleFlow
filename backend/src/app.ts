@@ -2,6 +2,9 @@ import Fastify, { type FastifyRequest, type FastifyReply } from "fastify";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import fjwt from "@fastify/jwt";
+import multipart from "@fastify/multipart";
+import fastifyStatic from "@fastify/static";
+import path from "path";
 import { ZodError } from "zod";
 import { env } from "./config/env";
 import { AppError } from "./lib/app-error";
@@ -28,6 +31,16 @@ export async function buildApp(opts: Record<string, unknown> = {}) {
   });
 
   await app.register(fjwt, { secret: env.JWT_SECRET });
+
+  await app.register(multipart, {
+    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max
+  });
+
+  await app.register(fastifyStatic, {
+    root: path.resolve("uploads"),
+    prefix: "/uploads/",
+    decorateReply: false,
+  });
 
   // ── Auth decorator ───────────────────────────
   app.decorate(

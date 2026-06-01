@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { useTagStore, type Tag } from "../../store/tagStore";
 import TagPill from "../../components/tags/TagPill";
 import { useAuthStore } from "../../store/authStore";
@@ -45,7 +46,13 @@ export default function TagManager() {
 
   if (tags.length === 0) {
     return (
-      <div className="flex min-h-screen flex-col bg-[#FAFAFA]">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -12 }}
+        transition={{ duration: 0.2 }}
+        className="flex min-h-screen flex-col bg-[#FAFAFA]"
+      >
         <Header user={user} logout={logout} />
         <div className="mx-auto mt-20 max-w-2xl px-4">
           <div className="rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-gray-100">
@@ -54,12 +61,18 @@ export default function TagManager() {
             </p>
           </div>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA]">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -12 }}
+      transition={{ duration: 0.2 }}
+      className="min-h-screen bg-[#FAFAFA]"
+    >
       <Header user={user} logout={logout} />
 
       <div className="mx-auto max-w-2xl space-y-4 p-4">
@@ -158,7 +171,7 @@ export default function TagManager() {
           ))}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
