@@ -1,13 +1,22 @@
 import { z } from "zod";
 
+export const checklistItemSchema = z.object({
+  id: z.string().optional(),
+  text: z.string().min(1).max(500),
+  isCompleted: z.boolean().default(false),
+  position: z.number().int().min(0).default(0),
+});
+
 export const createTaskSchema = z.object({
   title: z.string().min(1).max(200),
   description: z.string().max(2000).nullable().optional(),
   priority: z.number().int().min(1).max(4).default(4),
+  type: z.enum(["TEXT", "CHECKLIST"]).default("TEXT"),
   dueDate: z.string().datetime().nullable().optional(),
   rrule: z.string().nullable().optional(),
   listId: z.string().nullable().optional(),
   parentTaskId: z.string().nullable().optional(),
+  checklistItems: z.array(checklistItemSchema).optional(),
 });
 
 export const updateTaskSchema = z.object({
@@ -15,10 +24,12 @@ export const updateTaskSchema = z.object({
   description: z.string().max(2000).nullable().optional(),
   priority: z.number().int().min(1).max(4).optional(),
   isCompleted: z.boolean().optional(),
+  type: z.enum(["TEXT", "CHECKLIST"]).optional(),
   dueDate: z.string().datetime().nullable().optional(),
   rrule: z.string().nullable().optional(),
   listId: z.string().nullable().optional(),
   parentTaskId: z.string().nullable().optional(),
+  checklistItems: z.array(checklistItemSchema).optional(),
 });
 
 export const taskQuerySchema = z.object({

@@ -11,6 +11,7 @@ const taskInclude = {
   },
   tags: { include: { tag: true } },
   attachments: { orderBy: { uploadDate: "desc" as const } },
+  checklistItems: { orderBy: { position: "asc" as const } },
 };
 
 const taskSelect = {
@@ -18,6 +19,7 @@ const taskSelect = {
   title: true,
   description: true,
   priority: true,
+  type: true,
   isCompleted: true,
   dueDate: true,
   rrule: true,
@@ -30,15 +32,18 @@ const taskSelect = {
 type RawTask = Record<string, unknown>;
 type RawTaskTag = { tag: { id: string; name: string; color: string } };
 type RawAttachment = { id: string; fileName: string; fileUrl: string; uploadDate: string };
+type RawChecklistItem = { id: string; text: string; isCompleted: boolean; position: number };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function formatTask(task: RawTask): any {
-  const { tags, subTasks, attachments, ...rest } = task;
+  const { tags, subTasks, attachments, checklistItems, ...rest } = task;
   return {
     ...rest,
+    type: rest.type || "TEXT",
     tags: (tags as RawTaskTag[] | undefined)?.map((t) => t.tag) ?? [],
     subTasks: (subTasks as RawTask[] | undefined)?.map(formatTask) ?? [],
     attachments: (attachments as RawAttachment[] | undefined) ?? [],
+    checklistItems: (checklistItems as RawChecklistItem[] | undefined) ?? [],
   };
 }
 
@@ -104,15 +109,25 @@ export class TaskService {
         title: input.title,
         description: input.description ?? null,
         priority: input.priority ?? 4,
+        type: input.type ?? "TEXT",
         dueDate: input.dueDate ? new Date(input.dueDate) : null,
         rrule: input.rrule ?? null,
         listId: input.listId ?? null,
         parentTaskId: input.parentTaskId ?? null,
+        ...(input.checklistItems && {
+          checklistItems: {
+            create: input.checklistItems.map((item, i) => ({
+              text: item.text,
+              isCompleted: item.isCompleted,
+              position: item.position ?? i,
+            })),
+          },
+        }),
       },
       select: taskSelect,
     });
 
-    return { ...task, tags: [], subTasks: [] };
+    return { ...task, tags: [], subTasks: [], checklistItems: input.checklistItems ?? [], attachments: [] };
   }
 
   async update(userId: string, taskId: string, input: UpdateTaskInput) {
@@ -145,23 +160,66 @@ export class TaskService {
       }
     }
 
+    const data: Record<string, unknown> = {
+      ...(input.title !== undefined && { title: input.title }),
+      ...(input.description !== undefined && { description: input.description }),
+      ...(input.priority !== undefined && { priority: input.priority }),
+      ...(input.isCompleted !== undefined && { isCompleted: input.isCompleted }),
+      ...(input.type !== undefined && { type: input.type }),
+      ...(input.dueDate !== undefined && {
+        dueDate: input.dueDate ? new Date(input.dueDate) : null,
+      }),
+      ...(input.rrule !== undefined && { rrule: input.rrule }),
+      ...(input.listId !== undefined && { listId: input.listId }),
+      ...(input.parentTaskId !== undefined && {
+        parentTaskId: input.parentTaskId,
+      }),
+    };
+
+    if (input.checklistItems !== undefined) {
+      const existing = await prisma.checklistItem.findMany({
+        where: { taskId },
+        select: { id: true },
+      });
+      const existingIds = new Set(existing.map((c) => c.id));
+      const incomingIds = new Set(
+        input.checklistItems.filter((c) => c.id).map((c) => c.id!),
+      );
+
+      const toDelete = [...existingIds].filter((id) => !incomingIds.has(id));
+      if (toDelete.length > 0) {
+        await prisma.checklistItem.deleteMany({
+          where: { id: { in: toDelete }, taskId },
+        });
+      }
+
+      for (const item of input.checklistItems) {
+        if (item.id && existingIds.has(item.id)) {
+          await prisma.checklistItem.update({
+            where: { id: item.id },
+            data: {
+              text: item.text,
+              isCompleted: item.isCompleted,
+              position: item.position,
+            },
+          });
+        } else {
+          await prisma.checklistItem.create({
+            data: {
+              taskId,
+              text: item.text,
+              isCompleted: item.isCompleted,
+              position: item.position,
+            },
+          });
+        }
+      }
+    }
+
     const task = await prisma.task.update({
       where: { id: taskId },
       include: taskInclude,
-      data: {
-        ...(input.title !== undefined && { title: input.title }),
-        ...(input.description !== undefined && { description: input.description }),
-        ...(input.priority !== undefined && { priority: input.priority }),
-        ...(input.isCompleted !== undefined && { isCompleted: input.isCompleted }),
-        ...(input.dueDate !== undefined && {
-          dueDate: input.dueDate ? new Date(input.dueDate) : null,
-        }),
-        ...(input.rrule !== undefined && { rrule: input.rrule }),
-        ...(input.listId !== undefined && { listId: input.listId }),
-        ...(input.parentTaskId !== undefined && {
-          parentTaskId: input.parentTaskId,
-        }),
-      },
+      data,
     });
 
     return formatTask(task);

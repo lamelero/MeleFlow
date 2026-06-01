@@ -9,11 +9,19 @@ export interface Attachment {
   uploadDate: string;
 }
 
+export interface ChecklistItem {
+  id?: string;
+  text: string;
+  isCompleted: boolean;
+  position: number;
+}
+
 export interface Task {
   id: string;
   title: string;
   description: string | null;
   priority: number;
+  type: "TEXT" | "CHECKLIST";
   isCompleted: boolean;
   dueDate: string | null;
   rrule: string | null;
@@ -24,6 +32,7 @@ export interface Task {
   subTasks?: Task[];
   tags?: { id: string; name: string; color: string }[];
   attachments?: Attachment[];
+  checklistItems?: ChecklistItem[];
 }
 
 interface TaskFilters {
@@ -41,19 +50,23 @@ interface TaskState {
   createTask: (input: {
     title: string;
     priority?: number;
+    type?: "TEXT" | "CHECKLIST";
     listId?: string | null;
     parentTaskId?: string | null;
     description?: string | null;
     dueDate?: string | null;
+    checklistItems?: ChecklistItem[];
   }) => Promise<Task>;
   updateTask: (id: string, input: Partial<{
     title: string;
     description: string | null;
     priority: number;
+    type: "TEXT" | "CHECKLIST";
     isCompleted: boolean;
     dueDate: string | null;
     listId: string | null;
     parentTaskId: string | null;
+    checklistItems: ChecklistItem[];
   }>) => Promise<void>;
   toggleTask: (id: string) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;

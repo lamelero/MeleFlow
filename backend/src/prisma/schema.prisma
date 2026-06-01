@@ -14,6 +14,11 @@ enum Role {
   USER
 }
 
+enum TaskType {
+  TEXT
+  CHECKLIST
+}
+
 // ── User ─────────────────────────────────────────
 
 model User {
@@ -41,6 +46,7 @@ model Task {
   title       String
   description String?
   priority    Int       @default(4) // 1=Urgent 2=High 3=Medium 4=Low
+  type        TaskType  @default(TEXT)
   dueDate     DateTime? @default(now())
   rrule       String?   // RRULE string for recurrence (RFC 5545)
   isCompleted Boolean   @default(false)
@@ -60,10 +66,24 @@ model Task {
   tags             TaskTag[]
   pomodoroSessions PomodoroSession[]
   attachments      Attachment[]
+  checklistItems   ChecklistItem[]
 
   @@index([userId, isCompleted])
   @@index([userId, dueDate])
   @@index([listId])
+}
+
+model ChecklistItem {
+  id          String   @id @default(cuid())
+  text        String
+  isCompleted Boolean  @default(false)
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
 }
 
 model Attachment {

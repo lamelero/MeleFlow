@@ -25,8 +25,12 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
   const [tagDropdownOpen, setTagDropdownOpen] = useState(false);
   const [dueDate, setDueDate] = useState<Date | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [taskType, setTaskType] = useState<"TEXT" | "CHECKLIST">("TEXT");
+  const [checklistItems, setChecklistItems] = useState<{ id?: string; text: string; isCompleted: boolean; position: number }[]>([]);
+  const [newChecklistText, setNewChecklistText] = useState("");
   const tagInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const checklistInputRef = useRef<HTMLInputElement>(null);
 
   const storeTask = useTaskStore((s) =>
     task ? s.tasks.find((t) => t.id === task.id) : undefined,
@@ -37,6 +41,8 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
     if (t) {
       setDescription(t.description || "");
       setDueDate(t.dueDate ? new Date(t.dueDate) : null);
+      setTaskType(t.type || "TEXT");
+      setChecklistItems(t.checklistItems ?? []);
       setPreview(false);
     }
   }, [t?.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -135,6 +141,43 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
     } catch {
       toast.error("Failed to delete attachment");
     }
+  }
+
+  async function handleTypeChange(type: "TEXT" | "CHECKLIST") {
+    setTaskType(type);
+    await updateTask(t.id, { type });
+  }
+
+  async function handleAddChecklistItem() {
+    const text = newChecklistText.trim();
+    if (!text) return;
+    const items = [...checklistItems, { text, isCompleted: false, position: checklistItems.length }];
+    setChecklistItems(items);
+    setNewChecklistText("");
+    await updateTask(t.id, { checklistItems: items, type: "CHECKLIST" });
+    setTaskType("CHECKLIST");
+    checklistInputRef.current?.focus();
+  }
+
+  async function handleChecklistItemKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      await handleAddChecklistItem();
+    }
+  }
+
+  async function handleToggleChecklistItem(index: number) {
+    const items = checklistItems.map((item, i) =>
+      i === index ? { ...item, isCompleted: !item.isCompleted } : item,
+    );
+    setChecklistItems(items);
+    await updateTask(t.id, { checklistItems: items });
+  }
+
+  async function handleRemoveChecklistItem(index: number) {
+    const items = checklistItems.filter((_, i) => i !== index).map((item, i) => ({ ...item, position: i }));
+    setChecklistItems(items);
+    await updateTask(t.id, { checklistItems: items });
   }
 
   async function handleTagKeyDown(e: React.KeyboardEvent) {
@@ -301,37 +344,135 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
           </div>
 
           <div className="mb-4">
-            <div className="mb-2 flex items-center justify-between">
-              <label className="font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400">
-                Description
-              </label>
+            <label className="mb-2 block font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400">
+              Type
+            </label>
+            <div className="flex rounded-xl border border-gray-200 bg-gray-50 p-0.5">
               <button
-                type="button"
-                onClick={() => setPreview(!preview)}
-                className="rounded-lg px-2 py-1 font-urbanist text-xs text-gray-500 hover:bg-gray-100"
+                onClick={() => handleTypeChange("TEXT")}
+                className={`flex-1 rounded-lg px-3 py-2 font-urbanist text-sm font-medium transition-all ${
+                  taskType === "TEXT"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
               >
-                {preview ? "Edit" : "Preview"}
+                Text
+              </button>
+              <button
+                onClick={() => handleTypeChange("CHECKLIST")}
+                className={`flex-1 rounded-lg px-3 py-2 font-urbanist text-sm font-medium transition-all ${
+                  taskType === "CHECKLIST"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                Checklist
               </button>
             </div>
-
-            {preview ? (
-              <div className="min-h-[120px] rounded-xl border border-gray-200 bg-gray-50 p-4 font-urbanist text-sm text-gray-700 prose prose-sm max-w-none">
-                {description ? (
-                  <Markdown>{description}</Markdown>
-                ) : (
-                  <span className="text-gray-400">No description</span>
-                )}
-              </div>
-            ) : (
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Add a description (Markdown supported)..."
-                rows={5}
-                className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 font-urbanist text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
-              />
-            )}
           </div>
+
+          {taskType === "CHECKLIST" ? (
+            <div className="mb-4">
+              <label className="mb-2 block font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400">
+                Items
+              </label>
+              <div className="mb-3 flex gap-2">
+                <input
+                  ref={checklistInputRef}
+                  type="text"
+                  value={newChecklistText}
+                  onChange={(e) => setNewChecklistText(e.target.value)}
+                  onKeyDown={handleChecklistItemKeyDown}
+                  placeholder="Add an item..."
+                  className="flex-1 rounded-xl border border-gray-200 px-4 py-2.5 font-urbanist text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+                />
+                <button
+                  onClick={handleAddChecklistItem}
+                  disabled={!newChecklistText.trim()}
+                  className="rounded-xl bg-primary px-4 py-2.5 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
+                >
+                  Add
+                </button>
+              </div>
+              {checklistItems.length === 0 ? (
+                <p className="font-urbanist text-xs text-gray-400">
+                  No items yet. Add one above.
+                </p>
+              ) : (
+                <div className="space-y-1">
+                  {checklistItems.map((item, index) => (
+                    <div
+                      key={index}
+                      className="group flex items-center gap-3 rounded-xl border border-gray-100 px-3 py-2.5 transition-colors hover:bg-gray-50"
+                    >
+                      <button
+                        onClick={() => handleToggleChecklistItem(index)}
+                        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-colors ${
+                          item.isCompleted
+                            ? "border-primary bg-primary text-white"
+                            : "border-gray-300 hover:border-primary"
+                        }`}
+                      >
+                        {item.isCompleted && (
+                          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </button>
+                      <span
+                        className={`flex-1 font-urbanist text-sm ${
+                          item.isCompleted ? "text-gray-400 line-through" : "text-gray-700"
+                        }`}
+                      >
+                        {item.text}
+                      </span>
+                      <button
+                        onClick={() => handleRemoveChecklistItem(index)}
+                        className="shrink-0 rounded-lg p-1 text-gray-300 opacity-0 transition-all hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
+                      >
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="mb-4">
+              <div className="mb-2 flex items-center justify-between">
+                <label className="font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400">
+                  Description
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setPreview(!preview)}
+                  className="rounded-lg px-2 py-1 font-urbanist text-xs text-gray-500 hover:bg-gray-100"
+                >
+                  {preview ? "Edit" : "Preview"}
+                </button>
+              </div>
+
+              {preview ? (
+                <div className="min-h-[120px] rounded-xl border border-gray-200 bg-gray-50 p-4 font-urbanist text-sm text-gray-700 prose prose-sm max-w-none">
+                  {description ? (
+                    <Markdown>{description}</Markdown>
+                  ) : (
+                    <span className="text-gray-400">No description</span>
+                  )}
+                </div>
+              ) : (
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Add a description (Markdown supported)..."
+                  rows={5}
+                  className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 font-urbanist text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+                />
+              )}
+            </div>
+          )}
 
           <div className="mb-4">
             <label className="mb-2 block font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400">
