@@ -11,6 +11,13 @@ export const updateSettingsSchema = z.object({
   maxUploadSize: z.number().int().min(1).max(200).optional(),
   maxLoginAttempts: z.number().int().min(1).max(100).optional(),
   loginLockoutMinutes: z.number().int().min(1).max(1440).optional(),
+  smtpHost: z.string().optional(),
+  smtpPort: z.number().int().min(1).max(65535).optional(),
+  smtpUser: z.string().optional(),
+  smtpPassword: z.string().optional(),
+  fromEmail: z.string().email().optional().or(z.literal("")),
+  emailEnabled: z.boolean().optional(),
+  emailSubject: z.string().max(200).optional(),
 });
 
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;

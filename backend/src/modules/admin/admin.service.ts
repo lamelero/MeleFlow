@@ -65,6 +65,13 @@ export class AdminService {
       loginLockoutMinutes: map.loginLockoutMinutes !== undefined
         ? Number(map.loginLockoutMinutes)
         : env.LOGIN_LOCKOUT_MINUTES,
+      smtpHost: map.smtpHost || "",
+      smtpPort: map.smtpPort ? Number(map.smtpPort) : 587,
+      smtpUser: map.smtpUser || "",
+      smtpPassword: map.smtpPassword ? "••••••••" : "",
+      fromEmail: map.fromEmail || "",
+      emailEnabled: map.emailEnabled === "true",
+      emailSubject: map.emailSubject || "Reminder: {{title}} is due soon",
     };
   }
 
@@ -88,6 +95,27 @@ export class AdminService {
     }
     if (input.loginLockoutMinutes !== undefined) {
       await upsert("loginLockoutMinutes", String(input.loginLockoutMinutes));
+    }
+    if (input.smtpHost !== undefined) {
+      await upsert("smtpHost", input.smtpHost);
+    }
+    if (input.smtpPort !== undefined) {
+      await upsert("smtpPort", String(input.smtpPort));
+    }
+    if (input.smtpUser !== undefined) {
+      await upsert("smtpUser", input.smtpUser);
+    }
+    if (input.smtpPassword !== undefined && input.smtpPassword !== "••••••••") {
+      await upsert("smtpPassword", input.smtpPassword);
+    }
+    if (input.fromEmail !== undefined) {
+      await upsert("fromEmail", input.fromEmail);
+    }
+    if (input.emailEnabled !== undefined) {
+      await upsert("emailEnabled", String(input.emailEnabled));
+    }
+    if (input.emailSubject !== undefined) {
+      await upsert("emailSubject", input.emailSubject);
     }
 
     return this.getSettings();

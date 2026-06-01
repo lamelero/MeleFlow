@@ -11,10 +11,19 @@ import ThemeToggle from "../../components/ThemeToggle";
 
 export default function AdminPanel() {
   const { user, logout } = useAuthStore();
-  const { stats, settings, fetchUsers, fetchStats, fetchSettings, updateSettings, error, clearError } = useAdminStore();
+  const { stats, settings, fetchUsers, fetchStats, fetchSettings, updateSettings, testEmail, error, clearError } = useAdminStore();
   const [localUploadSize, setLocalUploadSize] = useState(settings.maxUploadSize);
   const [localMaxAttempts, setLocalMaxAttempts] = useState(settings.maxLoginAttempts);
   const [localLockoutMinutes, setLocalLockoutMinutes] = useState(settings.loginLockoutMinutes);
+
+  // Email settings local state
+  const [localSmtpHost, setLocalSmtpHost] = useState(settings.smtpHost);
+  const [localSmtpPort, setLocalSmtpPort] = useState(settings.smtpPort);
+  const [localSmtpUser, setLocalSmtpUser] = useState(settings.smtpUser);
+  const [localSmtpPassword, setLocalSmtpPassword] = useState("");
+  const [localFromEmail, setLocalFromEmail] = useState(settings.fromEmail);
+  const [localEmailSubject, setLocalEmailSubject] = useState(settings.emailSubject);
+  const [localEmailEnabled, setLocalEmailEnabled] = useState(settings.emailEnabled);
 
   useEffect(() => {
     fetchStats();
@@ -26,7 +35,25 @@ export default function AdminPanel() {
     setLocalUploadSize(settings.maxUploadSize);
     setLocalMaxAttempts(settings.maxLoginAttempts);
     setLocalLockoutMinutes(settings.loginLockoutMinutes);
-  }, [settings.maxUploadSize, settings.maxLoginAttempts, settings.loginLockoutMinutes]);
+    setLocalSmtpHost(settings.smtpHost);
+    setLocalSmtpPort(settings.smtpPort);
+    setLocalSmtpUser(settings.smtpUser);
+    setLocalFromEmail(settings.fromEmail);
+    setLocalEmailSubject(settings.emailSubject);
+    setLocalEmailEnabled(settings.emailEnabled);
+  }, [settings]);
+
+  function saveEmailSettings() {
+    updateSettings({
+      smtpHost: localSmtpHost,
+      smtpPort: localSmtpPort,
+      smtpUser: localSmtpUser,
+      smtpPassword: localSmtpPassword || undefined,
+      fromEmail: localFromEmail,
+      emailSubject: localEmailSubject,
+      emailEnabled: localEmailEnabled,
+    });
+  }
 
   if (user?.role !== "ADMIN") {
     return (
@@ -90,6 +117,7 @@ export default function AdminPanel() {
 
         <StatsCards stats={stats} />
 
+        {/* General Settings */}
         <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
           <h2 className="mb-4 font-outfit text-lg font-semibold text-gray-900 dark:text-gray-100">
             Settings
@@ -208,6 +236,134 @@ export default function AdminPanel() {
                   Save
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Email Settings */}
+        <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-outfit text-lg font-semibold text-gray-900 dark:text-gray-100">
+              Email Configuration
+            </h2>
+            <label className="flex items-center gap-2">
+              <span className="font-urbanist text-xs font-medium text-gray-500 dark:text-gray-400">
+                {localEmailEnabled ? "Enabled" : "Disabled"}
+              </span>
+              <button
+                onClick={() => {
+                  setLocalEmailEnabled(!localEmailEnabled);
+                  setTimeout(() => saveEmailSettings(), 0);
+                }}
+                className={`relative h-6 w-10 rounded-full transition-colors ${
+                  localEmailEnabled ? "bg-primary" : "bg-gray-300 dark:bg-gray-600"
+                }`}
+              >
+                <span
+                  className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform dark:bg-gray-200 ${
+                    localEmailEnabled ? "translate-x-4" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </label>
+          </div>
+
+          <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
+                  SMTP Host
+                </label>
+                <input
+                  type="text"
+                  value={localSmtpHost}
+                  onChange={(e) => setLocalSmtpHost(e.target.value)}
+                  placeholder="smtp.example.com"
+                  className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+                />
+              </div>
+              <div>
+                <label className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
+                  SMTP Port
+                </label>
+                <input
+                  type="number"
+                  value={localSmtpPort}
+                  onChange={(e) => setLocalSmtpPort(Number(e.target.value))}
+                  placeholder="587"
+                  className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
+                  SMTP Username
+                </label>
+                <input
+                  type="text"
+                  value={localSmtpUser}
+                  onChange={(e) => setLocalSmtpUser(e.target.value)}
+                  placeholder="user@example.com"
+                  className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+                />
+              </div>
+              <div>
+                <label className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
+                  SMTP Password
+                </label>
+                <input
+                  type="password"
+                  value={localSmtpPassword}
+                  onChange={(e) => setLocalSmtpPassword(e.target.value)}
+                  placeholder={settings.smtpPassword ? "•••••••• (leave blank to keep)" : "Enter password"}
+                  className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
+                  From Email
+                </label>
+                <input
+                  type="email"
+                  value={localFromEmail}
+                  onChange={(e) => setLocalFromEmail(e.target.value)}
+                  placeholder="noreply@example.com"
+                  className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+                />
+              </div>
+              <div>
+                <label className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Email Subject
+                </label>
+                <input
+                  type="text"
+                  value={localEmailSubject}
+                  onChange={(e) => setLocalEmailSubject(e.target.value)}
+                  placeholder="Reminder: {{title}} is due soon"
+                  className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                onClick={saveEmailSettings}
+                className="rounded-xl bg-primary px-5 py-2.5 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600"
+              >
+                Save Email Settings
+              </button>
+              <button
+                onClick={testEmail}
+                disabled={!localSmtpHost || !localFromEmail}
+                className="rounded-xl bg-gray-100 px-5 py-2.5 font-urbanist text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              >
+                Send Test Email
+              </button>
             </div>
           </div>
         </div>

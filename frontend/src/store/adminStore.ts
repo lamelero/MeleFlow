@@ -27,6 +27,13 @@ export interface SystemSettings {
   maxUploadSize: number;
   maxLoginAttempts: number;
   loginLockoutMinutes: number;
+  smtpHost: string;
+  smtpPort: number;
+  smtpUser: string;
+  smtpPassword: string;
+  fromEmail: string;
+  emailEnabled: boolean;
+  emailSubject: string;
 }
 
 interface AdminState {
@@ -40,13 +47,28 @@ interface AdminState {
   fetchSettings: () => Promise<void>;
   updateSettings: (data: Partial<SystemSettings>) => Promise<void>;
   updateUser: (id: string, data: { role?: string; isActive?: boolean }) => Promise<void>;
+  testEmail: () => Promise<void>;
   clearError: () => void;
 }
+
+const defaultSettings: SystemSettings = {
+  allowRegistration: true,
+  maxUploadSize: 50,
+  maxLoginAttempts: 5,
+  loginLockoutMinutes: 15,
+  smtpHost: "",
+  smtpPort: 587,
+  smtpUser: "",
+  smtpPassword: "",
+  fromEmail: "",
+  emailEnabled: false,
+  emailSubject: "Reminder: {{title}} is due soon",
+};
 
 export const useAdminStore = create<AdminState>((set, get) => ({
   users: [],
   stats: null,
-  settings: { allowRegistration: true, maxUploadSize: 50, maxLoginAttempts: 5, loginLockoutMinutes: 15 },
+  settings: defaultSettings,
   isLoading: false,
   error: null,
 
@@ -78,7 +100,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   fetchSettings: async () => {
     try {
       const { data } = await client.get("/admin/settings");
-      set({ settings: data });
+      set({ settings: { ...defaultSettings, ...data } });
     } catch {
       // use defaults
     }
@@ -87,7 +109,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   updateSettings: async (input) => {
     try {
       const { data } = await client.patch("/admin/settings", input);
-      set({ settings: data });
+      set({ settings: { ...defaultSettings, ...data } });
       toast.success("Settings saved");
     } catch (err: unknown) {
       const msg =
@@ -111,6 +133,18 @@ export const useAdminStore = create<AdminState>((set, get) => ({
           ?.error || "Failed to update user";
       set({ error: msg });
       throw err;
+    }
+  },
+
+  testEmail: async () => {
+    try {
+      await client.post("/admin/test-email");
+      toast.success("Test email sent! Check your inbox.");
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { error?: string } } })?.response?.data
+          ?.error || "Failed to send test email";
+      toast.error(msg);
     }
   },
 
