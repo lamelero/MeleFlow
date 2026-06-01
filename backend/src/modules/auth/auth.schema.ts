@@ -25,6 +25,13 @@ export const updateLanguageSchema = z.object({
   language: z.enum(["en", "es"]),
 });
 
+export const updateProfileSchema = z.object({
+  displayName: z.string().max(60).optional(),
+  notificationEmail: z.string().email().optional().or(z.literal("")),
+  bio: z.string().max(500).optional(),
+  timezone: z.string().max(50).optional(),
+});
+
 export const setup2FASchema = z.object({});
 
 export const enable2FASchema = z.object({
@@ -44,3 +51,4 @@ export type LoginInput = z.infer<typeof loginSchema>;
 export type Verify2FALoginInput = z.infer<typeof verify2FASchema>;
 export type RefreshInput = z.infer<typeof refreshSchema>;
 export type UpdateLanguageInput = z.infer<typeof updateLanguageSchema>;
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

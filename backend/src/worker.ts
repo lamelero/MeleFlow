@@ -20,7 +20,7 @@ cron.schedule("* * * * *", async () => {
         dueDate: { gte: now, lte: in24h },
       },
       include: {
-        user: { select: { id: true, email: true, username: true } },
+        user: { select: { id: true, email: true, username: true, notificationEmail: true } },
       },
     });
 
@@ -29,7 +29,8 @@ cron.schedule("* * * * *", async () => {
       const alreadySent = await redis.get(reminderKey);
       if (alreadySent) continue;
 
-      if (!task.user.email) continue;
+      const emailTo = task.user.notificationEmail || task.user.email;
+      if (!emailTo) continue;
 
       // Build subject from template
       const subject = `Reminder: "${task.title}" is due soon`;
@@ -41,10 +42,10 @@ cron.schedule("* * * * *", async () => {
         "http://localhost:5173/app",
       );
 
-      const sent = await sendEmail(task.user.email, subject, html);
+      const sent = await sendEmail(emailTo, subject, html);
 
       if (sent) {
-        console.log(`[Worker] Email sent to ${task.user.email} for task "${task.title}"`);
+        console.log(`[Worker] Email sent to ${emailTo} for task "${task.title}"`);
       } else {
         console.log(`[Worker] Email skipped (disabled or misconfigured) for task "${task.title}"`);
       }

@@ -14,7 +14,7 @@ import {
   verifyRecoveryCode,
   generateTOTPUri,
 } from "../../lib/two-factor";
-import type { RegisterInput, LoginInput, Verify2FALoginInput } from "./auth.schema";
+import type { RegisterInput, LoginInput, Verify2FALoginInput, UpdateProfileInput } from "./auth.schema";
 
 export class AuthService {
   async register(input: RegisterInput) {
@@ -228,23 +228,45 @@ export class AuthService {
   }
 
   async getMe(userId: string) {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        role: true,
-        language: true,
-        isTwoFactorEnabled: true,
-      },
-    });
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          displayName: true,
+          avatarUrl: true,
+          notificationEmail: true,
+          bio: true,
+          timezone: true,
+          role: true,
+          language: true,
+          isTwoFactorEnabled: true,
+        },
+      });
 
-    if (!user) {
-      throw new AppError(404, "User not found");
+      if (!user) throw new AppError(404, "User not found");
+      return user;
+    } catch (err) {
+      if (err instanceof AppError) throw err;
+
+      // Fallback: columns may not exist yet (pre-migration)
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          role: true,
+          language: true,
+          isTwoFactorEnabled: true,
+        },
+      });
+
+      if (!user) throw new AppError(404, "User not found");
+      return user;
     }
-
-    return user;
   }
 
   async updateLanguage(userId: string, language: string) {
@@ -252,6 +274,34 @@ export class AuthService {
       where: { id: userId },
       data: { language },
     });
+  }
+
+  async updateProfile(userId: string, input: UpdateProfileInput) {
+    const data: Record<string, string | null> = {};
+
+    if (input.displayName !== undefined) {
+      data.displayName = input.displayName || null;
+    }
+    if (input.notificationEmail !== undefined) {
+      data.notificationEmail = input.notificationEmail || null;
+    }
+    if (input.bio !== undefined) {
+      data.bio = input.bio || null;
+    }
+    if (input.timezone !== undefined) {
+      data.timezone = input.timezone || null;
+    }
+
+    if (Object.keys(data).length === 0) {
+      return this.getMe(userId);
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data,
+    });
+
+    return this.getMe(userId);
   }
 
   // ── 2FA Management ─────────────────────────────

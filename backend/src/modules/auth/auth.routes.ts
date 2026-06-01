@@ -1,10 +1,14 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+import path from "path";
+import fs from "fs/promises";
+import { prisma } from "../../config/database";
 import {
   registerSchema,
   loginSchema,
   verify2FASchema,
   refreshSchema,
   updateLanguageSchema,
+  updateProfileSchema,
   setup2FASchema,
   enable2FASchema,
   disable2FASchema,
@@ -125,6 +129,50 @@ export async function authRoutes(app: FastifyInstance) {
       const { language } = updateLanguageSchema.parse(req.body);
       await service.updateLanguage(sub, language);
       return reply.code(204).send();
+    },
+  );
+
+  app.patch(
+    "/profile",
+    { onRequest: [app.authenticate] },
+    async (req, reply) => {
+      const { sub } = req.user;
+      const input = updateProfileSchema.parse(req.body);
+      const user = await service.updateProfile(sub, input);
+      return reply.send(user);
+    },
+  );
+
+  app.post(
+    "/avatar",
+    { onRequest: [app.authenticate] },
+    async (req, reply) => {
+      const { sub } = req.user;
+      const data = await req.file();
+      if (!data) {
+        return reply.code(400).send({ error: "No file uploaded" });
+      }
+
+      const ext = path.extname(data.filename) || ".png";
+      const filename = `avatar-${sub}${ext}`;
+      const uploadDir = path.resolve("uploads");
+      await fs.mkdir(uploadDir, { recursive: true });
+      const filePath = path.join(uploadDir, filename);
+
+      const chunks: Buffer[] = [];
+      for await (const chunk of data.file) {
+        chunks.push(chunk);
+      }
+      await fs.writeFile(filePath, Buffer.concat(chunks));
+
+      const avatarUrl = `/uploads/${filename}`;
+
+      await prisma.user.update({
+        where: { id: sub },
+        data: { avatarUrl },
+      });
+
+      return reply.send({ avatarUrl });
     },
   );
 

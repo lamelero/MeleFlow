@@ -5,6 +5,11 @@ export interface User {
   id: string;
   email: string;
   username: string;
+  displayName?: string | null;
+  avatarUrl?: string | null;
+  notificationEmail?: string | null;
+  bio?: string | null;
+  timezone?: string | null;
   role: string;
   language: string;
   isTwoFactorEnabled?: boolean;
@@ -28,6 +33,8 @@ interface AuthState {
   logout: () => Promise<void>;
   initialize: () => Promise<void>;
   updateLanguage: (lang: string) => Promise<void>;
+  updateProfile: (data: { displayName?: string; notificationEmail?: string; bio?: string; timezone?: string }) => Promise<void>;
+  uploadAvatar: (file: File) => Promise<string>;
   clearError: () => void;
 }
 
@@ -136,6 +143,24 @@ export const useAuthStore = create<AuthState>((set) => ({
     } catch {
       // Silently ignore
     }
+  },
+
+  updateProfile: async (data) => {
+    const res = await client.patch("/auth/profile", data);
+    set({ user: res.data });
+  },
+
+  uploadAvatar: async (file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+    const res = await client.post("/auth/avatar", form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    const { avatarUrl } = res.data;
+    set((state) => ({
+      user: state.user ? { ...state.user, avatarUrl } : null,
+    }));
+    return avatarUrl;
   },
 
   clearError: () => set({ error: null }),
