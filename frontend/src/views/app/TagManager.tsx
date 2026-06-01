@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTagStore, type Tag } from "../../store/tagStore";
 import TagPill from "../../components/tags/TagPill";
@@ -83,12 +84,12 @@ export default function TagManager() {
             Manage Tags
           </h2>
           <div className="flex items-center gap-2">
-            <a
-              href="/app"
-              className="rounded-xl bg-gray-100 px-4 py-2 font-urbanist text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-            >
-              Back
-            </a>
+          <Link
+            to="/app"
+            className="rounded-xl bg-gray-100 px-4 py-2 font-urbanist text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+          >
+            Back
+          </Link>
           </div>
         </div>
 

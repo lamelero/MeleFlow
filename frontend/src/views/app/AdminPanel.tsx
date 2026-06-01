@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/authStore";
@@ -53,12 +54,12 @@ export default function AdminPanel() {
             Admin Panel
           </h1>
           <div className="flex items-center gap-3">
-            <a
-              href="/app"
+            <Link
+              to="/app"
               className="rounded-xl bg-gray-100 px-4 py-2 font-urbanist text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
             >
               Back to App
-            </a>
+            </Link>
             <ThemeToggle />
             <LanguageSwitcher />
             <span className="font-urbanist text-sm text-gray-600 dark:text-gray-400">
