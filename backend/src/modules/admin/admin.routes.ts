@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import { updateUserSchema } from "./admin.schema";
+import { updateUserSchema, updateSettingsSchema } from "./admin.schema";
 import { AdminService } from "./admin.service";
 
 const service = new AdminService();
@@ -33,5 +33,16 @@ export async function adminRoutes(app: FastifyInstance) {
   app.get("/stats", async (_req, reply) => {
     const stats = await service.getStats();
     return reply.send(stats);
+  });
+
+  app.get("/settings", async (_req, reply) => {
+    const settings = await service.getSettings();
+    return reply.send(settings);
+  });
+
+  app.patch("/settings", async (req, reply) => {
+    const input = updateSettingsSchema.parse(req.body);
+    const settings = await service.updateSettings(input);
+    return reply.send(settings);
   });
 }

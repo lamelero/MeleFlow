@@ -33,7 +33,7 @@ export async function buildApp(opts: Record<string, unknown> = {}) {
   await app.register(fjwt, { secret: env.JWT_SECRET });
 
   await app.register(multipart, {
-    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max
+    limits: { fileSize: 200 * 1024 * 1024 }, // 200MB cap (dynamic check inside service)
   });
 
   await app.register(fastifyStatic, {

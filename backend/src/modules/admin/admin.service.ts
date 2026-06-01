@@ -1,6 +1,7 @@
 import { prisma } from "../../config/database";
+import { env } from "../../config/env";
 import { AppError } from "../../lib/app-error";
-import type { UpdateUserInput } from "./admin.schema";
+import type { UpdateUserInput, UpdateSettingsInput } from "./admin.schema";
 
 export class AdminService {
   async getUsers() {
@@ -44,6 +45,40 @@ export class AdminService {
         isActive: true,
       },
     });
+  }
+
+  async getSettings() {
+    const rows = await prisma.systemSetting.findMany();
+    const map: Record<string, string> = {};
+    for (const r of rows) map[r.key] = r.value;
+
+    return {
+      allowRegistration: map.allowRegistration !== undefined
+        ? map.allowRegistration === "true"
+        : env.ALLOW_REGISTRATION,
+      maxUploadSize: map.maxUploadSize !== undefined
+        ? Number(map.maxUploadSize)
+        : env.MAX_UPLOAD_SIZE,
+    };
+  }
+
+  async updateSettings(input: UpdateSettingsInput) {
+    const upsert = async (key: string, value: string) => {
+      await prisma.systemSetting.upsert({
+        where: { key },
+        create: { key, value },
+        update: { value },
+      });
+    };
+
+    if (input.allowRegistration !== undefined) {
+      await upsert("allowRegistration", String(input.allowRegistration));
+    }
+    if (input.maxUploadSize !== undefined) {
+      await upsert("maxUploadSize", String(input.maxUploadSize));
+    }
+
+    return this.getSettings();
   }
 
   async getStats() {

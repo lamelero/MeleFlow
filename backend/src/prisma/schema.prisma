@@ -156,6 +156,14 @@ model HabitLog {
   @@index([date])
 }
 
+// ── System Settings (key-value for admin panel) ──
+
+model SystemSetting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+}
+
 // ── PomodoroSession (focus timer) ────────────────
 
 model PomodoroSession {

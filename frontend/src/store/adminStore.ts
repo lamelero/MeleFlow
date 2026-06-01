@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import toast from "react-hot-toast";
 import { client } from "../api/client";
 
 interface AdminUser {
@@ -21,13 +22,21 @@ export interface AdminStats {
   totalPomodoros: number;
 }
 
+export interface SystemSettings {
+  allowRegistration: boolean;
+  maxUploadSize: number;
+}
+
 interface AdminState {
   users: AdminUser[];
   stats: AdminStats | null;
+  settings: SystemSettings;
   isLoading: boolean;
   error: string | null;
   fetchUsers: () => Promise<void>;
   fetchStats: () => Promise<void>;
+  fetchSettings: () => Promise<void>;
+  updateSettings: (data: Partial<SystemSettings>) => Promise<void>;
   updateUser: (id: string, data: { role?: string; isActive?: boolean }) => Promise<void>;
   clearError: () => void;
 }
@@ -35,6 +44,7 @@ interface AdminState {
 export const useAdminStore = create<AdminState>((set, get) => ({
   users: [],
   stats: null,
+  settings: { allowRegistration: true, maxUploadSize: 50 },
   isLoading: false,
   error: null,
 
@@ -60,6 +70,29 @@ export const useAdminStore = create<AdminState>((set, get) => ({
         (err as { response?: { data?: { error?: string } } })?.response?.data
           ?.error || "Failed to load stats";
       set({ error: msg });
+    }
+  },
+
+  fetchSettings: async () => {
+    try {
+      const { data } = await client.get("/admin/settings");
+      set({ settings: data });
+    } catch {
+      // use defaults
+    }
+  },
+
+  updateSettings: async (input) => {
+    try {
+      const { data } = await client.patch("/admin/settings", input);
+      set({ settings: data });
+      toast.success("Settings saved");
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { error?: string } } })?.response?.data
+          ?.error || "Failed to save settings";
+      set({ error: msg });
+      toast.error(msg);
     }
   },
 

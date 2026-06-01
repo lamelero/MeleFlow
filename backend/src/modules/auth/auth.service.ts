@@ -9,6 +9,16 @@ import type { RegisterInput, LoginInput } from "./auth.schema";
 
 export class AuthService {
   async register(input: RegisterInput) {
+    const setting = await prisma.systemSetting.findUnique({
+      where: { key: "allowRegistration" },
+    });
+    const allowed = setting
+      ? setting.value === "true"
+      : env.ALLOW_REGISTRATION;
+    if (!allowed) {
+      throw new AppError(403, "Registration is disabled. Contact an administrator.");
+    }
+
     const existing = await prisma.user.findFirst({
       where: { OR: [{ email: input.email }, { username: input.username }] },
     });

@@ -2,6 +2,7 @@ import path from "path";
 import fs from "fs/promises";
 import { randomUUID } from "crypto";
 import { prisma } from "../../config/database";
+import { env } from "../../config/env";
 import { AppError } from "../../lib/app-error";
 
 const UPLOAD_DIR = path.resolve("uploads");
@@ -15,11 +16,24 @@ async function ensureUploadDir() {
 }
 
 export class AttachmentService {
+  async getMaxUploadSize(): Promise<number> {
+    const setting = await prisma.systemSetting.findUnique({
+      where: { key: "maxUploadSize" },
+    });
+    return setting ? Number(setting.value) : env.MAX_UPLOAD_SIZE;
+  }
+
   async upload(userId: string, taskId: string, file: { filename: string; buffer: Buffer; mimetype: string }) {
     const task = await prisma.task.findFirst({
       where: { id: taskId, userId },
     });
     if (!task) throw new AppError(404, "Task not found");
+
+    const maxSize = await this.getMaxUploadSize();
+    const sizeMB = file.buffer.length / (1024 * 1024);
+    if (sizeMB > maxSize) {
+      throw new AppError(413, `File exceeds the ${maxSize}MB upload limit`);
+    }
 
     await ensureUploadDir();
 

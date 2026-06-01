@@ -17,5 +17,10 @@ export const env = z
     NODE_ENV: z
       .enum(["development", "production", "test"])
       .default("development"),
+    ALLOW_REGISTRATION: z
+      .string()
+      .transform((v) => v === "true")
+      .default("true"),
+    MAX_UPLOAD_SIZE: z.coerce.number().default(50),
   })
   .parse(process.env);
