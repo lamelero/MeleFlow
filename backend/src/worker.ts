@@ -5,6 +5,7 @@ import cron from "node-cron";
 import { prisma } from "./config/database";
 import { redis } from "./config/redis";
 import { sendEmail, buildReminderEmail } from "./lib/email-service";
+import { HabitService } from "./modules/habits/habits.service";
 
 console.log(" MeleNotes Worker started — checking for reminders every minute");
 
@@ -55,7 +56,43 @@ cron.schedule("* * * * *", async () => {
     }
 
     if (tasks.length > 0) {
-      console.log(`[Worker] Processed ${tasks.length} reminder(s)`);
+      console.log(`[Worker] Processed ${tasks.length} task reminder(s)`);
+    }
+
+    // ── Habit reminders ───────────────────────────
+    const habitService = new HabitService();
+    const habits = await habitService.findHabitsDueForReminder();
+
+    for (const habit of habits) {
+      const today = new Date().toISOString().split("T")[0];
+      const reminderKey = `reminder:habit:${habit.id}:${today}`;
+      const alreadySent = await redis.get(reminderKey);
+      if (alreadySent) continue;
+
+      const emailTo = habit.user.notificationEmail || habit.user.email;
+      if (!emailTo) continue;
+
+      const subject = `Habit reminder: "${habit.name}"`;
+      const html = buildReminderEmail(
+        habit.user.username,
+        `Don't forget to complete your habit: "${habit.name}"`,
+        "",
+        "http://localhost:5173/app",
+      );
+
+      const sent = await sendEmail(emailTo, subject, html);
+
+      if (sent) {
+        console.log(`[Worker] Habit reminder sent to ${emailTo} for "${habit.name}"`);
+      } else {
+        console.log(`[Worker] Habit reminder skipped (disabled/misconfigured) for "${habit.name}"`);
+      }
+
+      await redis.set(reminderKey, "1", "EX", 86400);
+    }
+
+    if (habits.length > 0) {
+      console.log(`[Worker] Processed ${habits.length} habit reminder(s)`);
     }
   } catch (err) {
     console.error("[Worker] Error processing reminders:", err);

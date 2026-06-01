@@ -3,11 +3,12 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useListStore } from "../../store/listStore";
 import { useTaskStore, type Task } from "../../store/taskStore";
-import { useHabitStore } from "../../store/habitStore";
+import { useHabitStore, type Habit } from "../../store/habitStore";
 import { useTagStore } from "../../store/tagStore";
 import TaskList from "../../components/tasks/TaskList";
 import TaskDetailPanel from "../../components/tasks/TaskDetailPanel";
 import HabitCard from "../../components/habits/HabitCard";
+import HabitFormModal from "../../components/habits/HabitFormModal";
 import AppLayout from "../../components/AppLayout";
 
 export default function Dashboard() {
@@ -21,8 +22,8 @@ export default function Dashboard() {
   const [showNewList, setShowNewList] = useState(false);
   const [newListName, setNewListName] = useState("");
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [newHabitName, setNewHabitName] = useState("");
-  const [showNewHabit, setShowNewHabit] = useState(false);
+  const [habitFormOpen, setHabitFormOpen] = useState(false);
+  const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -51,12 +52,26 @@ export default function Dashboard() {
     setShowNewList(false);
   }
 
-  async function handleCreateHabit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newHabitName.trim()) return;
-    await createHabit({ name: newHabitName.trim() });
-    setNewHabitName("");
-    setShowNewHabit(false);
+  async function handleSaveHabit(data: {
+    name: string;
+    description?: string | null;
+    category: string;
+    priority: number;
+    frequency: string | null;
+    startDate?: string;
+    endDate?: string | null;
+  }) {
+    if (editingHabit) {
+      await useHabitStore.getState().updateHabit(editingHabit.id, data);
+    } else {
+      await createHabit(data);
+    }
+    setEditingHabit(null);
+  }
+
+  function handleEditHabit(habit: Habit) {
+    setEditingHabit(habit);
+    setHabitFormOpen(true);
   }
 
   function handleTagClick(tagId: string | undefined) {
@@ -214,35 +229,21 @@ export default function Dashboard() {
                 Habits
               </h2>
               <button
-                onClick={() => setShowNewHabit(!showNewHabit)}
-                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-primary dark:hover:bg-gray-800"
+                onClick={() => {
+                  setEditingHabit(null);
+                  setHabitFormOpen(true);
+                }}
+                className="rounded-xl px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors"
+                style={{ backgroundColor: "#14B8A6" }}
               >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
+                <span className="flex items-center gap-1.5">
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                  New Habit
+                </span>
               </button>
             </div>
-
-            {showNewHabit && (
-              <form onSubmit={handleCreateHabit} className="mb-4">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newHabitName}
-                    onChange={(e) => setNewHabitName(e.target.value)}
-                    placeholder="Habit name"
-                    className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
-                    autoFocus
-                  />
-                  <button
-                    type="submit"
-                    className="rounded-xl bg-primary px-4 py-2.5 font-urbanist text-sm font-medium text-white"
-                  >
-                    Add
-                  </button>
-                </div>
-              </form>
-            )}
 
             {habits.length === 0 ? (
               <motion.div
@@ -270,13 +271,52 @@ export default function Dashboard() {
                 </p>
               </motion.div>
             ) : (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {habits.map((habit) => (
-                  <HabitCard key={habit.id} habit={habit} />
-                ))}
+              <div className="space-y-6">
+                {/* Active habits */}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {habits
+                    .filter((h) => !h.isArchived)
+                    .map((habit) => (
+                      <HabitCard
+                        key={habit.id}
+                        habit={habit}
+                        onEdit={handleEditHabit}
+                      />
+                    ))}
+                </div>
+
+                {/* Archived habits */}
+                {habits.filter((h) => h.isArchived).length > 0 && (
+                  <div>
+                    <h3 className="mb-3 font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400">
+                      Archived
+                    </h3>
+                    <div className="grid gap-3 opacity-50 sm:grid-cols-2">
+                      {habits
+                        .filter((h) => h.isArchived)
+                        .map((habit) => (
+                          <HabitCard
+                            key={habit.id}
+                            habit={habit}
+                            onEdit={handleEditHabit}
+                          />
+                        ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </section>
+
+          <HabitFormModal
+            isOpen={habitFormOpen}
+            onClose={() => {
+              setHabitFormOpen(false);
+              setEditingHabit(null);
+            }}
+            onSave={handleSaveHabit}
+            habit={editingHabit}
+          />
         </main>
       </div>
 

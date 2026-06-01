@@ -14,6 +14,24 @@ enum Role {
   USER
 }
 
+enum HabitCategory {
+  DEJAR_HABITO
+  ARTE
+  TAREA
+  MEDITACION
+  ESTUDIO
+  TRABAJO
+  DEPORTE
+  ENTRETENIMIENTO
+  SOCIAL
+  FINANZAS
+  SALUD
+  NUTRICION
+  HOGAR
+  AIRE_LIBRE
+  OTROS
+}
+
 enum TaskType {
   TEXT
   CHECKLIST
@@ -160,15 +178,18 @@ model TaskTag {
 // ── Habit ────────────────────────────────────────
 
 model Habit {
-  id          String   @id @default(cuid())
+  id          String        @id @default(cuid())
   name        String
   description String?
-  streakCount Int      @default(0)
-  frequency   String   @default("daily") // daily | weekly | monthly
-  color       String   @default("#14B8A6")
-  icon        String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  category    HabitCategory @default(OTROS)
+  priority    Int           @default(1)
+  frequency   String?       // null = daily no constraints; JSON: {"type":"weekly","days":[1,3,5],"reminderTime":"09:00"}
+  startDate   DateTime      @default(now())
+  endDate     DateTime?
+  isArchived  Boolean       @default(false)
+  streakCount Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -179,10 +200,11 @@ model Habit {
 // ── HabitLog (daily check-in) ────────────────────
 
 model HabitLog {
-  id        String   @id @default(cuid())
-  date      DateTime @db.Date
-  note      String?
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  date        DateTime @db.Date
+  isCompleted Boolean  @default(true)
+  note        String?
+  createdAt   DateTime @default(now())
 
   habitId String
   habit   Habit  @relation(fields: [habitId], references: [id], onDelete: Cascade)
