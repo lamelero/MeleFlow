@@ -33,7 +33,7 @@ export default function PomodoroTimer() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center gap-2 rounded-xl bg-gray-100 px-3 py-1.5">
+      <div className="flex items-center gap-2 rounded-xl bg-gray-100 px-3 py-1.5 dark:bg-gray-800">
         <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       </div>
     );
@@ -45,7 +45,7 @@ export default function PomodoroTimer() {
         onClick={() => start()}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        className="flex items-center gap-1.5 rounded-xl bg-primary/10 px-3 py-1.5 font-urbanist text-xs font-medium text-primary transition-colors hover:bg-primary/20"
+        className="flex items-center gap-1.5 rounded-xl bg-primary/10 px-3 py-1.5 font-urbanist text-xs font-medium text-primary transition-colors hover:bg-primary/20 dark:bg-primary/20"
       >
         <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
@@ -57,7 +57,7 @@ export default function PomodoroTimer() {
   }
 
   return (
-    <div className="flex items-center gap-2 rounded-xl bg-gray-100 px-3 py-1.5">
+    <div className="flex items-center gap-2 rounded-xl bg-gray-100 px-3 py-1.5 dark:bg-gray-800">
       <div className="relative flex items-center justify-center" style={{ width: SIZE, height: SIZE }}>
         <svg width={SIZE} height={SIZE} className="-rotate-90">
           <circle
@@ -65,7 +65,7 @@ export default function PomodoroTimer() {
             cy={SIZE / 2}
             r={RADIUS}
             fill="none"
-            stroke="#E5E7EB"
+            stroke="var(--color-progress-bg, #E5E7EB)"
             strokeWidth={STROKE}
             className="transition-colors"
           />
@@ -95,7 +95,7 @@ export default function PomodoroTimer() {
         )}
       </div>
 
-      <span className={`font-urbanist text-xs font-mono tabular-nums ${isWarning ? "text-red-500" : "text-gray-700"}`}>
+      <span className={`font-urbanist text-xs font-mono tabular-nums ${isWarning ? "text-red-500" : "text-gray-700 dark:text-gray-300"}`}>
         {display}
       </span>
 
@@ -104,7 +104,7 @@ export default function PomodoroTimer() {
           <motion.button
             onClick={pause}
             whileTap={{ scale: 0.85 }}
-            className="rounded-lg p-1 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
+            className="rounded-lg p-1 text-gray-500 hover:bg-gray-200 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-300"
             title="Pause"
           >
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -115,7 +115,7 @@ export default function PomodoroTimer() {
           <motion.button
             onClick={resume}
             whileTap={{ scale: 0.85 }}
-            className="rounded-lg p-1 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
+            className="rounded-lg p-1 text-gray-500 hover:bg-gray-200 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-300"
             title="Resume"
           >
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -126,7 +126,7 @@ export default function PomodoroTimer() {
         <motion.button
           onClick={complete}
           whileTap={{ scale: 0.85 }}
-          className="rounded-lg p-1 text-gray-500 hover:bg-gray-200 hover:text-green-600"
+          className="rounded-lg p-1 text-gray-500 hover:bg-gray-200 hover:text-green-600 dark:hover:bg-gray-700 dark:hover:text-green-400"
           title="Complete"
         >
           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

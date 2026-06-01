@@ -65,6 +65,10 @@
       "generateNewCodes": "Generate new recovery codes"
     }
   },
+  "theme": {
+    "light": "Light mode",
+    "dark": "Dark mode"
+  },
   "admin": {
     "maxLoginAttempts": "Max login attempts",
     "maxLoginAttemptsDesc": "Failed attempts before lockout (1–100)",

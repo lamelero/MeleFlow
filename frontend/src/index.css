@@ -1,12 +1,52 @@
 @import "tailwindcss";
 
+@variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-outfit: "Outfit", sans-serif;
   --font-urbanist: "Urbanist", sans-serif;
 
   --color-primary: #14B8A6;
+  --color-primary-dark: #0D9488;
   --color-priority-urgent: #EF4444;
   --color-priority-high: #F59E0B;
   --color-priority-medium: #3B82F6;
   --color-priority-low: #9CA3AF;
+}
+
+:root {
+  --color-bg: #FAFAFA;
+  --color-surface: #ffffff;
+  --color-surface-hover: #f9fafb;
+  --color-text: #111827;
+  --color-text-secondary: #6b7280;
+  --color-text-muted: #9ca3af;
+  --color-border: #e5e7eb;
+  --color-border-light: rgba(0,0,0,0.04);
+  --color-grid-empty: #E5E7EB;
+  --color-progress-bg: #E5E7EB;
+}
+
+.dark {
+  --color-bg: #070d19;
+  --color-surface: #0f1a2e;
+  --color-surface-hover: #162240;
+  --color-text: #e2e8f0;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
+  --color-border: #1e2d4a;
+  --color-border-light: rgba(255,255,255,0.04);
+  --color-grid-empty: #1e2d4a;
+  --color-progress-bg: #1e2d4a;
+}
+
+html, body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  min-height: 100vh;
+}
+
+body {
+  font-family: "Urbanist", sans-serif;
 }

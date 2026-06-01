@@ -11,6 +11,7 @@ import TaskDetailPanel from "../../components/tasks/TaskDetailPanel";
 import HabitCard from "../../components/habits/HabitCard";
 import PomodoroTimer from "../../components/pomodoro/PomodoroTimer";
 import LanguageSwitcher from "../../components/LanguageSwitcher";
+import ThemeToggle from "../../components/ThemeToggle";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -73,9 +74,9 @@ export default function Dashboard() {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -12 }}
       transition={{ duration: 0.2 }}
-      className="flex min-h-screen flex-col bg-[#FAFAFA]"
+      className="flex min-h-screen flex-col"
     >
-      <header className="sticky top-0 z-10 border-b border-gray-200 bg-white/80 backdrop-blur-sm">
+      <header className="sticky top-0 z-10 border-b border-gray-200 bg-white/80 backdrop-blur-sm dark:border-gray-800 dark:bg-gray-900/80">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
           <h1 className="font-outfit text-xl font-bold text-primary">
             MeleNotes
@@ -85,15 +86,16 @@ export default function Dashboard() {
             {user?.role === "ADMIN" && (
               <a
                 href="/admin"
-                className="rounded-xl bg-gray-100 px-4 py-2 font-urbanist text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200"
+                className="rounded-xl bg-gray-100 px-4 py-2 font-urbanist text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
               >
                 Admin
               </a>
             )}
+            <ThemeToggle />
             <LanguageSwitcher />
             <button
               onClick={() => navigate("/app/profile")}
-              className="font-urbanist text-sm text-gray-600 hover:text-primary"
+              className="font-urbanist text-sm text-gray-600 hover:text-primary dark:text-gray-400"
             >
               {user?.username}
             </button>
@@ -109,14 +111,14 @@ export default function Dashboard() {
 
       <div className="mx-auto flex w-full max-w-6xl flex-1 gap-6 p-4">
         <aside className="w-56 shrink-0 space-y-4">
-          <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-100">
+          <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="font-outfit text-sm font-semibold text-gray-900">
+              <h2 className="font-outfit text-sm font-semibold text-gray-900 dark:text-gray-100">
                 Lists
               </h2>
               <button
                 onClick={() => setShowNewList(!showNewList)}
-                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-primary"
+                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-primary dark:hover:bg-gray-800"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -131,7 +133,7 @@ export default function Dashboard() {
                   value={newListName}
                   onChange={(e) => setNewListName(e.target.value)}
                   placeholder="List name"
-                  className="w-full rounded-xl border border-gray-200 px-3 py-2 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                   autoFocus
                 />
               </form>
@@ -146,7 +148,7 @@ export default function Dashboard() {
                 className={`w-full rounded-lg px-3 py-2 text-left font-urbanist text-sm transition-colors ${
                   !activeListId && !activeTagId
                     ? "bg-primary/10 font-medium text-primary"
-                    : "text-gray-600 hover:bg-gray-50"
+                    : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
                 }`}
               >
                 All tasks
@@ -161,7 +163,7 @@ export default function Dashboard() {
                   className={`w-full rounded-lg px-3 py-2 text-left font-urbanist text-sm transition-colors ${
                     activeListId === list.id
                       ? "bg-primary/10 font-medium text-primary"
-                      : "text-gray-600 hover:bg-gray-50"
+                      : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
                   }`}
                 >
                   <span
@@ -169,7 +171,7 @@ export default function Dashboard() {
                     style={{ backgroundColor: list.color }}
                   />
                   {list.name}
-                  <span className="ml-auto text-xs text-gray-400">
+                  <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">
                     {list._count.tasks}
                   </span>
                 </button>
@@ -178,14 +180,14 @@ export default function Dashboard() {
           </div>
 
           {tags.length > 0 && (
-            <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-100">
+            <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
               <div className="mb-3 flex items-center justify-between">
-                <h2 className="font-outfit text-sm font-semibold text-gray-900">
+                <h2 className="font-outfit text-sm font-semibold text-gray-900 dark:text-gray-100">
                   Tags
                 </h2>
                 <a
                   href="/tags"
-                  className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-primary"
+                  className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-primary dark:hover:bg-gray-800"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -201,7 +203,7 @@ export default function Dashboard() {
                     className={`w-full rounded-lg px-3 py-2 text-left font-urbanist text-sm transition-colors ${
                       activeTagId === tag.id
                         ? "bg-primary/10 font-medium text-primary"
-                        : "text-gray-600 hover:bg-gray-50"
+                        : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
                     }`}
                   >
                     <span
@@ -219,14 +221,14 @@ export default function Dashboard() {
         <main className="min-w-0 flex-1 space-y-8">
           <section>
             <form onSubmit={handleCreateTask} className="mb-4">
-              <div className="rounded-2xl bg-white shadow-sm ring-1 ring-gray-100">
+              <div className="rounded-2xl bg-white shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
                 <input
                   ref={inputRef}
                   type="text"
                   value={newTaskTitle}
                   onChange={(e) => setNewTaskTitle(e.target.value)}
                   placeholder="Add a new task..."
-                  className="w-full rounded-2xl px-5 py-3.5 font-urbanist text-sm outline-none placeholder:text-gray-400"
+                  className="w-full rounded-2xl bg-white px-5 py-3.5 font-urbanist text-sm outline-none placeholder:text-gray-400 dark:bg-gray-900 dark:text-gray-100 dark:placeholder-gray-500"
                 />
               </div>
             </form>
@@ -246,12 +248,12 @@ export default function Dashboard() {
 
           <section>
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-outfit text-lg font-semibold text-gray-900">
+              <h2 className="font-outfit text-lg font-semibold text-gray-900 dark:text-gray-100">
                 Habits
               </h2>
               <button
                 onClick={() => setShowNewHabit(!showNewHabit)}
-                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-primary"
+                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-primary dark:hover:bg-gray-800"
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -267,7 +269,7 @@ export default function Dashboard() {
                     value={newHabitName}
                     onChange={(e) => setNewHabitName(e.target.value)}
                     placeholder="Habit name"
-                    className="flex-1 rounded-xl border border-gray-200 px-4 py-2.5 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                     autoFocus
                   />
                   <button
@@ -284,10 +286,10 @@ export default function Dashboard() {
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="rounded-2xl bg-white p-10 text-center shadow-sm ring-1 ring-gray-100"
+                className="rounded-2xl bg-white p-10 text-center shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800"
               >
                 <svg
-                  className="mx-auto mb-4 h-16 w-16"
+                  className="mx-auto mb-4 h-16 w-16 dark:opacity-70"
                   viewBox="0 0 64 64"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"

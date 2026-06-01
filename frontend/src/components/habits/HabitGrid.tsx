@@ -37,7 +37,7 @@ export default function HabitGrid({
               title={`${day.date}${day.completed ? " ✓" : ""}`}
               className="h-2.5 w-2.5 rounded-sm"
               style={{
-                backgroundColor: day.completed ? color : "#E5E7EB",
+                backgroundColor: day.completed ? color : "var(--color-grid-empty, #E5E7EB)",
               }}
             />
           ))}

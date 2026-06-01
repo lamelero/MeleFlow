@@ -41,7 +41,7 @@ export default function TaskList({
 
   if (error) {
     return (
-      <div className="rounded-xl bg-red-50 px-4 py-3 font-urbanist text-sm text-red-600">
+      <div className="rounded-xl bg-red-50 px-4 py-3 font-urbanist text-sm text-red-600 dark:bg-red-900/30 dark:text-red-400">
         {error}
       </div>
     );
@@ -52,10 +52,10 @@ export default function TaskList({
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-2xl bg-white p-10 text-center shadow-sm ring-1 ring-gray-100"
+        className="rounded-2xl bg-white p-10 text-center shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800"
       >
         <svg
-          className="mx-auto mb-4 h-16 w-16"
+          className="mx-auto mb-4 h-16 w-16 dark:opacity-70"
           viewBox="0 0 64 64"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"

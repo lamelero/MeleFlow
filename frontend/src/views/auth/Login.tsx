@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../store/authStore";
 import AuthLayout from "./AuthLayout";
 import LanguageSwitcher from "../../components/LanguageSwitcher";
+import ThemeToggle from "../../components/ThemeToggle";
 import { translateAuthError } from "../../lib/translate-error";
 
 export default function Login() {
@@ -35,18 +36,21 @@ export default function Login() {
   return (
     <AuthLayout>
       <div className="flex items-center justify-between">
-        <h2 className="font-outfit text-xl font-semibold text-gray-900">
+        <h2 className="font-outfit text-xl font-semibold text-gray-900 dark:text-white">
           {t("auth.welcomeBack")}
         </h2>
-        <LanguageSwitcher />
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <LanguageSwitcher />
+        </div>
       </div>
-      <p className="mt-1 font-urbanist text-sm text-gray-500">
+      <p className="mt-1 font-urbanist text-sm text-gray-500 dark:text-gray-400">
         {t("auth.signInToAccount")}
       </p>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         {error && (
-          <div className="rounded-xl bg-red-50 px-4 py-3 font-urbanist text-sm text-red-600">
+          <div className="rounded-xl bg-red-50 px-4 py-3 font-urbanist text-sm text-red-600 dark:bg-red-900/30 dark:text-red-400">
             {translateAuthError(error, t)}
           </div>
         )}
@@ -54,7 +58,7 @@ export default function Login() {
         <div>
           <label
             htmlFor="email"
-            className="font-urbanist text-sm font-medium text-gray-700"
+            className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300"
           >
             {t("auth.email")}
           </label>
@@ -68,7 +72,7 @@ export default function Login() {
               setEmail(e.target.value);
               clearError();
             }}
-            className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-2.5 font-urbanist text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+            className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
             placeholder={t("auth.emailPlaceholder")}
           />
         </div>
@@ -76,7 +80,7 @@ export default function Login() {
         <div>
           <label
             htmlFor="password"
-            className="font-urbanist text-sm font-medium text-gray-700"
+            className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300"
           >
             {t("auth.password")}
           </label>
@@ -90,7 +94,7 @@ export default function Login() {
               setPassword(e.target.value);
               clearError();
             }}
-            className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-2.5 font-urbanist text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+            className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
             placeholder={t("auth.passwordPlaceholder")}
           />
         </div>
@@ -100,9 +104,9 @@ export default function Login() {
             type="checkbox"
             checked={rememberMe}
             onChange={(e) => setRememberMe(e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary/20"
+            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary/20 dark:border-gray-600"
           />
-          <span className="font-urbanist text-sm text-gray-600">Remember me</span>
+          <span className="font-urbanist text-sm text-gray-600 dark:text-gray-400">Remember me</span>
         </label>
 
         <button
@@ -114,7 +118,7 @@ export default function Login() {
         </button>
       </form>
 
-      <p className="mt-6 text-center font-urbanist text-sm text-gray-500">
+      <p className="mt-6 text-center font-urbanist text-sm text-gray-500 dark:text-gray-400">
         {t("auth.noAccount")}{" "}
         <Link
           to="/register"

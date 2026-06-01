@@ -65,6 +65,10 @@
       "generateNewCodes": "Generar nuevos códigos de recuperación"
     }
   },
+  "theme": {
+    "light": "Modo claro",
+    "dark": "Modo oscuro"
+  },
   "admin": {
     "maxLoginAttempts": "Intentos máximos de inicio de sesión",
     "maxLoginAttemptsDesc": "Intentos fallidos antes del bloqueo (1–100)",

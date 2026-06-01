@@ -16,21 +16,20 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.25 }}
       className="relative flex min-h-screen items-center justify-center overflow-hidden p-4"
-      style={{ backgroundColor: "#F4F9F9" }}
     >
       {/* Gradient orbs */}
-      <div className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full opacity-30 blur-3xl" style={{ backgroundColor: "#14B8A6" }} />
-      <div className="pointer-events-none absolute -bottom-32 -right-32 h-96 w-96 rounded-full opacity-20 blur-3xl" style={{ backgroundColor: "#6C5CE7" }} />
-      <div className="pointer-events-none absolute left-1/3 top-1/2 h-64 w-64 rounded-full opacity-15 blur-3xl" style={{ backgroundColor: "#FF6B6B" }} />
+      <div className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full opacity-30 blur-3xl dark:opacity-20" style={{ backgroundColor: "#14B8A6" }} />
+      <div className="pointer-events-none absolute -bottom-32 -right-32 h-96 w-96 rounded-full opacity-20 blur-3xl dark:opacity-10" style={{ backgroundColor: "#6C5CE7" }} />
+      <div className="pointer-events-none absolute left-1/3 top-1/2 h-64 w-64 rounded-full opacity-15 blur-3xl dark:opacity-10" style={{ backgroundColor: "#FF6B6B" }} />
 
       {/* Grid overlay */}
       <div
-        className="pointer-events-none absolute inset-0"
+        className="pointer-events-none absolute inset-0 dark:opacity-50"
         style={{ backgroundImage: gridBg }}
       />
 
       {/* Decorative illustration */}
-      <div className="pointer-events-none absolute bottom-8 left-8 hidden opacity-20 lg:block">
+      <div className="pointer-events-none absolute bottom-8 left-8 hidden opacity-20 lg:block dark:opacity-10">
         <svg width="280" height="280" viewBox="0 0 280 280" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="40" y="40" width="80" height="80" rx="12" stroke="#14B8A6" strokeWidth="2" fill="none" />
           <rect x="130" y="30" width="90" height="90" rx="16" stroke="#6C5CE7" strokeWidth="2" fill="none" />
@@ -67,7 +66,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
             initial={{ y: -6, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.15 }}
-            className="font-outfit text-3xl font-bold tracking-tight"
+            className="font-outfit text-3xl font-bold tracking-tight dark:text-white"
             style={{ color: "#1a1a2e" }}
           >
             {t("auth.taskflow")}
@@ -76,7 +75,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
             initial={{ y: -4, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="mt-1 font-urbanist text-sm"
+            className="mt-1 font-urbanist text-sm dark:text-gray-400"
             style={{ color: "#6B7280" }}
           >
             {t("auth.taskflowTagline")}
@@ -86,7 +85,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           initial={{ y: 16, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.25, duration: 0.3 }}
-          className="rounded-2xl border border-white/50 bg-white/80 p-8 shadow-xl backdrop-blur-xl ring-1 ring-black/5"
+          className="rounded-2xl border border-white/50 bg-white/80 p-8 shadow-xl backdrop-blur-xl ring-1 ring-black/5 dark:border-gray-800 dark:bg-gray-900/80 dark:ring-white/5"
         >
           {children}
         </motion.div>

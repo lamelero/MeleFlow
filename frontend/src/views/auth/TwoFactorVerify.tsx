@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../store/authStore";
 import AuthLayout from "./AuthLayout";
 import LanguageSwitcher from "../../components/LanguageSwitcher";
+import ThemeToggle from "../../components/ThemeToggle";
 
 export default function TwoFactorVerify() {
   const navigate = useNavigate();
@@ -80,18 +81,21 @@ export default function TwoFactorVerify() {
   return (
     <AuthLayout>
       <div className="flex items-center justify-between">
-        <h2 className="font-outfit text-xl font-semibold text-gray-900">
+        <h2 className="font-outfit text-xl font-semibold text-gray-900 dark:text-white">
           Two-Factor Authentication
         </h2>
-        <LanguageSwitcher />
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <LanguageSwitcher />
+        </div>
       </div>
-      <p className="mt-1 font-urbanist text-sm text-gray-500">
+      <p className="mt-1 font-urbanist text-sm text-gray-500 dark:text-gray-400">
         Enter the 6-digit code from your authenticator app or a recovery code.
       </p>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-6">
         {error && (
-          <div className="rounded-xl bg-red-50 px-4 py-3 font-urbanist text-sm text-red-600">
+          <div className="rounded-xl bg-red-50 px-4 py-3 font-urbanist text-sm text-red-600 dark:bg-red-900/30 dark:text-red-400">
             {error}
           </div>
         )}
@@ -109,7 +113,7 @@ export default function TwoFactorVerify() {
               onKeyDown={(e) => handleKeyDown(index, e)}
               onPaste={index === 0 ? handlePaste : undefined}
               autoComplete="one-time-code"
-              className="h-14 w-12 rounded-xl border border-gray-200 text-center font-outfit text-xl font-semibold outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+              className="h-14 w-12 rounded-xl border border-gray-200 bg-white text-center font-outfit text-xl font-semibold outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
             />
           ))}
         </div>
@@ -125,7 +129,7 @@ export default function TwoFactorVerify() {
         <button
           type="button"
           onClick={() => navigate("/login")}
-          className="w-full text-center font-urbanist text-sm text-gray-500 hover:text-gray-700"
+          className="w-full text-center font-urbanist text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
         >
           Back to login
         </button>

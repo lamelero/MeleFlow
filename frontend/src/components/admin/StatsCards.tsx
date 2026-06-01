@@ -22,15 +22,15 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       {cards.map((card) => (
         <div
           key={card.label}
-          className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-100"
+          className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800"
         >
           <div className="flex items-center gap-3">
             <div className={`h-3 w-3 rounded-full ${card.color}`} />
-            <span className="font-urbanist text-sm text-gray-500">
+            <span className="font-urbanist text-sm text-gray-500 dark:text-gray-400">
               {card.label}
             </span>
           </div>
-          <p className="mt-2 font-outfit text-2xl font-bold text-gray-900">
+          <p className="mt-2 font-outfit text-2xl font-bold text-gray-900 dark:text-gray-100">
             {card.value}
           </p>
         </div>

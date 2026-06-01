@@ -4,10 +4,12 @@ import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../store/authStore";
 import { client } from "../../api/client";
+import ThemeToggle from "../../components/ThemeToggle";
+import LanguageSwitcher from "../../components/LanguageSwitcher";
 
 export default function Profile() {
   const { t } = useTranslation();
-  const { user, updateLanguage } = useAuthStore();
+  const { user, updateLanguage, logout } = useAuthStore();
 
   const [activeTab, setActiveTab] = useState<"general" | "security">("general");
 
@@ -106,21 +108,25 @@ export default function Profile() {
       transition={{ duration: 0.2 }}
     >
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="font-outfit text-xl font-bold text-gray-900">
+        <h1 className="font-outfit text-xl font-bold text-gray-900 dark:text-gray-100">
           Profile Settings
         </h1>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <LanguageSwitcher />
+        </div>
       </div>
 
       {/* Tabs */}
-      <div className="mb-6 flex gap-1 rounded-xl bg-gray-100 p-1">
+      <div className="mb-6 flex gap-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-800">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`flex-1 rounded-lg px-4 py-2 font-urbanist text-sm font-medium transition-colors ${
               activeTab === tab.id
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
+                ? "bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-gray-100"
+                : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
             }`}
           >
             {tab.label}
@@ -129,21 +135,21 @@ export default function Profile() {
       </div>
 
       {activeTab === "general" && (
-        <div className="space-y-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
+        <div className="space-y-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
           <div>
-            <label className="font-urbanist text-sm font-medium text-gray-700">Email</label>
-            <p className="mt-1 font-urbanist text-sm text-gray-500">{user?.email}</p>
+            <label className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+            <p className="mt-1 font-urbanist text-sm text-gray-500 dark:text-gray-400">{user?.email}</p>
           </div>
           <div>
-            <label className="font-urbanist text-sm font-medium text-gray-700">Username</label>
-            <p className="mt-1 font-urbanist text-sm text-gray-500">{user?.username}</p>
+            <label className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
+            <p className="mt-1 font-urbanist text-sm text-gray-500 dark:text-gray-400">{user?.username}</p>
           </div>
           <div>
-            <label className="font-urbanist text-sm font-medium text-gray-700">Role</label>
-            <p className="mt-1 font-urbanist text-sm text-gray-500">{user?.role}</p>
+            <label className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
+            <p className="mt-1 font-urbanist text-sm text-gray-500 dark:text-gray-400">{user?.role}</p>
           </div>
           <div>
-            <label className="font-urbanist text-sm font-medium text-gray-700">Language</label>
+            <label className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">Language</label>
             <div className="mt-1 flex gap-2">
               {["en", "es"].map((lang) => (
                 <button
@@ -152,7 +158,7 @@ export default function Profile() {
                   className={`rounded-lg px-3 py-1.5 font-urbanist text-sm font-medium transition-colors ${
                     user?.language === lang
                       ? "bg-primary text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
                   }`}
                 >
                   {lang === "en" ? "English" : "Español"}
@@ -166,14 +172,14 @@ export default function Profile() {
       {activeTab === "security" && (
         <div className="space-y-6">
           {/* 2FA Section */}
-          <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
-            <h3 className="mb-4 font-outfit text-base font-semibold text-gray-900">
+          <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
+            <h3 className="mb-4 font-outfit text-base font-semibold text-gray-900 dark:text-gray-100">
               Two-Factor Authentication (2FA)
             </h3>
 
             {!isTwoFactorConfigured && !isTwoFactorEnabled && (
               <div>
-                <p className="mb-4 font-urbanist text-sm text-gray-500">
+                <p className="mb-4 font-urbanist text-sm text-gray-500 dark:text-gray-400">
                   Add an extra layer of security to your account by enabling 2FA.
                 </p>
                 <button
@@ -187,13 +193,13 @@ export default function Profile() {
 
             {isTwoFactorConfigured && !isTwoFactorEnabled && qrUri && (
               <div className="space-y-4">
-                <p className="font-urbanist text-sm text-gray-500">
+                <p className="font-urbanist text-sm text-gray-500 dark:text-gray-400">
                   Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.),
                   then enter the 6-digit code below to enable.
                 </p>
 
                 <div className="flex justify-center">
-                  <div className="rounded-xl border border-gray-200 p-4">
+                  <div className="rounded-xl border border-gray-200 p-4 dark:border-gray-700 dark:bg-gray-800">
                     <img
                       src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUri)}`}
                       alt="2FA QR Code"
@@ -203,7 +209,7 @@ export default function Profile() {
                 </div>
 
                 <div>
-                  <label className="font-urbanist text-sm font-medium text-gray-700">
+                  <label className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
                     Verification Code
                   </label>
                   <div className="mt-1 flex gap-2">
@@ -214,7 +220,7 @@ export default function Profile() {
                       value={setupCode}
                       onChange={(e) => setSetupCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                       placeholder="000000"
-                      className="flex-1 rounded-xl border border-gray-200 px-4 py-2.5 font-urbanist text-sm text-center tracking-widest outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                      className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm text-center tracking-widest outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                     />
                     <button
                       onClick={handleEnable2FA}
@@ -227,16 +233,16 @@ export default function Profile() {
                 </div>
 
                 {showRecoveryCodes && recoveryCodes.length > 0 && (
-                  <div className="rounded-xl bg-amber-50 p-4 ring-1 ring-amber-200">
-                    <p className="mb-2 font-urbanist text-sm font-semibold text-amber-800">
+                  <div className="rounded-xl bg-amber-50 p-4 ring-1 ring-amber-200 dark:bg-amber-900/20 dark:ring-amber-700/30">
+                    <p className="mb-2 font-urbanist text-sm font-semibold text-amber-800 dark:text-amber-300">
                       Recovery Codes — Save these safely!
                     </p>
-                    <p className="mb-3 font-urbanist text-xs text-amber-700">
+                    <p className="mb-3 font-urbanist text-xs text-amber-700 dark:text-amber-400">
                       Each code can be used only once. Store them in a secure location.
                     </p>
                     <div className="grid grid-cols-2 gap-1">
                       {recoveryCodes.map((code, i) => (
-                        <code key={i} className="font-mono text-sm font-medium text-amber-900">
+                        <code key={i} className="font-mono text-sm font-medium text-amber-900 dark:text-amber-200">
                           {code}
                         </code>
                       ))}
@@ -250,13 +256,13 @@ export default function Profile() {
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <div className="h-2 w-2 rounded-full bg-green-500" />
-                  <span className="font-urbanist text-sm font-medium text-green-700">
+                  <span className="font-urbanist text-sm font-medium text-green-700 dark:text-green-400">
                     2FA is enabled
                   </span>
                 </div>
 
-                <div className="rounded-xl bg-gray-50 p-4">
-                  <label className="font-urbanist text-sm font-medium text-gray-700">
+                <div className="rounded-xl bg-gray-50 p-4 dark:bg-gray-800">
+                  <label className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
                     Enter your password to disable 2FA or manage recovery codes
                   </label>
                   <input
@@ -264,7 +270,7 @@ export default function Profile() {
                     value={passwordInput}
                     onChange={(e) => setPasswordInput(e.target.value)}
                     placeholder="Your password"
-                    className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-2.5 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                   />
                   <div className="mt-3 flex flex-wrap gap-2">
                     <button
@@ -277,7 +283,7 @@ export default function Profile() {
                     <button
                       onClick={handleRegenerateRecoveryCodes}
                       disabled={!passwordInput}
-                      className="rounded-xl bg-gray-200 px-4 py-2 font-urbanist text-sm font-medium text-gray-700 transition-colors hover:bg-gray-300 disabled:opacity-50"
+                      className="rounded-xl bg-gray-200 px-4 py-2 font-urbanist text-sm font-medium text-gray-700 transition-colors hover:bg-gray-300 disabled:opacity-50 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
                     >
                       Generate new recovery codes
                     </button>
@@ -285,16 +291,16 @@ export default function Profile() {
                 </div>
 
                 {showRecoveryCodes && recoveryCodes.length > 0 && (
-                  <div className="rounded-xl bg-amber-50 p-4 ring-1 ring-amber-200">
-                    <p className="mb-2 font-urbanist text-sm font-semibold text-amber-800">
+                  <div className="rounded-xl bg-amber-50 p-4 ring-1 ring-amber-200 dark:bg-amber-900/20 dark:ring-amber-700/30">
+                    <p className="mb-2 font-urbanist text-sm font-semibold text-amber-800 dark:text-amber-300">
                       New Recovery Codes
                     </p>
-                    <p className="mb-3 font-urbanist text-xs text-amber-700">
+                    <p className="mb-3 font-urbanist text-xs text-amber-700 dark:text-amber-400">
                       Save these immediately. They won't be shown again.
                     </p>
                     <div className="grid grid-cols-2 gap-1">
                       {recoveryCodes.map((code, i) => (
-                        <code key={i} className="font-mono text-sm font-medium text-amber-900">
+                        <code key={i} className="font-mono text-sm font-medium text-amber-900 dark:text-amber-200">
                           {code}
                         </code>
                       ))}
