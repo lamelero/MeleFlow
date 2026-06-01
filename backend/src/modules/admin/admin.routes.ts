@@ -45,4 +45,12 @@ export async function adminRoutes(app: FastifyInstance) {
     const settings = await service.updateSettings(input);
     return reply.send(settings);
   });
+
+  app.get("/security-logs", async (req, reply) => {
+    const query = req.query as { limit?: string; offset?: string };
+    const limit = Math.min(Number(query.limit) || 50, 200);
+    const offset = Number(query.offset) || 0;
+    const logs = await service.getSecurityLogs(limit, offset);
+    return reply.send(logs);
+  });
 }

@@ -1,15 +1,12 @@
-import { useEffect } from "react";
+import type { ReactNode } from "react";
 import { motion } from "framer-motion";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 
-export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading, initialize } = useAuthStore();
+export default function ProtectedRoute({ children }: { children: ReactNode }) {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isLoading = useAuthStore((s) => s.isLoading);
   const location = useLocation();
-
-  useEffect(() => {
-    initialize();
-  }, [initialize]);
 
   if (isLoading) {
     return (

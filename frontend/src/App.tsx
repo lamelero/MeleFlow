@@ -1,9 +1,13 @@
+import { useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { Toaster } from "react-hot-toast";
+import { useAuthStore } from "./store/authStore";
 import Login from "./views/auth/Login";
 import Register from "./views/auth/Register";
+import TwoFactorVerify from "./views/auth/TwoFactorVerify";
 import Dashboard from "./views/app/Dashboard";
+import Profile from "./views/app/Profile";
 import AdminPanel from "./views/app/AdminPanel";
 import TagManager from "./views/app/TagManager";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -11,6 +15,11 @@ import "./i18n";
 
 export default function App() {
   const location = useLocation();
+  const initialize = useAuthStore((s) => s.initialize);
+
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
 
   return (
     <>
@@ -28,12 +37,21 @@ export default function App() {
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           <Route path="/login" element={<Login />} />
+          <Route path="/login/2fa" element={<TwoFactorVerify />} />
           <Route path="/register" element={<Register />} />
           <Route
             path="/app"
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
               </ProtectedRoute>
             }
           />

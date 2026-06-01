@@ -17,10 +17,13 @@ export const env = z
     NODE_ENV: z
       .enum(["development", "production", "test"])
       .default("development"),
+    ENCRYPTION_KEY: z.string().min(32).default("dev-encryption-key-32chars!default00"),
     ALLOW_REGISTRATION: z
       .string()
       .transform((v) => v === "true")
       .default("true"),
     MAX_UPLOAD_SIZE: z.coerce.number().default(50),
+    MAX_LOGIN_ATTEMPTS: z.coerce.number().default(5),
+    LOGIN_LOCKOUT_MINUTES: z.coerce.number().default(15),
   })
   .parse(process.env);

@@ -9,6 +9,8 @@ export const updateUserSchema = z.object({
 export const updateSettingsSchema = z.object({
   allowRegistration: z.boolean().optional(),
   maxUploadSize: z.number().int().min(1).max(200).optional(),
+  maxLoginAttempts: z.number().int().min(1).max(100).optional(),
+  loginLockoutMinutes: z.number().int().min(1).max(1440).optional(),
 });
 
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;

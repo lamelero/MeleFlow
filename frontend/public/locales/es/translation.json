@@ -22,6 +22,12 @@
     "passwordsDoNotMatch": "Las contraseñas no coinciden",
     "taskflow": "MeleNotes",
     "taskflowTagline": "Gestión de tareas autoalojada",
+    "rememberMe": "Recordarme",
+    "twoFactorRequired": "Autenticación de dos factores",
+    "twoFactorCode": "Ingresa el código de 6 dígitos de tu app de autenticación o un código de recuperación.",
+    "verify": "Verificar",
+    "verifying": "Verificando...",
+    "backToLogin": "Volver al inicio de sesión",
     "errors": {
       "loginFailed": "Error al iniciar sesión",
       "registrationFailed": "Error al registrarse",
@@ -31,7 +37,38 @@
       "unauthorized": "No autorizado. Inicia sesión de nuevo.",
       "forbidden": "No tienes permiso para hacer eso",
       "notFound": "No encontrado",
-      "unknown": "Algo salió mal"
+      "unknown": "Algo salió mal",
+      "tooManyAttempts": "Demasiados intentos de inicio de sesión. Intenta de nuevo más tarde.",
+      "invalid2FACode": "Código 2FA inválido"
     }
+  },
+  "profile": {
+    "title": "Configuración de perfil",
+    "general": "General",
+    "security": "Seguridad",
+    "email": "Correo electrónico",
+    "username": "Nombre de usuario",
+    "role": "Rol",
+    "language": "Idioma",
+    "twoFactor": {
+      "title": "Autenticación de dos factores (2FA)",
+      "description": "Añade una capa extra de seguridad a tu cuenta activando 2FA.",
+      "setup": "Configurar 2FA",
+      "scanQR": "Escanea este código QR con tu app de autenticación, luego ingresa el código de 6 dígitos para activar.",
+      "verificationCode": "Código de verificación",
+      "enable": "Activar",
+      "enabled": "2FA está activada",
+      "disable": "Desactivar 2FA",
+      "enterPassword": "Ingresa tu contraseña para desactivar 2FA o gestionar códigos de recuperación",
+      "recoveryCodes": "Códigos de recuperación",
+      "saveRecoveryCodes": "¡Guárdalos de forma segura! Cada código solo puede usarse una vez.",
+      "generateNewCodes": "Generar nuevos códigos de recuperación"
+    }
+  },
+  "admin": {
+    "maxLoginAttempts": "Intentos máximos de inicio de sesión",
+    "maxLoginAttemptsDesc": "Intentos fallidos antes del bloqueo (1–100)",
+    "lockoutDuration": "Duración del bloqueo",
+    "lockoutDurationDesc": "Minutos bloqueado tras intentos fallidos (1–1440)"
   }
 }

@@ -22,6 +22,12 @@
     "passwordsDoNotMatch": "Passwords do not match",
     "taskflow": "MeleNotes",
     "taskflowTagline": "Self-hosted task management",
+    "rememberMe": "Remember me",
+    "twoFactorRequired": "Two-Factor Authentication",
+    "twoFactorCode": "Enter the 6-digit code from your authenticator app or a recovery code.",
+    "verify": "Verify",
+    "verifying": "Verifying...",
+    "backToLogin": "Back to login",
     "errors": {
       "loginFailed": "Login failed",
       "registrationFailed": "Registration failed",
@@ -31,7 +37,38 @@
       "unauthorized": "Unauthorized. Please log in again.",
       "forbidden": "You don't have permission to do that",
       "notFound": "Not found",
-      "unknown": "Something went wrong"
+      "unknown": "Something went wrong",
+      "tooManyAttempts": "Too many login attempts. Please try again later.",
+      "invalid2FACode": "Invalid 2FA code"
     }
+  },
+  "profile": {
+    "title": "Profile Settings",
+    "general": "General",
+    "security": "Security",
+    "email": "Email",
+    "username": "Username",
+    "role": "Role",
+    "language": "Language",
+    "twoFactor": {
+      "title": "Two-Factor Authentication (2FA)",
+      "description": "Add an extra layer of security to your account by enabling 2FA.",
+      "setup": "Setup 2FA",
+      "scanQR": "Scan this QR code with your authenticator app, then enter the 6-digit code below to enable.",
+      "verificationCode": "Verification Code",
+      "enable": "Enable",
+      "enabled": "2FA is enabled",
+      "disable": "Disable 2FA",
+      "enterPassword": "Enter your password to disable 2FA or manage recovery codes",
+      "recoveryCodes": "Recovery Codes",
+      "saveRecoveryCodes": "Save these safely! Each code can be used only once.",
+      "generateNewCodes": "Generate new recovery codes"
+    }
+  },
+  "admin": {
+    "maxLoginAttempts": "Max login attempts",
+    "maxLoginAttemptsDesc": "Failed attempts before lockout (1–100)",
+    "lockoutDuration": "Lockout duration",
+    "lockoutDurationDesc": "Minutes locked after failed attempts (1–1440)"
   }
 }

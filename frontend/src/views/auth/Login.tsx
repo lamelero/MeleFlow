@@ -9,17 +9,22 @@ import { translateAuthError } from "../../lib/translate-error";
 export default function Login() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { login, error, clearError, isLoading } = useAuthStore();
+  const { login, error, clearError } = useAuthStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await login(email, password);
-      navigate("/app");
+      const result = await login(email, password, rememberMe);
+      if (result.requiresTwoFactor && result.twoFactorToken) {
+        navigate("/login/2fa", { state: { twoFactorToken: result.twoFactorToken } });
+      } else {
+        navigate("/app");
+      }
     } catch {
       // error is set in store
     } finally {
@@ -89,6 +94,16 @@ export default function Login() {
             placeholder={t("auth.passwordPlaceholder")}
           />
         </div>
+
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={rememberMe}
+            onChange={(e) => setRememberMe(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary/20"
+          />
+          <span className="font-urbanist text-sm text-gray-600">Remember me</span>
+        </label>
 
         <button
           type="submit"

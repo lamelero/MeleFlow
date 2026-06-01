@@ -25,6 +25,8 @@ export interface AdminStats {
 export interface SystemSettings {
   allowRegistration: boolean;
   maxUploadSize: number;
+  maxLoginAttempts: number;
+  loginLockoutMinutes: number;
 }
 
 interface AdminState {
@@ -44,7 +46,7 @@ interface AdminState {
 export const useAdminStore = create<AdminState>((set, get) => ({
   users: [],
   stats: null,
-  settings: { allowRegistration: true, maxUploadSize: 50 },
+  settings: { allowRegistration: true, maxUploadSize: 50, maxLoginAttempts: 5, loginLockoutMinutes: 15 },
   isLoading: false,
   error: null,
 

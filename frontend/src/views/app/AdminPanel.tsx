@@ -11,6 +11,8 @@ export default function AdminPanel() {
   const { user, logout } = useAuthStore();
   const { stats, settings, fetchUsers, fetchStats, fetchSettings, updateSettings, error, clearError } = useAdminStore();
   const [localUploadSize, setLocalUploadSize] = useState(settings.maxUploadSize);
+  const [localMaxAttempts, setLocalMaxAttempts] = useState(settings.maxLoginAttempts);
+  const [localLockoutMinutes, setLocalLockoutMinutes] = useState(settings.loginLockoutMinutes);
 
   useEffect(() => {
     fetchStats();
@@ -20,7 +22,9 @@ export default function AdminPanel() {
 
   useEffect(() => {
     setLocalUploadSize(settings.maxUploadSize);
-  }, [settings.maxUploadSize]);
+    setLocalMaxAttempts(settings.maxLoginAttempts);
+    setLocalLockoutMinutes(settings.loginLockoutMinutes);
+  }, [settings.maxUploadSize, settings.maxLoginAttempts, settings.loginLockoutMinutes]);
 
   if (user?.role !== "ADMIN") {
     return (
@@ -140,6 +144,62 @@ export default function AdminPanel() {
                     }
                   }}
                   disabled={localUploadSize === settings.maxUploadSize}
+                  className="rounded-xl bg-primary px-3 py-1.5 font-urbanist text-xs font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-urbanist text-sm font-medium text-gray-900">
+                  Max login attempts
+                </p>
+                <p className="font-urbanist text-xs text-gray-500">
+                  Failed attempts before lockout (1–100)
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={localMaxAttempts}
+                  onChange={(e) => setLocalMaxAttempts(Number(e.target.value))}
+                  className="w-20 rounded-xl border border-gray-200 px-3 py-1.5 font-urbanist text-sm text-center outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                />
+                <button
+                  onClick={() => updateSettings({ maxLoginAttempts: localMaxAttempts })}
+                  disabled={localMaxAttempts === settings.maxLoginAttempts}
+                  className="rounded-xl bg-primary px-3 py-1.5 font-urbanist text-xs font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-urbanist text-sm font-medium text-gray-900">
+                  Lockout duration
+                </p>
+                <p className="font-urbanist text-xs text-gray-500">
+                  Minutes locked after failed attempts (1–1440)
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={1}
+                  max={1440}
+                  value={localLockoutMinutes}
+                  onChange={(e) => setLocalLockoutMinutes(Number(e.target.value))}
+                  className="w-20 rounded-xl border border-gray-200 px-3 py-1.5 font-urbanist text-sm text-center outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                />
+                <button
+                  onClick={() => updateSettings({ loginLockoutMinutes: localLockoutMinutes })}
+                  disabled={localLockoutMinutes === settings.loginLockoutMinutes}
                   className="rounded-xl bg-primary px-3 py-1.5 font-urbanist text-xs font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
                 >
                   Save

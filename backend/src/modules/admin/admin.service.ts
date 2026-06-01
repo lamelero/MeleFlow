@@ -59,6 +59,12 @@ export class AdminService {
       maxUploadSize: map.maxUploadSize !== undefined
         ? Number(map.maxUploadSize)
         : env.MAX_UPLOAD_SIZE,
+      maxLoginAttempts: map.maxLoginAttempts !== undefined
+        ? Number(map.maxLoginAttempts)
+        : env.MAX_LOGIN_ATTEMPTS,
+      loginLockoutMinutes: map.loginLockoutMinutes !== undefined
+        ? Number(map.loginLockoutMinutes)
+        : env.LOGIN_LOCKOUT_MINUTES,
     };
   }
 
@@ -77,8 +83,30 @@ export class AdminService {
     if (input.maxUploadSize !== undefined) {
       await upsert("maxUploadSize", String(input.maxUploadSize));
     }
+    if (input.maxLoginAttempts !== undefined) {
+      await upsert("maxLoginAttempts", String(input.maxLoginAttempts));
+    }
+    if (input.loginLockoutMinutes !== undefined) {
+      await upsert("loginLockoutMinutes", String(input.loginLockoutMinutes));
+    }
 
     return this.getSettings();
+  }
+
+  async getSecurityLogs(limit: number, offset: number) {
+    const [logs, total] = await Promise.all([
+      prisma.securityLog.findMany({
+        take: limit,
+        skip: offset,
+        orderBy: { createdAt: "desc" },
+        include: {
+          user: { select: { id: true, email: true, username: true } },
+        },
+      }),
+      prisma.securityLog.count(),
+    ]);
+
+    return { logs, total, limit, offset };
   }
 
   async getStats() {

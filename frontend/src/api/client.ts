@@ -1,5 +1,15 @@
 import axios from "axios";
 
+let accessToken: string | null = null;
+
+export function setAccessToken(token: string | null) {
+  accessToken = token;
+}
+
+export function getAccessToken(): string | null {
+  return accessToken;
+}
+
 const client = axios.create({
   baseURL: "/api",
   headers: {
@@ -7,15 +17,14 @@ const client = axios.create({
     Pragma: "no-cache",
     Expires: "0",
   },
+  withCredentials: true,
 });
 
 client.interceptors.request.use((config) => {
-  const token = localStorage.getItem("accessToken");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  if (accessToken) {
+    config.headers.Authorization = `Bearer ${accessToken}`;
   }
 
-  // Send language preference
   const lang =
     localStorage.getItem("i18nextLng") ||
     navigator.language?.slice(0, 2) ||
@@ -51,7 +60,9 @@ client.interceptors.response.use(
       error.response?.status === 401 &&
       !originalRequest._retry &&
       !originalRequest.url?.includes("/auth/login") &&
-      !originalRequest.url?.includes("/auth/register")
+      !originalRequest.url?.includes("/auth/register") &&
+      !originalRequest.url?.includes("/auth/verify-2fa") &&
+      !originalRequest.url?.includes("/auth/refresh")
     ) {
       if (isRefreshing) {
         return new Promise<string>((resolve, reject) => {
@@ -66,22 +77,16 @@ client.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const refreshToken = localStorage.getItem("refreshToken");
-        if (!refreshToken) throw new Error("No refresh token");
+        const { data } = await axios.post("/api/auth/refresh", {}, { withCredentials: true });
 
-        const { data } = await axios.post("/api/auth/refresh", { refreshToken });
-
-        localStorage.setItem("accessToken", data.accessToken);
-        localStorage.setItem("refreshToken", data.refreshToken);
-
+        setAccessToken(data.accessToken);
         processQueue(null, data.accessToken);
 
         originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
         return client(originalRequest);
       } catch (err) {
         processQueue(err, null);
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
+        setAccessToken(null);
         window.location.href = "/login";
         return Promise.reject(err);
       } finally {

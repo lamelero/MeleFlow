@@ -32,11 +32,18 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  // 2FA
+  twoFactorSecret      String? // AES-256-GCM encrypted
+  isTwoFactorEnabled   Boolean @default(false)
+  recoveryCodes        String? // JSON array of bcrypt hashed recovery codes
+
   tasks            Task[]
   lists            List[]
   habits           Habit[]
   tags             Tag[]
   pomodoroSessions PomodoroSession[]
+  refreshTokens    RefreshToken[]
+  securityLogs     SecurityLog[]
 }
 
 // ── Task (with subtask self-reference) ───────────
@@ -174,6 +181,50 @@ model HabitLog {
 
   @@unique([habitId, date])
   @@index([date])
+}
+
+// ── Refresh Tokens (DB-backed, httpOnly cookie) ──
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// ── Failed Login Attempts (rate limiting) ───────
+
+model FailedLoginAttempt {
+  id        String   @id @default(cuid())
+  email     String
+  ip        String
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([email, createdAt])
+  @@index([ip, createdAt])
+}
+
+// ── Security Audit Log ──────────────────────────
+
+model SecurityLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String   // LOGIN_FAILED, LOGIN_SUCCESS, LOGOUT, 2FA_ENABLED, 2FA_DISABLED, etc.
+  details   String?  // JSON with extra context
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
 }
 
 // ── System Settings (key-value for admin panel) ──

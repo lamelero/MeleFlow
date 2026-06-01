@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuthStore } from "../../store/authStore";
 import { useListStore } from "../../store/listStore";
@@ -12,6 +13,7 @@ import PomodoroTimer from "../../components/pomodoro/PomodoroTimer";
 import LanguageSwitcher from "../../components/LanguageSwitcher";
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const { lists, fetchLists, createList } = useListStore();
   const { createTask } = useTaskStore();
@@ -89,9 +91,12 @@ export default function Dashboard() {
               </a>
             )}
             <LanguageSwitcher />
-            <span className="font-urbanist text-sm text-gray-600">
+            <button
+              onClick={() => navigate("/app/profile")}
+              className="font-urbanist text-sm text-gray-600 hover:text-primary"
+            >
               {user?.username}
-            </span>
+            </button>
             <button
               onClick={logout}
               className="rounded-xl bg-red-500 px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-red-600"

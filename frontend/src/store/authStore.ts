@@ -1,12 +1,20 @@
 import { create } from "zustand";
-import { client } from "../api/client";
+import { client, setAccessToken, getAccessToken } from "../api/client";
 
-interface User {
+export interface User {
   id: string;
   email: string;
   username: string;
   role: string;
   language: string;
+  isTwoFactorEnabled?: boolean;
+}
+
+export interface LoginResult {
+  accessToken?: string;
+  user?: User;
+  requiresTwoFactor?: boolean;
+  twoFactorToken?: string;
 }
 
 interface AuthState {
@@ -14,7 +22,8 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<LoginResult>;
+  verify2FA: (twoFactorToken: string, code: string) => Promise<void>;
   register: (email: string, username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   initialize: () => Promise<void>;
@@ -29,33 +38,60 @@ export const useAuthStore = create<AuthState>((set) => ({
   error: null,
 
   initialize: async () => {
-    const accessToken = localStorage.getItem("accessToken");
-    if (!accessToken) {
-      set({ isLoading: false });
-      return;
-    }
-
     try {
-      const { data } = await client.get("/auth/me");
-      set({ user: data, isAuthenticated: true, isLoading: false });
+      const existingToken = getAccessToken();
+      if (existingToken) {
+        try {
+          const { data } = await client.get("/auth/me");
+          set({ user: data, isAuthenticated: true, isLoading: false });
+          return;
+        } catch {
+          setAccessToken(null);
+        }
+      }
+      const { data } = await client.post("/auth/refresh", {});
+      setAccessToken(data.accessToken);
+      set({ user: data.user, isAuthenticated: true, isLoading: false });
     } catch {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
       set({ user: null, isAuthenticated: false, isLoading: false });
     }
   },
 
-  login: async (email, password) => {
+  login: async (email, password, rememberMe = false) => {
     set({ error: null });
     try {
-      const { data } = await client.post("/auth/login", { email, password });
-      localStorage.setItem("accessToken", data.accessToken);
-      localStorage.setItem("refreshToken", data.refreshToken);
-      set({ user: data.user, isAuthenticated: true, error: null });
+      const { data } = await client.post("/auth/login", { email, password, rememberMe });
+
+      if (data.requiresTwoFactor) {
+        return {
+          requiresTwoFactor: true,
+          twoFactorToken: data.twoFactorToken,
+          user: data.user,
+        };
+      }
+
+      setAccessToken(data.accessToken);
+      set({ user: data.user, isAuthenticated: true, isLoading: false, error: null });
+      return { accessToken: data.accessToken, user: data.user };
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: string } } })?.response?.data
           ?.error || "Login failed";
+      set({ error: message });
+      throw err;
+    }
+  },
+
+  verify2FA: async (twoFactorToken, code) => {
+    set({ error: null });
+    try {
+      const { data } = await client.post("/auth/verify-2fa", { twoFactorToken, code });
+      setAccessToken(data.accessToken);
+      set({ user: data.user, isAuthenticated: true, isLoading: false, error: null });
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { error?: string } } })?.response?.data
+          ?.error || "Invalid 2FA code";
       set({ error: message });
       throw err;
     }
@@ -69,9 +105,8 @@ export const useAuthStore = create<AuthState>((set) => ({
         username,
         password,
       });
-      localStorage.setItem("accessToken", data.accessToken);
-      localStorage.setItem("refreshToken", data.refreshToken);
-      set({ user: data.user, isAuthenticated: true, error: null });
+      setAccessToken(data.accessToken);
+      set({ user: data.user, isAuthenticated: true, isLoading: false, error: null });
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: string } } })?.response?.data
@@ -82,16 +117,12 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   logout: async () => {
-    const refreshToken = localStorage.getItem("refreshToken");
     try {
-      if (refreshToken) {
-        await client.post("/auth/logout", { refreshToken });
-      }
+      await client.post("/auth/logout");
     } catch {
       // Silently ignore logout errors
     } finally {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
+      setAccessToken(null);
       set({ user: null, isAuthenticated: false, error: null });
     }
   },
@@ -103,7 +134,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         user: state.user ? { ...state.user, language: lang } : null,
       }));
     } catch {
-      // Silently ignore — language persists in localStorage anyway
+      // Silently ignore
     }
   },
 

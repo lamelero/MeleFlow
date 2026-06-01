@@ -2,6 +2,7 @@ import Fastify, { type FastifyRequest, type FastifyReply } from "fastify";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import fjwt from "@fastify/jwt";
+import cookie from "@fastify/cookie";
 import multipart from "@fastify/multipart";
 import fastifyStatic from "@fastify/static";
 import path from "path";
@@ -31,6 +32,11 @@ export async function buildApp(opts: Record<string, unknown> = {}) {
   });
 
   await app.register(fjwt, { secret: env.JWT_SECRET });
+
+  await app.register(cookie, {
+    secret: env.JWT_SECRET,
+    parseOptions: {},
+  });
 
   await app.register(multipart, {
     limits: { fileSize: 200 * 1024 * 1024 }, // 200MB cap (dynamic check inside service)
