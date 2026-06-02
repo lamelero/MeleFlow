@@ -38,6 +38,8 @@ interface AuthState {
   clearError: () => void;
 }
 
+let _initializing = false;
+
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isAuthenticated: false,
@@ -45,6 +47,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   error: null,
 
   initialize: async () => {
+    if (_initializing) return;
+    _initializing = true;
     try {
       const existingToken = getAccessToken();
       if (existingToken) {
@@ -56,11 +60,13 @@ export const useAuthStore = create<AuthState>((set) => ({
           setAccessToken(null);
         }
       }
-      const { data } = await client.post("/auth/refresh", {});
+      const { data } = await client.post("/auth/refresh", { rememberMe: true });
       setAccessToken(data.accessToken);
       set({ user: data.user, isAuthenticated: true, isLoading: false });
     } catch {
       set({ user: null, isAuthenticated: false, isLoading: false });
+    } finally {
+      _initializing = false;
     }
   },
 
