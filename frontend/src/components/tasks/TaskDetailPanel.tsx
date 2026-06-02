@@ -38,6 +38,8 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
   const [taskType, setTaskType] = useState<"TEXT" | "CHECKLIST">("TEXT");
   const [checklistItems, setChecklistItems] = useState<{ id?: string; text: string; isCompleted: boolean; position: number }[]>([]);
   const [newChecklistText, setNewChecklistText] = useState("");
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingText, setEditingText] = useState("");
   const [reminderEnabled, setReminderEnabled] = useState(false);
   const [reminderType, setReminderType] = useState<"daily" | "weekly">("daily");
   const [reminderDays, setReminderDays] = useState<number[]>([]);
@@ -251,6 +253,38 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
     const items = checklistItems.filter((_, i) => i !== index).map((item, i) => ({ ...item, position: i }));
     setChecklistItems(items);
     await updateTask(t.id, { checklistItems: items });
+  }
+
+  function handleStartEdit(index: number, text: string) {
+    setEditingIndex(index);
+    setEditingText(text);
+  }
+
+  async function handleSaveEdit(index: number) {
+    const text = editingText.trim();
+    if (!text) return;
+    const items = checklistItems.map((item, i) =>
+      i === index ? { ...item, text } : item,
+    );
+    setChecklistItems(items);
+    setEditingIndex(null);
+    setEditingText("");
+    await updateTask(t.id, { checklistItems: items });
+  }
+
+  function handleCancelEdit() {
+    setEditingIndex(null);
+    setEditingText("");
+  }
+
+  async function handleEditKeyDown(e: React.KeyboardEvent, index: number) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      await handleSaveEdit(index);
+    }
+    if (e.key === "Escape") {
+      handleCancelEdit();
+    }
   }
 
   async function handleTagKeyDown(e: React.KeyboardEvent) {
@@ -515,13 +549,26 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
                           </svg>
                         )}
                       </button>
-                      <span
-                        className={`flex-1 font-urbanist text-sm ${
-                          item.isCompleted ? "text-gray-400 line-through dark:text-gray-500" : "text-gray-700 dark:text-gray-300"
-                        }`}
-                      >
-                        {item.text}
-                      </span>
+                      {editingIndex === index ? (
+                        <input
+                          type="text"
+                          value={editingText}
+                          onChange={(e) => setEditingText(e.target.value)}
+                          onBlur={() => handleSaveEdit(index)}
+                          onKeyDown={(e) => handleEditKeyDown(e, index)}
+                          autoFocus
+                          className="flex-1 rounded-lg border border-primary bg-white px-3 py-1.5 font-urbanist text-sm outline-none ring-2 ring-primary/20 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                        />
+                      ) : (
+                        <span
+                          onClick={() => handleStartEdit(index, item.text)}
+                          className={`flex-1 cursor-text font-urbanist text-sm ${
+                            item.isCompleted ? "text-gray-400 line-through dark:text-gray-500" : "text-gray-700 dark:text-gray-300"
+                          }`}
+                        >
+                          {item.text}
+                        </span>
+                      )}
                       <button
                         onClick={() => handleRemoveChecklistItem(index)}
                         className="shrink-0 rounded-lg p-1 text-gray-300 opacity-0 transition-all hover:bg-red-50 hover:text-red-500 group-hover:opacity-100 dark:hover:bg-red-900/20"
