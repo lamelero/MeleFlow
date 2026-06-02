@@ -43,10 +43,16 @@ cron.schedule("* * * * *", async () => {
     for (const task of tasks) {
       const reminderKey = `reminder:sent:${task.id}`;
       const alreadySent = await redis.get(reminderKey);
-      if (alreadySent) continue;
+      if (alreadySent) {
+        console.log(`[Worker] Task already notified today, skipping "${task.title}"`);
+        continue;
+      }
 
       const emailTo = task.user.notificationEmail || task.user.email;
-      if (!emailTo) continue;
+      if (!emailTo) {
+        console.log(`[Worker] No email for user "${task.user.username}", skipping task "${task.title}"`);
+        continue;
+      }
       const lang = task.user.language || "en";
 
       const subject = t(lang, "taskSubject").replace("{{title}}", task.title);
@@ -83,13 +89,21 @@ cron.schedule("* * * * *", async () => {
     console.log(`[Worker] Found ${habits.length} habit(s) due for reminder`);
 
     for (const habit of habits) {
+      const freq = JSON.parse(habit.frequency!);
+      const remTime = freq.reminderTime || "00:00";
       const today = new Date().toISOString().split("T")[0];
-      const reminderKey = `reminder:habit:${habit.id}:${today}`;
+      const reminderKey = `reminder:habit:${habit.id}:${today}:${remTime}`;
       const alreadySent = await redis.get(reminderKey);
-      if (alreadySent) continue;
+      if (alreadySent) {
+        console.log(`[Worker] Habit already notified at ${remTime}, skipping "${habit.name}"`);
+        continue;
+      }
 
       const emailTo = habit.user.notificationEmail || habit.user.email;
-      if (!emailTo) continue;
+      if (!emailTo) {
+        console.log(`[Worker] No email for user "${habit.user.username}", skipping habit "${habit.name}"`);
+        continue;
+      }
       const lang = habit.user.language || "en";
 
       const subject = t(lang, "habitSubject").replace("{{name}}", habit.name);
@@ -106,9 +120,9 @@ cron.schedule("* * * * *", async () => {
       const sent = await sendEmail(emailTo, subject, html);
 
       if (sent) {
-        console.log(`[Worker] Habit reminder sent to ${emailTo} for "${habit.name}" (${today})`);
+        console.log(`[Worker] Habit reminder sent to ${emailTo} for "${habit.name}" (${today} ${remTime})`);
       } else {
-        console.log(`[Worker] Habit reminder skipped (disabled/misconfigured) for "${habit.name}" (${today})`);
+        console.log(`[Worker] Habit reminder skipped (disabled/misconfigured) for "${habit.name}" (${today} ${remTime})`);
       }
 
       await redis.set(reminderKey, "1", "EX", 86400);
