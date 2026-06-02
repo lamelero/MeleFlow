@@ -4,7 +4,7 @@ config();
 import cron from "node-cron";
 import { prisma } from "./config/database";
 import { redis } from "./config/redis";
-import { sendEmail, buildReminderEmail } from "./lib/email-service";
+import { sendEmail, buildReminderEmail, buildHabitReminderEmail } from "./lib/email-service";
 import { t } from "./lib/email-i18n";
 import { HabitService } from "./modules/habits/habits.service";
 
@@ -107,12 +107,11 @@ cron.schedule("* * * * *", async () => {
       const lang = habit.user.language || "en";
 
       const subject = t(lang, "habitSubject").replace("{{name}}", habit.name);
-      const message = t(lang, "habitBody").replace("{{name}}", `<strong>${habit.name}</strong>`);
-      const html = buildReminderEmail(
+      const html = buildHabitReminderEmail(
         habit.user.username,
         habit.name,
-        message,
-        "",
+        habit.category,
+        habit.streakCount,
         appUrl,
         lang,
       );
