@@ -1,8 +1,10 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { updateUserSchema, updateSettingsSchema } from "./admin.schema";
 import { AdminService } from "./admin.service";
+import { BackupService } from "./backup.service";
 
 const service = new AdminService();
+const backupService = new BackupService();
 
 async function isAdmin(req: FastifyRequest, reply: FastifyReply) {
   try {
@@ -111,5 +113,63 @@ export async function adminRoutes(app: FastifyInstance) {
   app.delete("/logo", async (_req, reply) => {
     const result = await service.removeLogo();
     return reply.send(result);
+  });
+
+  // ── Backup routes ─────────────────────────────
+
+  app.post("/backup", async (req, reply) => {
+    const body = req.body as { encrypted?: boolean } | undefined;
+    const result = await backupService.createBackup(body?.encrypted);
+    return reply.send(result);
+  });
+
+  app.get("/backups", async (_req, reply) => {
+    const backups = await backupService.listBackups();
+    return reply.send(backups);
+  });
+
+  app.get("/backups/:name/download", async (req, reply) => {
+    const { name } = req.params as { name: string };
+    const { stream } = await backupService.downloadBackup(name);
+    reply.header("Content-Disposition", `attachment; filename="${name}"`);
+    reply.type("application/gzip");
+    return reply.send(stream);
+  });
+
+  app.delete("/backups/:name", async (req, reply) => {
+    const { name } = req.params as { name: string };
+    await backupService.deleteBackup(name);
+    return reply.send({ deleted: true });
+  });
+
+  app.post("/restore/:name", async (req, reply) => {
+    const { name } = req.params as { name: string };
+    await backupService.restoreFromDisk(name);
+    return reply.send({ ok: true, message: "Restore complete. Please log in again." });
+  });
+
+  app.post("/restore", async (req, reply) => {
+    const file = await req.file();
+    if (!file) {
+      return reply.code(400).send({ error: "No backup file uploaded" });
+    }
+    const chunks: Buffer[] = [];
+    for await (const chunk of file.file) {
+      chunks.push(chunk);
+    }
+    const buffer = Buffer.concat(chunks);
+    await backupService.restoreFromUpload({ buffer, filename: file.filename });
+    return reply.send({ ok: true, message: "Restore complete. Please log in again." });
+  });
+
+  app.get("/backup-settings", async (_req, reply) => {
+    const settings = await backupService.getSettings();
+    return reply.send(settings);
+  });
+
+  app.patch("/backup-settings", async (req, reply) => {
+    const body = req.body as { backupInterval?: string; backupRetention?: number; backupEncrypted?: boolean };
+    const settings = await backupService.updateSettings(body);
+    return reply.send(settings);
   });
 }

@@ -10,10 +10,24 @@ import StatsCards from "../../components/admin/StatsCards";
 import UsersTable from "../../components/admin/UsersTable";
 import AppLayout from "../../components/AppLayout";
 
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), sizes.length - 1);
+  return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
+}
+
 export default function AdminPanel() {
   const { t } = useTranslation();
   const { user } = useAuthStore();
-  const { stats, settings, fetchUsers, fetchStats, fetchSettings, updateSettings, testEmail, error, clearError } = useAdminStore();
+  const {
+    stats, settings, fetchUsers, fetchStats, fetchSettings, updateSettings,
+    testEmail, error, clearError,
+    backups, backupSettings, backupCreating,
+    fetchBackups, fetchBackupSettings, createBackup, deleteBackup, restoreBackup,
+    updateBackupSettings,
+  } = useAdminStore();
   const [localUploadSize, setLocalUploadSize] = useState(settings.maxUploadSize);
   const [localStorageQuota, setLocalStorageQuota] = useState(Math.round(settings.maxStoragePerUser / (1024 * 1024 * 1024)));
   const [localMaxAttempts, setLocalMaxAttempts] = useState(settings.maxLoginAttempts);
@@ -61,7 +75,9 @@ export default function AdminPanel() {
     fetchStats();
     fetchUsers();
     fetchSettings();
-  }, [fetchStats, fetchUsers, fetchSettings]);
+    fetchBackups();
+    fetchBackupSettings();
+  }, [fetchStats, fetchUsers, fetchSettings, fetchBackups, fetchBackupSettings]);
 
   useEffect(() => {
     setLocalUploadSize(settings.maxUploadSize);
@@ -515,6 +531,151 @@ export default function AdminPanel() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Backup & Restore */}
+        <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
+          <h2 className="mb-4 font-outfit text-lg font-semibold text-gray-900 dark:text-gray-100">
+            Backup & Restore
+          </h2>
+
+          {/* Settings */}
+          <div className="mb-6 grid gap-4 sm:grid-cols-3">
+            <div>
+              <label className="mb-1 block font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                Schedule
+              </label>
+              <select
+                value={backupSettings.backupInterval}
+                onChange={(e) => updateBackupSettings({ backupInterval: e.target.value })}
+                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+              >
+                <option value="manual">Manual only</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                Retention (max backups)
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={100}
+                value={backupSettings.backupRetention}
+                onChange={(e) => {
+                  const v = Math.max(1, Math.min(100, Number(e.target.value)));
+                  updateBackupSettings({ backupRetention: v });
+                }}
+                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+              />
+            </div>
+            <div className="flex items-end pb-2">
+              <label className="flex items-center gap-2">
+                <span className="font-urbanist text-xs font-medium text-gray-500 dark:text-gray-400">
+                  Encrypt with AES-256
+                </span>
+                <button
+                  onClick={() => updateBackupSettings({ backupEncrypted: !backupSettings.backupEncrypted })}
+                  className={`relative h-6 w-10 rounded-full transition-colors ${
+                    backupSettings.backupEncrypted ? "bg-primary" : "bg-gray-300 dark:bg-gray-600"
+                  }`}
+                >
+                  <span
+                    className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform dark:bg-gray-200 ${
+                      backupSettings.backupEncrypted ? "translate-x-4" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </label>
+            </div>
+          </div>
+
+          {/* Create button */}
+          <div className="mb-6">
+            <button
+              onClick={() => createBackup(backupSettings.backupEncrypted)}
+              disabled={backupCreating}
+              className="rounded-xl bg-primary px-5 py-2.5 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-60"
+            >
+              {backupCreating ? (
+                <span className="flex items-center gap-2">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  Creating...
+                </span>
+              ) : (
+                "Generate backup now"
+              )}
+            </button>
+          </div>
+
+          {/* Backup list */}
+          {backups.length === 0 ? (
+            <div className="rounded-xl bg-gray-50 p-6 text-center ring-1 ring-gray-200 dark:bg-gray-800/50 dark:ring-gray-700">
+              <p className="font-urbanist text-sm text-gray-400 dark:text-gray-500">
+                No backups yet. Generate one above.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {backups.map((backup) => (
+                <div
+                  key={backup.name}
+                  className="group flex items-center gap-4 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-800/50"
+                >
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+                    <svg className="h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 8l5-5m0 0l5 5m-5-5v12" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="truncate font-urbanist text-sm font-medium text-gray-900 dark:text-gray-100">
+                      {backup.name}
+                      {backup.encrypted && (
+                        <span className="ml-2 rounded bg-yellow-100 px-1.5 py-0.5 text-xs font-medium text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+                          Encrypted
+                        </span>
+                      )}
+                    </p>
+                    <p className="font-urbanist text-xs text-gray-400 dark:text-gray-500">
+                      {formatBytes(backup.size)} &middot; {new Date(backup.date).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 gap-1.5 opacity-0 transition-opacity group-hover:opacity-100">
+                    <a
+                      href={`/api/admin/backups/${encodeURIComponent(backup.name)}/download`}
+                      className="rounded-lg p-2 text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-gray-700"
+                      title="Download"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V3" />
+                      </svg>
+                    </a>
+                    <button
+                      onClick={() => restoreBackup(backup.name)}
+                      className="rounded-lg p-2 text-gray-400 hover:bg-orange-100 hover:text-orange-600 dark:hover:bg-orange-900/30"
+                      title="Restore"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => deleteBackup(backup.name)}
+                      className="rounded-lg p-2 text-gray-400 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30"
+                      title="Delete"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div>

@@ -40,6 +40,22 @@ export interface SystemSettings {
   emailSubject: string;
   logoUrl: string;
   frontendUrl: string;
+  backupInterval?: string;
+  backupRetention?: number;
+  backupEncrypted?: boolean;
+}
+
+export interface BackupEntry {
+  name: string;
+  size: number;
+  date: string;
+  encrypted: boolean;
+}
+
+export interface BackupSettings {
+  backupInterval: string;
+  backupRetention: number;
+  backupEncrypted: boolean;
 }
 
 interface AdminState {
@@ -58,6 +74,15 @@ interface AdminState {
   uploadLogo: (file: File) => Promise<string>;
   removeLogo: () => Promise<void>;
   clearError: () => void;
+  backups: BackupEntry[];
+  backupSettings: BackupSettings;
+  backupCreating: boolean;
+  fetchBackups: () => Promise<void>;
+  fetchBackupSettings: () => Promise<void>;
+  createBackup: (encrypted?: boolean) => Promise<void>;
+  deleteBackup: (name: string) => Promise<void>;
+  restoreBackup: (name: string) => Promise<void>;
+  updateBackupSettings: (data: Partial<BackupSettings>) => Promise<void>;
 }
 
 const defaultSettings: SystemSettings = {
@@ -75,6 +100,15 @@ const defaultSettings: SystemSettings = {
   emailSubject: "Reminder: {{title}} is due soon",
   logoUrl: "",
   frontendUrl: "http://localhost:3001",
+  backupInterval: "manual",
+  backupRetention: 10,
+  backupEncrypted: false,
+};
+
+const defaultBackupSettings: BackupSettings = {
+  backupInterval: "manual",
+  backupRetention: 10,
+  backupEncrypted: false,
 };
 
 export const useAdminStore = create<AdminState>((set, get) => ({
@@ -83,6 +117,9 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   settings: defaultSettings,
   isLoading: false,
   error: null,
+  backups: [],
+  backupSettings: defaultBackupSettings,
+  backupCreating: false,
 
   fetchUsers: async () => {
     set({ isLoading: true, error: null });
@@ -192,6 +229,65 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       settings: { ...state.settings, logoUrl: "" },
     }));
     toast.success("Logo removed");
+  },
+
+  // ── Backup methods ──────────────────────────
+
+  fetchBackups: async () => {
+    try {
+      const { data } = await client.get("/admin/backups");
+      set({ backups: data });
+    } catch { /* silent */ }
+  },
+
+  fetchBackupSettings: async () => {
+    try {
+      const { data } = await client.get("/admin/backup-settings");
+      set({ backupSettings: data });
+    } catch { /* silent */ }
+  },
+
+  createBackup: async (encrypted = false) => {
+    set({ backupCreating: true });
+    try {
+      await client.post("/admin/backup", { encrypted });
+      toast.success("Backup created");
+      await get().fetchBackups();
+    } catch {
+      toast.error("Failed to create backup");
+    }
+    set({ backupCreating: false });
+  },
+
+  deleteBackup: async (name) => {
+    try {
+      await client.delete(`/admin/backups/${encodeURIComponent(name)}`);
+      toast.success("Backup deleted");
+      await get().fetchBackups();
+    } catch {
+      toast.error("Failed to delete backup");
+    }
+  },
+
+  restoreBackup: async (name) => {
+    if (!window.confirm("Restore will overwrite all current data. Users will need to log in again. Continue?")) return;
+    try {
+      await client.post(`/admin/restore/${encodeURIComponent(name)}`);
+      toast.success("Restore complete. Please log in again.");
+      setTimeout(() => { window.location.href = "/login"; }, 2000);
+    } catch {
+      toast.error("Failed to restore backup");
+    }
+  },
+
+  updateBackupSettings: async (data) => {
+    try {
+      const res = await client.patch("/admin/backup-settings", data);
+      set({ backupSettings: { ...get().backupSettings, ...res.data } });
+      toast.success("Backup settings saved");
+    } catch {
+      toast.error("Failed to save backup settings");
+    }
   },
 
   clearError: () => set({ error: null }),

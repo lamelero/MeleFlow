@@ -7,6 +7,7 @@ import { redis } from "./config/redis";
 import { sendEmail, buildReminderEmail, buildHabitReminderEmail } from "./lib/email-service";
 import { t } from "./lib/email-i18n";
 import { HabitService } from "./modules/habits/habits.service";
+import { runScheduledBackup } from "./modules/admin/backup.service";
 
 const DEFAULT_URL = process.env.FRONTEND_URL || "http://localhost:3001";
 
@@ -211,6 +212,50 @@ cron.schedule("* * * * *", async () => {
 
   } catch (err) {
     console.error("[Worker] Error processing reminders:", err);
+  }
+});
+
+// ── Scheduled backup check ────────────────────
+let lastBackupCheck = 0;
+
+cron.schedule("* * * * *", async () => {
+  try {
+    const now = Date.now();
+    if (now - lastBackupCheck < 60 * 60 * 1000) return;
+    lastBackupCheck = now;
+
+    const rows = await prisma.systemSetting.findMany({
+      where: { key: { in: ["backupInterval", "lastBackupRun"] } },
+    });
+    const map: Record<string, string> = {};
+    for (const r of rows) map[r.key] = r.value;
+
+    const interval = map.backupInterval || "manual";
+    if (interval === "manual") return;
+
+    const lastRun = map.lastBackupRun ? new Date(map.lastBackupRun).getTime() : 0;
+    const msSinceLastRun = Date.now() - lastRun;
+
+    const intervals: Record<string, number> = {
+      daily: 24 * 60 * 60 * 1000,
+      weekly: 7 * 24 * 60 * 60 * 1000,
+      monthly: 30 * 24 * 60 * 60 * 1000,
+    };
+
+    const threshold = intervals[interval];
+    if (!threshold || msSinceLastRun < threshold) return;
+
+    console.log(`[Worker] Running scheduled backup (${interval})...`);
+    await runScheduledBackup();
+
+    await prisma.systemSetting.upsert({
+      where: { key: "lastBackupRun" },
+      create: { key: "lastBackupRun", value: new Date().toISOString() },
+      update: { value: new Date().toISOString() },
+    });
+    console.log("[Worker] Scheduled backup completed");
+  } catch (err) {
+    console.error("[Worker] Backup check error:", err);
   }
 });
 

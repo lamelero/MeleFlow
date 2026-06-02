@@ -25,6 +25,9 @@ export const updateSettingsSchema = z.object({
   emailSubject: z.string().max(200).optional(),
   logoUrl: z.string().optional(),
   frontendUrl: z.string().url().max(200).optional(),
+  backupInterval: z.enum(["manual", "daily", "weekly", "monthly"]).optional(),
+  backupRetention: z.number().int().min(1).max(100).optional(),
+  backupEncrypted: z.boolean().optional(),
 });
 
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
