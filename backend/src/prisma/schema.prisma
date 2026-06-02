@@ -47,6 +47,7 @@ model User {
   role         Role     @default(USER)
   isActive     Boolean  @default(true)
   language     String   @default("en")
+  storageUsed  BigInt   @default(0)
 
   // Profile
   displayName      String?
@@ -123,6 +124,7 @@ model Attachment {
   id         String   @id @default(cuid())
   fileName   String
   fileUrl    String
+  fileSize   BigInt   @default(0)
   uploadDate DateTime @default(now())
   taskId     String
   task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)

@@ -23,6 +23,14 @@ export class AttachmentService {
     return setting ? Number(setting.value) : env.MAX_UPLOAD_SIZE;
   }
 
+  private async getMaxStoragePerUser(): Promise<number> {
+    const setting = await prisma.systemSetting.findUnique({
+      where: { key: "maxStoragePerUser" },
+    });
+    // return value in bytes (default 1 GB)
+    return setting ? Number(setting.value) : 1073741824;
+  }
+
   async upload(userId: string, taskId: string, file: { filename: string; buffer: Buffer; mimetype: string }) {
     const task = await prisma.task.findFirst({
       where: { id: taskId, userId },
@@ -33,6 +41,19 @@ export class AttachmentService {
     const sizeMB = file.buffer.length / (1024 * 1024);
     if (sizeMB > maxSize) {
       throw new AppError(413, `File exceeds the ${maxSize}MB upload limit`);
+    }
+
+    // Check storage quota
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { storageUsed: true },
+    });
+    if (!user) throw new AppError(404, "User not found");
+
+    const maxStorage = await this.getMaxStoragePerUser();
+    const currentUsed = Number(user.storageUsed);
+    if (currentUsed + file.buffer.length > maxStorage) {
+      throw new AppError(413, "Storage quota exceeded. Free up space or contact your admin.");
     }
 
     await ensureUploadDir();
@@ -47,8 +68,15 @@ export class AttachmentService {
       data: {
         fileName: file.filename,
         fileUrl: `/uploads/${safeName}`,
+        fileSize: file.buffer.length,
         taskId,
       },
+    });
+
+    // Increment user storage
+    await prisma.user.update({
+      where: { id: userId },
+      data: { storageUsed: { increment: file.buffer.length } },
     });
 
     return attachment;
@@ -85,5 +113,11 @@ export class AttachmentService {
     }
 
     await prisma.attachment.delete({ where: { id: attachmentId } });
+
+    // Decrement user storage
+    await prisma.user.update({
+      where: { id: userId },
+      data: { storageUsed: { decrement: Number(attachment.fileSize) } },
+    });
   }
 }

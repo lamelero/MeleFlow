@@ -13,6 +13,7 @@ export default function AdminPanel() {
   const { user } = useAuthStore();
   const { stats, settings, fetchUsers, fetchStats, fetchSettings, updateSettings, testEmail, error, clearError } = useAdminStore();
   const [localUploadSize, setLocalUploadSize] = useState(settings.maxUploadSize);
+  const [localStorageQuota, setLocalStorageQuota] = useState(Math.round(settings.maxStoragePerUser / (1024 * 1024 * 1024)));
   const [localMaxAttempts, setLocalMaxAttempts] = useState(settings.maxLoginAttempts);
   const [localLockoutMinutes, setLocalLockoutMinutes] = useState(settings.loginLockoutMinutes);
 
@@ -61,6 +62,7 @@ export default function AdminPanel() {
 
   useEffect(() => {
     setLocalUploadSize(settings.maxUploadSize);
+    setLocalStorageQuota(Math.round(settings.maxStoragePerUser / (1024 * 1024 * 1024)));
     setLocalMaxAttempts(settings.maxLoginAttempts);
     setLocalLockoutMinutes(settings.loginLockoutMinutes);
     setLocalSmtpHost(settings.smtpHost);
@@ -187,6 +189,38 @@ export default function AdminPanel() {
                     }
                   }}
                   disabled={localUploadSize === settings.maxUploadSize}
+                  className="rounded-xl bg-primary px-3 py-1.5 font-urbanist text-xs font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-urbanist text-sm font-medium text-gray-900 dark:text-gray-100">
+                  Storage quota per user
+                </p>
+                <p className="font-urbanist text-xs text-gray-500 dark:text-gray-400">
+                  Max storage per user in GB (1–1024)
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={1}
+                  max={1024}
+                  value={localStorageQuota}
+                  onChange={(e) => setLocalStorageQuota(Number(e.target.value))}
+                  className="w-20 rounded-xl border border-gray-200 bg-white px-3 py-1.5 font-urbanist text-sm text-center outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                />
+                <button
+                  onClick={() => {
+                    const gb = Math.max(1, Math.min(1024, localStorageQuota));
+                    setLocalStorageQuota(gb);
+                    updateSettings({ maxStoragePerUser: gb * 1024 * 1024 * 1024 });
+                  }}
+                  disabled={localStorageQuota === Math.round(settings.maxStoragePerUser / (1024 * 1024 * 1024))}
                   className="rounded-xl bg-primary px-3 py-1.5 font-urbanist text-xs font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
                 >
                   Save

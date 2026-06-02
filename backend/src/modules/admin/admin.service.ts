@@ -16,6 +16,7 @@ export class AdminService {
         role: true,
         isActive: true,
         createdAt: true,
+        storageUsed: true,
         _count: {
           select: { tasks: true, lists: true, habits: true },
         },
@@ -91,6 +92,9 @@ export class AdminService {
       maxUploadSize: map.maxUploadSize !== undefined
         ? Number(map.maxUploadSize)
         : env.MAX_UPLOAD_SIZE,
+      maxStoragePerUser: map.maxStoragePerUser !== undefined
+        ? Number(map.maxStoragePerUser)
+        : 1073741824,
       maxLoginAttempts: map.maxLoginAttempts !== undefined
         ? Number(map.maxLoginAttempts)
         : env.MAX_LOGIN_ATTEMPTS,
@@ -159,6 +163,9 @@ export class AdminService {
     }
     if (input.maxUploadSize !== undefined) {
       await upsert("maxUploadSize", String(input.maxUploadSize));
+    }
+    if (input.maxStoragePerUser !== undefined) {
+      await upsert("maxStoragePerUser", String(input.maxStoragePerUser));
     }
     if (input.maxLoginAttempts !== undefined) {
       await upsert("maxLoginAttempts", String(input.maxLoginAttempts));

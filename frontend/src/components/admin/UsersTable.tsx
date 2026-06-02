@@ -3,6 +3,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import { useAdminStore } from "../../store/adminStore";
 
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), sizes.length - 1);
+  return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
+}
+
 interface EditForm {
   email: string;
   username: string;
@@ -10,7 +18,7 @@ interface EditForm {
 }
 
 export default function UsersTable() {
-  const { users, updateUser, deleteUser, isLoading } = useAdminStore();
+  const { users, updateUser, deleteUser, isLoading, settings } = useAdminStore();
   const [updating, setUpdating] = useState<string | null>(null);
   const [editingUser, setEditingUser] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<EditForm>({ email: "", username: "", displayName: "" });
@@ -92,6 +100,9 @@ export default function UsersTable() {
                 <th className="px-4 py-3 text-left font-urbanist text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                   Tasks
                 </th>
+                <th className="px-4 py-3 text-left font-urbanist text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  Storage
+                </th>
                 <th className="px-4 py-3 text-right font-urbanist text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                   Actions
                 </th>
@@ -126,6 +137,27 @@ export default function UsersTable() {
                   </td>
                   <td className="px-4 py-3 font-urbanist text-sm text-gray-600 dark:text-gray-400">
                     {user._count.tasks}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <div className="h-1.5 w-16 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+                        <div
+                          className="h-full rounded-full transition-all"
+                          style={{
+                            width: `${Math.min(100, (Number(user.storageUsed) / settings.maxStoragePerUser) * 100)}%`,
+                            backgroundColor:
+                              Number(user.storageUsed) / settings.maxStoragePerUser > 0.9
+                                ? "#ef4444"
+                                : Number(user.storageUsed) / settings.maxStoragePerUser > 0.7
+                                  ? "#f59e0b"
+                                  : "#10b981",
+                          }}
+                        />
+                      </div>
+                      <span className="font-urbanist text-xs text-gray-500 dark:text-gray-400">
+                        {formatBytes(Number(user.storageUsed))}
+                      </span>
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-2">

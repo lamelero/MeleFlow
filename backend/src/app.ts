@@ -1,5 +1,10 @@
 import Fastify, { type FastifyRequest, type FastifyReply } from "fastify";
 import cors from "@fastify/cors";
+
+// BigInt serialization for JSON responses (Prisma uses BigInt for storage counts)
+(BigInt.prototype as unknown as Record<string, unknown>).toJSON = function () {
+  return Number(this);
+};
 import helmet from "@fastify/helmet";
 import fjwt from "@fastify/jwt";
 import cookie from "@fastify/cookie";

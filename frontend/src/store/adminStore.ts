@@ -10,6 +10,7 @@ interface AdminUser {
   role: string;
   isActive: boolean;
   createdAt: string;
+  storageUsed: string;
   _count: { tasks: number; lists: number; habits: number };
 }
 
@@ -26,6 +27,7 @@ export interface AdminStats {
 export interface SystemSettings {
   allowRegistration: boolean;
   maxUploadSize: number;
+  maxStoragePerUser: number;
   maxLoginAttempts: number;
   loginLockoutMinutes: number;
   smtpHost: string;
@@ -59,6 +61,7 @@ interface AdminState {
 const defaultSettings: SystemSettings = {
   allowRegistration: true,
   maxUploadSize: 50,
+  maxStoragePerUser: 1073741824,
   maxLoginAttempts: 5,
   loginLockoutMinutes: 15,
   smtpHost: "",

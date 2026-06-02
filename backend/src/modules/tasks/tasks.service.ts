@@ -31,7 +31,7 @@ const taskSelect = {
 
 type RawTask = Record<string, unknown>;
 type RawTaskTag = { tag: { id: string; name: string; color: string } };
-type RawAttachment = { id: string; fileName: string; fileUrl: string; uploadDate: string };
+type RawAttachment = { id: string; fileName: string; fileUrl: string; fileSize: bigint; uploadDate: string };
 type RawChecklistItem = { id: string; text: string; isCompleted: boolean; position: number };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

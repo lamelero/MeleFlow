@@ -12,6 +12,7 @@ export const updateUserSchema = z.object({
 export const updateSettingsSchema = z.object({
   allowRegistration: z.boolean().optional(),
   maxUploadSize: z.number().int().min(1).max(200).optional(),
+  maxStoragePerUser: z.number().int().min(1).max(1073741824).optional(),
   maxLoginAttempts: z.number().int().min(1).max(100).optional(),
   loginLockoutMinutes: z.number().int().min(1).max(1440).optional(),
   smtpHost: z.string().optional(),

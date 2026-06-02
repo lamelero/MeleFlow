@@ -4,6 +4,14 @@ import DatePicker from "react-datepicker";
 import Markdown from "react-markdown";
 import toast from "react-hot-toast";
 import type { Task, Attachment } from "../../store/taskStore";
+
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), sizes.length - 1);
+  return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
+}
 import { useTaskStore } from "../../store/taskStore";
 import { useTagStore, type Tag, randomTagColor } from "../../store/tagStore";
 import { client } from "../../api/client";
@@ -536,6 +544,9 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
                     >
                       {att.fileName}
                     </a>
+                    <span className="shrink-0 font-urbanist text-xs text-gray-400">
+                      {formatBytes(att.fileSize)}
+                    </span>
                     <button
                       onClick={() => handleDeleteAttachment(att)}
                       className="shrink-0 rounded-lg p-1 text-gray-400 opacity-0 transition-all hover:bg-red-50 hover:text-red-500 group-hover:opacity-100 dark:hover:bg-red-900/20"
