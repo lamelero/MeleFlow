@@ -65,6 +65,29 @@
       "generateNewCodes": "Generar nuevos códigos de recuperación"
     }
   },
+  "usermenu": {
+    "profile": "Perfil",
+    "security": "Seguridad",
+    "admin": "Admin",
+    "darkMode": "Modo oscuro",
+    "language": "Idioma",
+    "signOut": "Cerrar sesión"
+  },
+  "dashboard": {
+    "title": "Panel",
+    "lists": "Listas",
+    "listName": "Nombre de la lista",
+    "allTasks": "Todas las tareas",
+    "tags": "Etiquetas",
+    "newTask": "Añade una tarea nueva...",
+    "noTasksInList": "No hay tareas en esta lista",
+    "noTasksWithTag": "No hay tareas con esta etiqueta",
+    "noTasks": "Aún no hay tareas — crea una arriba",
+    "habits": "Hábitos",
+    "newHabit": "Nuevo hábito",
+    "noHabits": "Aún no hay hábitos — crea uno arriba",
+    "archived": "Archivados"
+  },
   "theme": {
     "light": "Modo claro",
     "dark": "Modo oscuro"

@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { useListStore } from "../../store/listStore";
 import { useTaskStore, type Task } from "../../store/taskStore";
 import { useHabitStore, type Habit } from "../../store/habitStore";
@@ -12,6 +13,7 @@ import HabitFormModal from "../../components/habits/HabitFormModal";
 import AppLayout from "../../components/AppLayout";
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const { lists, fetchLists, createList } = useListStore();
   const { createTask } = useTaskStore();
   const { habits, fetchHabits, createHabit } = useHabitStore();
@@ -79,7 +81,7 @@ export default function Dashboard() {
   }
 
   return (
-    <AppLayout title="Dashboard">
+    <AppLayout title={t("dashboard.title")}>
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -91,7 +93,7 @@ export default function Dashboard() {
           <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="font-outfit text-sm font-semibold text-gray-900 dark:text-gray-100">
-                Lists
+                {t("dashboard.lists")}
               </h2>
               <button
                 onClick={() => setShowNewList(!showNewList)}
@@ -109,7 +111,7 @@ export default function Dashboard() {
                   type="text"
                   value={newListName}
                   onChange={(e) => setNewListName(e.target.value)}
-                  placeholder="List name"
+                  placeholder={t("dashboard.listName")}
                   className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                   autoFocus
                 />
@@ -128,7 +130,7 @@ export default function Dashboard() {
                     : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
                 }`}
               >
-                All tasks
+                {t("dashboard.allTasks")}
               </button>
               {lists.map((list) => (
                 <button
@@ -160,7 +162,7 @@ export default function Dashboard() {
             <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="font-outfit text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  Tags
+                  {t("dashboard.tags")}
                 </h2>
                 <Link
                   to="/tags"
@@ -204,7 +206,7 @@ export default function Dashboard() {
                   type="text"
                   value={newTaskTitle}
                   onChange={(e) => setNewTaskTitle(e.target.value)}
-                  placeholder="Add a new task..."
+                  placeholder={t("dashboard.newTask")}
                   className="w-full rounded-2xl bg-white px-5 py-3.5 font-urbanist text-sm outline-none placeholder:text-gray-400 dark:bg-gray-900 dark:text-gray-100 dark:placeholder-gray-500"
                 />
               </div>
@@ -215,10 +217,10 @@ export default function Dashboard() {
               onTaskClick={setSelectedTask}
               emptyMessage={
                 activeListId
-                  ? "No tasks in this list"
+                  ? t("dashboard.noTasksInList")
                   : activeTagId
-                    ? "No tasks with this tag"
-                    : "No tasks yet — create one above"
+                    ? t("dashboard.noTasksWithTag")
+                    : t("dashboard.noTasks")
               }
             />
           </section>
@@ -226,7 +228,7 @@ export default function Dashboard() {
           <section>
             <div className="mb-4 flex items-center justify-between">
               <h2 className="font-outfit text-lg font-semibold text-gray-900 dark:text-gray-100">
-                Habits
+                {t("dashboard.habits")}
               </h2>
               <button
                 onClick={() => {
@@ -240,7 +242,7 @@ export default function Dashboard() {
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                   </svg>
-                  New Habit
+                  {t("dashboard.newHabit")}
                 </span>
               </button>
             </div>
@@ -267,7 +269,7 @@ export default function Dashboard() {
                   <path d="M16 8l-2 4m16-4l2 4M36 6l-1 6M44 10l-3 2" stroke="#14B8A6" strokeWidth="1.5" strokeLinecap="round" opacity="0.3" />
                 </svg>
                 <p className="font-urbanist text-sm text-gray-400">
-                  No habits yet — create one above
+                  {t("dashboard.noHabits")}
                 </p>
               </motion.div>
             ) : (
@@ -289,7 +291,7 @@ export default function Dashboard() {
                 {habits.filter((h) => h.isArchived).length > 0 && (
                   <div>
                     <h3 className="mb-3 font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400">
-                      Archived
+                      {t("dashboard.archived")}
                     </h3>
                     <div className="grid gap-3 opacity-50 sm:grid-cols-2">
                       {habits

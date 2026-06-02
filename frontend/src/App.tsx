@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { Toaster } from "react-hot-toast";
 import { useAuthStore } from "./store/authStore";
+import i18n from "./i18n";
 import Login from "./views/auth/Login";
 import Register from "./views/auth/Register";
 import TwoFactorVerify from "./views/auth/TwoFactorVerify";
@@ -16,10 +17,17 @@ import "./i18n";
 export default function App() {
   const location = useLocation();
   const initialize = useAuthStore((s) => s.initialize);
+  const user = useAuthStore((s) => s.user);
 
   useEffect(() => {
     initialize();
   }, [initialize]);
+
+  useEffect(() => {
+    if (user?.language && user.language !== i18n.language) {
+      i18n.changeLanguage(user.language);
+    }
+  }, [user?.language]);
 
   return (
     <>

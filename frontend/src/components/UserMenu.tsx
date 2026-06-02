@@ -14,7 +14,7 @@ function getInitials(name: string): string {
 export default function UserMenu() {
   const { user, logout } = useAuthStore();
   const { theme, toggleTheme } = useThemeStore();
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -101,10 +101,10 @@ export default function UserMenu() {
               <div className="h-px bg-gray-100 dark:bg-gray-700/50" />
 
               <div className="p-1.5">
-                <MenuItem icon={<UserIcon />} label="Profile" onClick={() => handleNavigate("/app/profile")} />
-                <MenuItem icon={<ShieldIcon />} label="Security" onClick={() => handleNavigate("/app/profile")} />
+                <MenuItem icon={<UserIcon />} label={t("usermenu.profile")} onClick={() => handleNavigate("/app/profile")} />
+                <MenuItem icon={<ShieldIcon />} label={t("usermenu.security")} onClick={() => handleNavigate("/app/profile")} />
                 {user?.role === "ADMIN" && (
-                  <MenuItem icon={<GearIcon />} label="Admin" onClick={() => handleNavigate("/admin")} />
+                  <MenuItem icon={<GearIcon />} label={t("usermenu.admin")} onClick={() => handleNavigate("/admin")} />
                 )}
               </div>
 
@@ -115,7 +115,7 @@ export default function UserMenu() {
                   <div className="flex items-center gap-2.5">
                     <MoonIcon />
                     <span className="font-urbanist text-sm text-gray-700 dark:text-gray-300">
-                      Dark mode
+                      {t("usermenu.darkMode")}
                     </span>
                   </div>
                   <button
@@ -135,7 +135,7 @@ export default function UserMenu() {
                   <div className="flex items-center gap-2.5">
                     <GlobeIcon />
                     <span className="font-urbanist text-sm text-gray-700 dark:text-gray-300">
-                      Language
+                      {t("usermenu.language")}
                     </span>
                   </div>
                   <button
@@ -155,7 +155,7 @@ export default function UserMenu() {
                   className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 font-urbanist text-sm text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
                 >
                   <ExitIcon />
-                  Sign out
+                  {t("usermenu.signOut")}
                 </button>
               </div>
             </motion.div>

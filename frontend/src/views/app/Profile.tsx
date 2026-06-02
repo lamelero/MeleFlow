@@ -13,7 +13,7 @@ function getInitials(name: string): string {
 }
 
 export default function Profile() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user, updateLanguage, updateProfile, uploadAvatar } = useAuthStore();
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -342,7 +342,7 @@ export default function Profile() {
                   {["en", "es"].map((lang) => (
                     <button
                       key={lang}
-                      onClick={() => updateLanguage(lang)}
+                      onClick={() => { i18n.changeLanguage(lang); updateLanguage(lang); }}
                       className={`rounded-lg px-3 py-1 font-urbanist text-xs font-medium transition-colors ${
                         user?.language === lang
                           ? "bg-primary text-white"

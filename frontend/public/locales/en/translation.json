@@ -65,6 +65,29 @@
       "generateNewCodes": "Generate new recovery codes"
     }
   },
+  "usermenu": {
+    "profile": "Profile",
+    "security": "Security",
+    "admin": "Admin",
+    "darkMode": "Dark mode",
+    "language": "Language",
+    "signOut": "Sign out"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "lists": "Lists",
+    "listName": "List name",
+    "allTasks": "All tasks",
+    "tags": "Tags",
+    "newTask": "Add a new task...",
+    "noTasksInList": "No tasks in this list",
+    "noTasksWithTag": "No tasks with this tag",
+    "noTasks": "No tasks yet — create one above",
+    "habits": "Habits",
+    "newHabit": "New Habit",
+    "noHabits": "No habits yet — create one above",
+    "archived": "Archived"
+  },
   "theme": {
     "light": "Light mode",
     "dark": "Dark mode"
