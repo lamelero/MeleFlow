@@ -30,6 +30,12 @@ export async function adminRoutes(app: FastifyInstance) {
     return reply.send(result);
   });
 
+  app.delete("/users/:id", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    await service.deleteUser(req.user.sub, id);
+    return reply.send({ deleted: true });
+  });
+
   app.get("/stats", async (_req, reply) => {
     const stats = await service.getStats();
     return reply.send(stats);

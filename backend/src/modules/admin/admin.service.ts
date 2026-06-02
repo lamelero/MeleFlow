@@ -12,6 +12,7 @@ export class AdminService {
         id: true,
         email: true,
         username: true,
+        displayName: true,
         role: true,
         isActive: true,
         createdAt: true,
@@ -27,15 +28,30 @@ export class AdminService {
     if (currentUserId === targetUserId && input.role !== undefined) {
       throw new AppError(400, "Cannot change your own role");
     }
+    if (currentUserId === targetUserId && input.isActive === false) {
+      throw new AppError(400, "Cannot deactivate yourself");
+    }
 
     const user = await prisma.user.findUnique({ where: { id: targetUserId } });
     if (!user) {
       throw new AppError(404, "User not found");
     }
 
+    if (input.email && input.email !== user.email) {
+      const existing = await prisma.user.findUnique({ where: { email: input.email } });
+      if (existing) throw new AppError(409, "Email already taken");
+    }
+    if (input.username && input.username !== user.username) {
+      const existing = await prisma.user.findUnique({ where: { username: input.username } });
+      if (existing) throw new AppError(409, "Username already taken");
+    }
+
     return prisma.user.update({
       where: { id: targetUserId },
       data: {
+        ...(input.email !== undefined && { email: input.email }),
+        ...(input.username !== undefined && { username: input.username }),
+        ...(input.displayName !== undefined && { displayName: input.displayName }),
         ...(input.role !== undefined && { role: input.role }),
         ...(input.isActive !== undefined && { isActive: input.isActive }),
       },
@@ -43,10 +59,24 @@ export class AdminService {
         id: true,
         email: true,
         username: true,
+        displayName: true,
         role: true,
         isActive: true,
       },
     });
+  }
+
+  async deleteUser(currentUserId: string, targetUserId: string) {
+    if (currentUserId === targetUserId) {
+      throw new AppError(400, "Cannot delete yourself");
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: targetUserId } });
+    if (!user) {
+      throw new AppError(404, "User not found");
+    }
+
+    await prisma.user.delete({ where: { id: targetUserId } });
   }
 
   async getSettings() {

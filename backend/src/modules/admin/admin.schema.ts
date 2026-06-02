@@ -2,6 +2,9 @@ import { z } from "zod";
 import { Role } from "@prisma/client";
 
 export const updateUserSchema = z.object({
+  email: z.string().email().optional(),
+  username: z.string().min(3).max(30).optional(),
+  displayName: z.string().max(100).optional(),
   role: z.nativeEnum(Role).optional(),
   isActive: z.boolean().optional(),
 });

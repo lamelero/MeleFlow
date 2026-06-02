@@ -6,6 +6,7 @@ interface AdminUser {
   id: string;
   email: string;
   username: string;
+  displayName?: string | null;
   role: string;
   isActive: boolean;
   createdAt: string;
@@ -47,7 +48,8 @@ interface AdminState {
   fetchStats: () => Promise<void>;
   fetchSettings: () => Promise<void>;
   updateSettings: (data: Partial<SystemSettings>) => Promise<void>;
-  updateUser: (id: string, data: { role?: string; isActive?: boolean }) => Promise<void>;
+  updateUser: (id: string, data: { email?: string; username?: string; displayName?: string; role?: string; isActive?: boolean }) => Promise<void>;
+  deleteUser: (id: string) => Promise<void>;
   testEmail: (to?: string) => Promise<void>;
   uploadLogo: (file: File) => Promise<string>;
   removeLogo: () => Promise<void>;
@@ -137,6 +139,19 @@ export const useAdminStore = create<AdminState>((set, get) => ({
           ?.error || "Failed to update user";
       set({ error: msg });
       throw err;
+    }
+  },
+
+  deleteUser: async (id) => {
+    try {
+      await client.delete(`/admin/users/${id}`);
+      set((state) => ({ users: state.users.filter((u) => u.id !== id) }));
+      toast.success("User deleted");
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { error?: string } } })?.response?.data
+          ?.error || "Failed to delete user";
+      toast.error(msg);
     }
   },
 
