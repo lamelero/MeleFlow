@@ -11,6 +11,7 @@ interface AdminUser {
   isActive: boolean;
   createdAt: string;
   storageUsed: string;
+  storageQuota: string | null;
   _count: { tasks: number; lists: number; habits: number };
 }
 
@@ -50,7 +51,7 @@ interface AdminState {
   fetchStats: () => Promise<void>;
   fetchSettings: () => Promise<void>;
   updateSettings: (data: Partial<SystemSettings>) => Promise<void>;
-  updateUser: (id: string, data: { email?: string; username?: string; displayName?: string; role?: string; isActive?: boolean }) => Promise<void>;
+  updateUser: (id: string, data: { email?: string; username?: string; displayName?: string; role?: string; isActive?: boolean; storageQuota?: number | null }) => Promise<void>;
   deleteUser: (id: string) => Promise<void>;
   testEmail: (to?: string) => Promise<void>;
   uploadLogo: (file: File) => Promise<string>;

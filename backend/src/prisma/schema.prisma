@@ -48,6 +48,7 @@ model User {
   isActive     Boolean  @default(true)
   language     String   @default("en")
   storageUsed  BigInt   @default(0)
+  storageQuota BigInt?
 
   // Profile
   displayName      String?

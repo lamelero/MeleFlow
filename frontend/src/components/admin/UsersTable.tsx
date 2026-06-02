@@ -15,17 +15,27 @@ interface EditForm {
   email: string;
   username: string;
   displayName: string;
+  storageQuota: string;
+}
+
+function effectiveQuota(user: { storageQuota: string | null }, globalQuota: number): number {
+  return user.storageQuota ? Number(user.storageQuota) : globalQuota;
 }
 
 export default function UsersTable() {
   const { users, updateUser, deleteUser, isLoading, settings } = useAdminStore();
   const [updating, setUpdating] = useState<string | null>(null);
   const [editingUser, setEditingUser] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState<EditForm>({ email: "", username: "", displayName: "" });
+  const [editForm, setEditForm] = useState<EditForm>({ email: "", username: "", displayName: "", storageQuota: "" });
   const [deletingUser, setDeletingUser] = useState<string | null>(null);
 
   function openEdit(user: (typeof users)[0]) {
-    setEditForm({ email: user.email, username: user.username, displayName: user.displayName || "" });
+    setEditForm({
+      email: user.email,
+      username: user.username,
+      displayName: user.displayName || "",
+      storageQuota: user.storageQuota ? String(Number(user.storageQuota) / (1024 * 1024 * 1024)) : "",
+    });
     setEditingUser(user.id);
   }
 
@@ -36,10 +46,14 @@ export default function UsersTable() {
     }
     setUpdating(userId);
     try {
+      const storageQuota = editForm.storageQuota.trim()
+        ? Number(editForm.storageQuota) * 1024 * 1024 * 1024
+        : null;
       await updateUser(userId, {
         email: editForm.email.trim(),
         username: editForm.username.trim(),
         displayName: editForm.displayName.trim() || undefined,
+        storageQuota,
       });
       setEditingUser(null);
       toast.success("User updated");
@@ -141,18 +155,21 @@ export default function UsersTable() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <div className="h-1.5 w-16 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
-                        <div
-                          className="h-full rounded-full transition-all"
-                          style={{
-                            width: `${Math.min(100, (Number(user.storageUsed) / settings.maxStoragePerUser) * 100)}%`,
-                            backgroundColor:
-                              Number(user.storageUsed) / settings.maxStoragePerUser > 0.9
-                                ? "#ef4444"
-                                : Number(user.storageUsed) / settings.maxStoragePerUser > 0.7
-                                  ? "#f59e0b"
-                                  : "#10b981",
-                          }}
-                        />
+                        {(() => {
+                          const quota = effectiveQuota(user, settings.maxStoragePerUser);
+                          const used = Number(user.storageUsed);
+                          const pct = Math.min(100, (used / quota) * 100);
+                          return (
+                            <div
+                              className="h-full rounded-full transition-all"
+                              style={{
+                                width: `${pct}%`,
+                                backgroundColor:
+                                  pct > 90 ? "#ef4444" : pct > 70 ? "#f59e0b" : "#10b981",
+                              }}
+                            />
+                          );
+                        })()}
                       </div>
                       <span className="font-urbanist text-xs text-gray-500 dark:text-gray-400">
                         {formatBytes(Number(user.storageUsed))}
@@ -249,6 +266,19 @@ export default function UsersTable() {
                     value={editForm.displayName}
                     onChange={(e) => setEditForm((f) => ({ ...f, displayName: e.target.value }))}
                     placeholder="(empty = same as username)"
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Storage Quota (GB)
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={editForm.storageQuota}
+                    onChange={(e) => setEditForm((f) => ({ ...f, storageQuota: e.target.value }))}
+                    placeholder={`(default: ${Math.round(settings.maxStoragePerUser / (1024 * 1024 * 1024))} GB)`}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                   />
                 </div>

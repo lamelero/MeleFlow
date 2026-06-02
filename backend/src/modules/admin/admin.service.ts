@@ -17,6 +17,7 @@ export class AdminService {
         isActive: true,
         createdAt: true,
         storageUsed: true,
+        storageQuota: true,
         _count: {
           select: { tasks: true, lists: true, habits: true },
         },
@@ -55,6 +56,7 @@ export class AdminService {
         ...(input.displayName !== undefined && { displayName: input.displayName }),
         ...(input.role !== undefined && { role: input.role }),
         ...(input.isActive !== undefined && { isActive: input.isActive }),
+        ...(input.storageQuota !== undefined && { storageQuota: input.storageQuota }),
       },
       select: {
         id: true,
@@ -63,6 +65,7 @@ export class AdminService {
         displayName: true,
         role: true,
         isActive: true,
+        storageQuota: true,
       },
     });
   }

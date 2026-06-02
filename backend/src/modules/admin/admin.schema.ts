@@ -7,6 +7,7 @@ export const updateUserSchema = z.object({
   displayName: z.string().max(100).optional(),
   role: z.nativeEnum(Role).optional(),
   isActive: z.boolean().optional(),
+  storageQuota: z.number().int().min(1).max(1073741824).nullable().optional(),
 });
 
 export const updateSettingsSchema = z.object({

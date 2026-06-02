@@ -46,11 +46,12 @@ export class AttachmentService {
     // Check storage quota
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { storageUsed: true },
+      select: { storageUsed: true, storageQuota: true },
     });
     if (!user) throw new AppError(404, "User not found");
 
-    const maxStorage = await this.getMaxStoragePerUser();
+    const globalMax = await this.getMaxStoragePerUser();
+    const maxStorage = Number(user.storageQuota) || globalMax;
     const currentUsed = Number(user.storageUsed);
     if (currentUsed + file.buffer.length > maxStorage) {
       throw new AppError(413, "Storage quota exceeded. Free up space or contact your admin.");
