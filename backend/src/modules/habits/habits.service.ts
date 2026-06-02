@@ -222,6 +222,7 @@ export class HabitService {
             email: true,
             username: true,
             notificationEmail: true,
+            language: true,
           },
         },
       },

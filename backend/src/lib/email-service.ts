@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import { prisma } from "../config/database";
+import { t, formatDate } from "./email-i18n";
 
 let transporter: nodemailer.Transporter | null = null;
 
@@ -65,22 +66,15 @@ export async function sendEmail(to: string, subject: string, html: string): Prom
   }
 }
 
-export function buildReminderEmail(username: string, taskTitle: string, dueDate: string, appUrl: string): string {
-  const formatted = new Date(dueDate).toLocaleString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+export function buildReminderEmail(username: string, body: string, dueDate: string, appUrl: string, lang = "en"): string {
+  const formatted = formatDate(dueDate, lang);
 
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${lang}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Task Reminder</title>
+  <title>${t(lang, "headerTitle")}</title>
   <style>
     body { margin:0; padding:0; background-color:#f4f9f9; font-family:'Segoe UI',Arial,sans-serif; }
     .container { max-width:520px; margin:40px auto; background:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,0.06); }
@@ -98,20 +92,19 @@ export function buildReminderEmail(username: string, taskTitle: string, dueDate:
 <body>
   <div class="container">
     <div class="header">
-      <h1>⏰ Task Reminder</h1>
+      <h1>${t(lang, "headerTitle")}</h1>
     </div>
     <div class="body">
-      <p>Hi <strong>${username}</strong>,</p>
-      <p>This is a friendly reminder about your upcoming task:</p>
-      <div class="task-card">
-        <div class="title">${taskTitle}</div>
-        <div class="due">Due: ${formatted}</div>
-      </div>
-      <a href="${appUrl}" class="btn" target="_blank">Open MeleNotes</a>
-      <p style="margin-top:16px;color:#9ca3af;font-size:13px;">Stay productive! ✨</p>
+      <p>${t(lang, "greeting").replace("{{username}}", username)}</p>
+      <p>${body}</p>
+      ${dueDate ? `<div class="task-card">
+        <div class="due">${t(lang, "dueLabel")} ${formatted}</div>
+      </div>` : ""}
+      <a href="${appUrl}" class="btn" target="_blank">${t(lang, "cta")}</a>
+      <p style="margin-top:16px;color:#9ca3af;font-size:13px;">${t(lang, "footerTagline")}</p>
     </div>
     <div class="footer">
-      MeleNotes &mdash; Self-hosted task management
+      ${t(lang, "footerBrand")}
     </div>
   </div>
 </body>

@@ -5,6 +5,7 @@ import cron from "node-cron";
 import { prisma } from "./config/database";
 import { redis } from "./config/redis";
 import { sendEmail, buildReminderEmail } from "./lib/email-service";
+import { t } from "./lib/email-i18n";
 import { HabitService } from "./modules/habits/habits.service";
 
 console.log(" MeleNotes Worker started — checking for reminders every minute");
@@ -21,7 +22,7 @@ cron.schedule("* * * * *", async () => {
         dueDate: { gte: now, lte: in24h },
       },
       include: {
-        user: { select: { id: true, email: true, username: true, notificationEmail: true } },
+        user: { select: { id: true, email: true, username: true, notificationEmail: true, language: true } },
       },
     });
 
@@ -32,15 +33,17 @@ cron.schedule("* * * * *", async () => {
 
       const emailTo = task.user.notificationEmail || task.user.email;
       if (!emailTo) continue;
+      const lang = task.user.language || "en";
 
-      // Build subject from template
-      const subject = `Reminder: "${task.title}" is due soon`;
+      const subject = t(lang, "taskSubject").replace("{{title}}", task.title);
 
+      const body = `${t(lang, "taskBody")}<div class="task-card"><div class="title">${task.title}</div></div>`;
       const html = buildReminderEmail(
         task.user.username,
-        task.title,
+        body,
         task.dueDate?.toISOString() ?? "",
         "http://localhost:5173/app",
+        lang,
       );
 
       const sent = await sendEmail(emailTo, subject, html);
@@ -71,13 +74,16 @@ cron.schedule("* * * * *", async () => {
 
       const emailTo = habit.user.notificationEmail || habit.user.email;
       if (!emailTo) continue;
+      const lang = habit.user.language || "en";
 
-      const subject = `Habit reminder: "${habit.name}"`;
+      const subject = t(lang, "habitSubject").replace("{{name}}", habit.name);
+      const body = t(lang, "habitBody").replace("{{name}}", `<strong>${habit.name}</strong>`);
       const html = buildReminderEmail(
         habit.user.username,
-        `Don't forget to complete your habit: "${habit.name}"`,
+        body,
         "",
         "http://localhost:5173/app",
+        lang,
       );
 
       const sent = await sendEmail(emailTo, subject, html);
