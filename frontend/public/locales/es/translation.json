@@ -108,6 +108,8 @@
     "maxLoginAttemptsDesc": "Intentos fallidos antes del bloqueo (1–100)",
     "lockoutDuration": "Duración del bloqueo",
     "lockoutDurationDesc": "Minutos bloqueado tras intentos fallidos (1–1440)",
+    "frontendUrl": "URL de la App",
+    "frontendUrlDesc": "URL pública para enlaces en correos (ej. https://melenotes.ejemplo.com)",
     "save": "Guardar",
     "mustBeRange": "Debe estar entre {{min}} y {{max}}",
     "emailConfig": "Configuración de correo",

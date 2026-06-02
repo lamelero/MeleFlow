@@ -108,6 +108,8 @@
     "maxLoginAttemptsDesc": "Failed attempts before lockout (1–100)",
     "lockoutDuration": "Lockout duration",
     "lockoutDurationDesc": "Minutes locked after failed attempts (1–1440)",
+    "frontendUrl": "App URL",
+    "frontendUrlDesc": "Public URL for email links (e.g. https://melenotes.example.com)",
     "save": "Save",
     "mustBeRange": "Must be between {{min}} and {{max}}",
     "emailConfig": "Email Configuration",

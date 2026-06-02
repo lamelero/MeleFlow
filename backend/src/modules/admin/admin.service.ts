@@ -112,6 +112,7 @@ export class AdminService {
       emailEnabled: map.emailEnabled === "true",
       emailSubject: map.emailSubject || "Reminder: {{title}} is due soon",
       logoUrl: map.logoUrl || "",
+      frontendUrl: map.frontendUrl || env.FRONTEND_URL,
     };
   }
 
@@ -196,6 +197,9 @@ export class AdminService {
     }
     if (input.emailSubject !== undefined) {
       await upsert("emailSubject", input.emailSubject);
+    }
+    if (input.frontendUrl !== undefined) {
+      await upsert("frontendUrl", input.frontendUrl);
     }
 
     return this.getSettings();

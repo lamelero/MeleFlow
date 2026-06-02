@@ -8,7 +8,17 @@ import { sendEmail, buildReminderEmail } from "./lib/email-service";
 import { t } from "./lib/email-i18n";
 import { HabitService } from "./modules/habits/habits.service";
 
-const APP_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+const DEFAULT_URL = process.env.FRONTEND_URL || "http://localhost:3001";
+
+async function getAppUrl(): Promise<string> {
+  try {
+    const row = await prisma.systemSetting.findUnique({ where: { key: "frontendUrl" } });
+    if (row?.value) return row.value;
+  } catch {
+    // fallback
+  }
+  return DEFAULT_URL;
+}
 
 console.log(" MeleNotes Worker started — checking for reminders every minute");
 
@@ -28,6 +38,8 @@ cron.schedule("* * * * *", async () => {
       },
     });
 
+    const appUrl = await getAppUrl();
+
     for (const task of tasks) {
       const reminderKey = `reminder:sent:${task.id}`;
       const alreadySent = await redis.get(reminderKey);
@@ -44,7 +56,7 @@ cron.schedule("* * * * *", async () => {
         task.title,
         t(lang, "taskBody"),
         task.dueDate?.toISOString() ?? "",
-        APP_URL,
+        appUrl,
         lang,
       );
 
@@ -87,7 +99,7 @@ cron.schedule("* * * * *", async () => {
         habit.name,
         message,
         "",
-        APP_URL,
+        appUrl,
         lang,
       );
 

@@ -39,6 +39,7 @@ export interface SystemSettings {
   emailEnabled: boolean;
   emailSubject: string;
   logoUrl: string;
+  frontendUrl: string;
 }
 
 interface AdminState {
@@ -73,6 +74,7 @@ const defaultSettings: SystemSettings = {
   emailEnabled: false,
   emailSubject: "Reminder: {{title}} is due soon",
   logoUrl: "",
+  frontendUrl: "http://localhost:3001",
 };
 
 export const useAdminStore = create<AdminState>((set, get) => ({

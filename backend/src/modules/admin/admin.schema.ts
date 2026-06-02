@@ -24,6 +24,7 @@ export const updateSettingsSchema = z.object({
   emailEnabled: z.boolean().optional(),
   emailSubject: z.string().max(200).optional(),
   logoUrl: z.string().optional(),
+  frontendUrl: z.string().url().max(200).optional(),
 });
 
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;

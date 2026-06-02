@@ -18,6 +18,7 @@ export default function AdminPanel() {
   const [localStorageQuota, setLocalStorageQuota] = useState(Math.round(settings.maxStoragePerUser / (1024 * 1024 * 1024)));
   const [localMaxAttempts, setLocalMaxAttempts] = useState(settings.maxLoginAttempts);
   const [localLockoutMinutes, setLocalLockoutMinutes] = useState(settings.loginLockoutMinutes);
+  const [localFrontendUrl, setLocalFrontendUrl] = useState(settings.frontendUrl);
 
   // Email settings local state
   const [localSmtpHost, setLocalSmtpHost] = useState(settings.smtpHost);
@@ -73,6 +74,7 @@ export default function AdminPanel() {
     setLocalFromEmail(settings.fromEmail);
     setLocalEmailSubject(settings.emailSubject);
     setLocalEmailEnabled(settings.emailEnabled);
+    setLocalFrontendUrl(settings.frontendUrl);
   }, [settings]);
 
   function saveEmailSettings() {
@@ -279,6 +281,33 @@ export default function AdminPanel() {
                 <button
                   onClick={() => updateSettings({ loginLockoutMinutes: localLockoutMinutes })}
                   disabled={localLockoutMinutes === settings.loginLockoutMinutes}
+                  className="rounded-xl bg-primary px-3 py-1.5 font-urbanist text-xs font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
+                >
+                  {t("admin.save")}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-urbanist text-sm font-medium text-gray-900 dark:text-gray-100">
+                  {t("admin.frontendUrl")}
+                </p>
+                <p className="font-urbanist text-xs text-gray-500 dark:text-gray-400">
+                  {t("admin.frontendUrlDesc")}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={localFrontendUrl}
+                  onChange={(e) => setLocalFrontendUrl(e.target.value)}
+                  placeholder="http://localhost:3001"
+                  className="w-56 rounded-xl border border-gray-200 bg-white px-3 py-1.5 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                />
+                <button
+                  onClick={() => updateSettings({ frontendUrl: localFrontendUrl })}
+                  disabled={localFrontendUrl === settings.frontendUrl}
                   className="rounded-xl bg-primary px-3 py-1.5 font-urbanist text-xs font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
                 >
                   {t("admin.save")}
