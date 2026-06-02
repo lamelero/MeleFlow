@@ -26,6 +26,7 @@ import { settingsRoutes } from "./modules/settings/settings.routes";
 export async function buildApp(opts: Record<string, unknown> = {}) {
   const app = Fastify({
     logger: env.NODE_ENV !== "test",
+    trustProxy: true,
     ...opts,
   });
 

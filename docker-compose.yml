@@ -11,6 +11,8 @@ x-shared: &shared-node
     - ./backend/vitest.config.ts:/usr/src/app/vitest.config.ts
     - melenotes_backend_node_modules:/usr/src/app/node_modules
   restart: unless-stopped
+  networks:
+    - melenote-net
 
 services:
 
@@ -19,8 +21,6 @@ services:
     image: postgres:16-alpine
     container_name: melenotes-postgres
     restart: unless-stopped
-    ports:
-      - "5432:5432"
     environment:
       POSTGRES_USER: taskflow
       POSTGRES_PASSWORD: taskflow
@@ -32,14 +32,14 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - melenote-net
 
   # ── Cache / Sessions ─────────────────────────
   redis:
     image: redis:7-alpine
     container_name: melenotes-redis
     restart: unless-stopped
-    ports:
-      - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -47,13 +47,13 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - melenote-net
 
   # ── Backend API ──────────────────────────────
   backend:
     <<: *shared-node
     container_name: melenotes-backend
-    ports:
-      - "3000:3000"
     command: >
       sh -c "
         npm install &&
@@ -88,6 +88,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    restart: unless-stopped
     env_file:
       - .env
 
@@ -97,8 +98,6 @@ services:
     container_name: melenotes-frontend
     working_dir: /usr/src/app
     restart: unless-stopped
-    ports:
-      - "5173:5173"
     command: sh -c "npm install && npm run dev"
     volumes:
       - ./frontend/src:/usr/src/app/src
@@ -113,6 +112,8 @@ services:
       - backend
     env_file:
       - .env
+    networks:
+      - melenote-net
 
   # ── Reverse Proxy ────────────────────────────
   nginx:
@@ -125,8 +126,14 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - ./backend/uploads:/var/www/uploads:ro
     depends_on:
-      - backend
-      - frontend
+      backend:
+        condition: service_started
+    networks:
+      - melenote-net
+
+networks:
+  melenote-net:
+    driver: bridge
 
 volumes:
   postgres_data:
