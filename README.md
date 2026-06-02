@@ -35,14 +35,35 @@ docker compose exec backend npx prisma db push
 docker compose logs -f
 ```
 
-The app is at **http://localhost**.
+The app is at **http://localhost:3001**.
 
-| Service     | Internal URL                   |
-|-------------|--------------------------------|
-| Frontend    | http://localhost (port 80)     |
-| Backend API | http://localhost/api           |
-| PostgreSQL  | localhost:5432                 |
-| Redis       | localhost:6379                 |
+| Service     | Internal URL                    |
+|-------------|---------------------------------|
+| Frontend    | http://localhost:3001            |
+| Backend API | http://localhost:3001/api        |
+| Nginx       | `127.0.0.1:3001` (localhost only) |
+| PostgreSQL  | `postgres:5432` (Docker network only) |
+| Redis       | `redis:6379` (Docker network only) |
+
+## Custom Port
+
+By default Nginx listens on `127.0.0.1:3001` (localhost only, to avoid conflict with Synology DSM on ports 80/443). To change the port:
+
+1. Edit `docker-compose.yml` → `nginx.ports`:
+   ```yaml
+   ports:
+     - "127.0.0.1:8080:80"   # replace 3001 with your port
+   ```
+2. If you also want to change the port inside the container, edit `nginx/nginx.conf`:
+   ```nginx
+   listen 8080;
+   ```
+   Then update the compose `ports:` to match (e.g. `"3001:8080"`).
+
+Apply with:
+```bash
+docker compose up -d nginx
+```
 
 ## Environment Variables
 
