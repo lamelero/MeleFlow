@@ -19,6 +19,7 @@ export interface ChecklistItem {
 
 export interface Task {
   id: string;
+  userId: string;
   title: string;
   description: string | null;
   priority: number;
@@ -36,6 +37,7 @@ export interface Task {
   checklistItems?: ChecklistItem[];
   reminderEnabled?: boolean;
   reminderConfig?: string | null;
+  collaborators?: { id: string; username: string; displayName: string | null; avatarUrl: string | null }[];
 }
 
 interface TaskFilters {
@@ -47,9 +49,11 @@ interface TaskFilters {
 
 interface TaskState {
   tasks: Task[];
+  sharedTasks: Task[];
   isLoading: boolean;
   error: string | null;
   fetchTasks: (filters?: TaskFilters) => Promise<void>;
+  fetchSharedTasks: () => Promise<void>;
   createTask: (input: {
     title: string;
     priority?: number;
@@ -76,10 +80,13 @@ interface TaskState {
   toggleTask: (id: string) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
   replaceTask: (task: Task) => void;
+  addCollaborator: (taskId: string, username: string) => Promise<void>;
+  removeCollaborator: (taskId: string, collaboratorId: string) => Promise<void>;
 }
 
 export const useTaskStore = create<TaskState>((set, get) => ({
   tasks: [],
+  sharedTasks: [],
   isLoading: false,
   error: null,
 
@@ -96,6 +103,15 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       set({ tasks: data, isLoading: false });
     } catch {
       set({ error: "Failed to load tasks", isLoading: false });
+    }
+  },
+
+  fetchSharedTasks: async () => {
+    try {
+      const { data } = await client.get("/tasks/shared");
+      set({ sharedTasks: data });
+    } catch {
+      // silent
     }
   },
 
@@ -170,5 +186,21 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     set((state) => ({
       tasks: state.tasks.map((t) => (t.id === task.id ? task : t)),
     }));
+  },
+
+  addCollaborator: async (taskId, username) => {
+    const { data } = await client.post(`/tasks/${taskId}/collaborators`, { username });
+    set((state) => ({
+      tasks: state.tasks.map((t) => (t.id === taskId ? data : t)),
+    }));
+    toast.success("Collaborator added");
+  },
+
+  removeCollaborator: async (taskId, collaboratorId) => {
+    const { data } = await client.delete(`/tasks/${taskId}/collaborators/${collaboratorId}`);
+    set((state) => ({
+      tasks: state.tasks.map((t) => (t.id === taskId ? data : t)),
+    }));
+    toast.success("Collaborator removed");
   },
 }));

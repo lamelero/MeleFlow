@@ -1,6 +1,8 @@
 import { prisma } from "../../config/database";
 import { AppError } from "../../lib/app-error";
-import type { CreateTaskInput, UpdateTaskInput, TaskQuery } from "./tasks.schema";
+import { sendEmail } from "../../lib/email-service";
+import { t } from "../../lib/email-i18n";
+import type { CreateTaskInput, UpdateTaskInput, TaskQuery, AddCollaboratorInput } from "./tasks.schema";
 
 const subTaskOrder = [{ priority: "asc" as const }, { createdAt: "desc" as const }];
 
@@ -12,6 +14,12 @@ const taskInclude = {
   tags: { include: { tag: true } },
   attachments: { orderBy: { uploadDate: "desc" as const } },
   checklistItems: { orderBy: { position: "asc" as const } },
+  user: { select: { id: true, username: true, displayName: true, language: true, notificationEmail: true, email: true } },
+  collaborators: {
+    include: {
+      user: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+    },
+  },
 };
 
 const taskSelect = {
@@ -35,10 +43,11 @@ type RawTask = Record<string, unknown>;
 type RawTaskTag = { tag: { id: string; name: string; color: string } };
 type RawAttachment = { id: string; fileName: string; fileUrl: string; fileSize: bigint; uploadDate: string };
 type RawChecklistItem = { id: string; text: string; isCompleted: boolean; position: number };
+type RawCollaborator = { user: { id: string; username: string; displayName: string | null; avatarUrl: string | null } };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function formatTask(task: RawTask): any {
-  const { tags, subTasks, attachments, checklistItems, ...rest } = task;
+  const { tags, subTasks, attachments, checklistItems, collaborators, ...rest } = task;
   return {
     ...rest,
     type: rest.type || "TEXT",
@@ -46,10 +55,26 @@ function formatTask(task: RawTask): any {
     subTasks: (subTasks as RawTask[] | undefined)?.map(formatTask) ?? [],
     attachments: (attachments as RawAttachment[] | undefined) ?? [],
     checklistItems: (checklistItems as RawChecklistItem[] | undefined) ?? [],
+    collaborators: (collaborators as RawCollaborator[] | undefined)?.map((c) => c.user) ?? [],
   };
 }
 
 export class TaskService {
+  private async canAccessTask(userId: string, taskId: string): Promise<{ isOwner: boolean; task: unknown }> {
+    const task = await prisma.task.findFirst({
+      where: {
+        id: taskId,
+        OR: [
+          { userId },
+          { collaborators: { some: { userId } } },
+        ],
+      },
+      include: taskInclude,
+    });
+    if (!task) throw new AppError(404, "Task not found");
+    return { isOwner: task.userId === userId, task };
+  }
+
   async findAll(userId: string, query: TaskQuery) {
     const where: Record<string, unknown> = {
       userId,
@@ -73,17 +98,22 @@ export class TaskService {
     return tasks.map(formatTask);
   }
 
-  async findById(userId: string, taskId: string) {
-    const task = await prisma.task.findFirst({
-      where: { id: taskId, userId },
+  async findShared(userId: string) {
+    const tasks = await prisma.task.findMany({
+      where: {
+        userId: { not: userId },
+        collaborators: { some: { userId } },
+        parentTaskId: null,
+      },
       include: taskInclude,
+      orderBy: [{ priority: "asc" }, { createdAt: "desc" }],
     });
+    return tasks.map(formatTask);
+  }
 
-    if (!task) {
-      throw new AppError(404, "Task not found");
-    }
-
-    return formatTask(task);
+  async findById(userId: string, taskId: string) {
+    const { task } = await this.canAccessTask(userId, taskId);
+    return formatTask(task as RawTask);
   }
 
   async create(userId: string, input: CreateTaskInput) {
@@ -135,13 +165,7 @@ export class TaskService {
   }
 
   async update(userId: string, taskId: string, input: UpdateTaskInput) {
-    const existing = await prisma.task.findFirst({
-      where: { id: taskId, userId },
-    });
-
-    if (!existing) {
-      throw new AppError(404, "Task not found");
-    }
+    await this.canAccessTask(userId, taskId);
 
     if (input.parentTaskId) {
       if (input.parentTaskId === taskId) {
@@ -228,17 +252,12 @@ export class TaskService {
       data,
     });
 
-    return formatTask(task);
+    return formatTask(task as unknown as RawTask);
   }
 
   async delete(userId: string, taskId: string) {
-    const existing = await prisma.task.findFirst({
-      where: { id: taskId, userId },
-    });
-
-    if (!existing) {
-      throw new AppError(404, "Task not found");
-    }
+    const { isOwner } = await this.canAccessTask(userId, taskId);
+    if (!isOwner) throw new AppError(403, "Only the task owner can delete this task");
 
     await prisma.$transaction(async (tx) => {
       await tx.task.deleteMany({ where: { parentTaskId: taskId } });
@@ -246,11 +265,74 @@ export class TaskService {
     });
   }
 
-  async addTag(userId: string, taskId: string, tagId: string) {
-    const task = await prisma.task.findFirst({
-      where: { id: taskId, userId },
+  async addCollaborator(userId: string, taskId: string, input: AddCollaboratorInput) {
+    const { isOwner, task } = await this.canAccessTask(userId, taskId);
+    if (!isOwner) throw new AppError(403, "Only the task owner can add collaborators");
+
+    const collaborator = await prisma.user.findUnique({
+      where: { username: input.username },
     });
-    if (!task) throw new AppError(404, "Task not found");
+    if (!collaborator) throw new AppError(404, "User not found");
+    if (collaborator.id === userId) throw new AppError(400, "Cannot add yourself as collaborator");
+
+    const existingCollab = await prisma.taskCollaborator.findUnique({
+      where: { taskId_userId: { taskId, userId: collaborator.id } },
+    });
+    if (existingCollab) throw new AppError(400, "User is already a collaborator");
+
+    await prisma.taskCollaborator.create({
+      data: { taskId, userId: collaborator.id },
+    });
+
+    try {
+      const owner = (task as { user: { username: string; language: string; notificationEmail: string | null; email: string } }).user;
+      const lang = collaborator.language || "en";
+      const emailTo = collaborator.notificationEmail || collaborator.email;
+      if (emailTo) {
+        const subject = t(lang, "taskSharedSubject").replace("{{inviter}}", owner.username);
+        const body = t(lang, "taskSharedBody").replace("{{inviter}}", owner.username).replace("{{title}}", (task as { title: string }).title);
+        const html = `<div style="font-family:system-ui,sans-serif;padding:20px;max-width:480px;margin:0 auto;">
+          <h2 style="color:#14B8A6;">${subject}</h2>
+          <p>${body}</p>
+        </div>`;
+        await sendEmail(emailTo, subject, html);
+      }
+    } catch {
+      // email failure is non-critical
+    }
+
+    return formatTask(task as RawTask);
+  }
+
+  async removeCollaborator(userId: string, taskId: string, collaboratorUserId: string) {
+    const { isOwner, task } = await this.canAccessTask(userId, taskId);
+    if (!isOwner) throw new AppError(403, "Only the task owner can remove collaborators");
+
+    const existing = await prisma.taskCollaborator.findUnique({
+      where: { taskId_userId: { taskId, userId: collaboratorUserId } },
+    });
+    if (!existing) throw new AppError(404, "Collaborator not found");
+
+    await prisma.taskCollaborator.delete({
+      where: { taskId_userId: { taskId, userId: collaboratorUserId } },
+    });
+
+    return formatTask(task as RawTask);
+  }
+
+  async getCollaborators(userId: string, taskId: string) {
+    await this.canAccessTask(userId, taskId);
+    const collabs = await prisma.taskCollaborator.findMany({
+      where: { taskId },
+      include: {
+        user: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+      },
+    });
+    return collabs.map((c: { user: { id: string; username: string; displayName: string | null; avatarUrl: string | null } }) => c.user);
+  }
+
+  async addTag(userId: string, taskId: string, tagId: string) {
+    await this.canAccessTask(userId, taskId);
 
     const tag = await prisma.tag.findFirst({
       where: { id: tagId, userId },
@@ -267,10 +349,7 @@ export class TaskService {
   }
 
   async removeTag(userId: string, taskId: string, tagId: string) {
-    const task = await prisma.task.findFirst({
-      where: { id: taskId, userId },
-    });
-    if (!task) throw new AppError(404, "Task not found");
+    await this.canAccessTask(userId, taskId);
 
     await prisma.taskTag.deleteMany({
       where: { taskId, tagId },

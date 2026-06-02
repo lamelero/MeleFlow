@@ -47,7 +47,12 @@ export const taskTagSchema = z.object({
   tagId: z.string().min(1),
 });
 
+export const addCollaboratorSchema = z.object({
+  username: z.string().min(1).max(50),
+});
+
 export type CreateTaskInput = z.infer<typeof createTaskSchema>;
 export type UpdateTaskInput = z.infer<typeof updateTaskSchema>;
 export type TaskQuery = z.infer<typeof taskQuerySchema>;
 export type TaskTagInput = z.infer<typeof taskTagSchema>;
+export type AddCollaboratorInput = z.infer<typeof addCollaboratorSchema>;

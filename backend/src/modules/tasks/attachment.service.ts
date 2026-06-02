@@ -33,7 +33,13 @@ export class AttachmentService {
 
   async upload(userId: string, taskId: string, file: { filename: string; buffer: Buffer; mimetype: string }) {
     const task = await prisma.task.findFirst({
-      where: { id: taskId, userId },
+      where: {
+        id: taskId,
+        OR: [
+          { userId },
+          { collaborators: { some: { userId } } },
+        ],
+      },
     });
     if (!task) throw new AppError(404, "Task not found");
 
@@ -85,7 +91,13 @@ export class AttachmentService {
 
   async findByTask(userId: string, taskId: string) {
     const task = await prisma.task.findFirst({
-      where: { id: taskId, userId },
+      where: {
+        id: taskId,
+        OR: [
+          { userId },
+          { collaborators: { some: { userId } } },
+        ],
+      },
     });
     if (!task) throw new AppError(404, "Task not found");
 
@@ -97,7 +109,13 @@ export class AttachmentService {
 
   async delete(userId: string, taskId: string, attachmentId: string) {
     const task = await prisma.task.findFirst({
-      where: { id: taskId, userId },
+      where: {
+        id: taskId,
+        OR: [
+          { userId },
+          { collaborators: { some: { userId } } },
+        ],
+      },
     });
     if (!task) throw new AppError(404, "Task not found");
 

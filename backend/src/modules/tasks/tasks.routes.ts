@@ -4,6 +4,7 @@ import {
   updateTaskSchema,
   taskQuerySchema,
   taskTagSchema,
+  addCollaboratorSchema,
 } from "./tasks.schema";
 import { TaskService } from "./tasks.service";
 import { AttachmentService } from "./attachment.service";
@@ -17,6 +18,11 @@ export async function taskRoutes(app: FastifyInstance) {
   app.get("/", async (req, reply) => {
     const query = taskQuerySchema.parse(req.query);
     const tasks = await service.findAll(req.user.sub, query);
+    return reply.send(tasks);
+  });
+
+  app.get("/shared", async (req, reply) => {
+    const tasks = await service.findShared(req.user.sub);
     return reply.send(tasks);
   });
 
@@ -55,6 +61,27 @@ export async function taskRoutes(app: FastifyInstance) {
   app.delete("/:id/tags/:tagId", async (req, reply) => {
     const { id, tagId } = req.params as { id: string; tagId: string };
     const task = await service.removeTag(req.user.sub, id, tagId);
+    return reply.send(task);
+  });
+
+  // ── Collaborator routes ──────────────────────
+
+  app.get("/:id/collaborators", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const collaborators = await service.getCollaborators(req.user.sub, id);
+    return reply.send(collaborators);
+  });
+
+  app.post("/:id/collaborators", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const input = addCollaboratorSchema.parse(req.body);
+    const task = await service.addCollaborator(req.user.sub, id, input);
+    return reply.send(task);
+  });
+
+  app.delete("/:id/collaborators/:collaboratorId", async (req, reply) => {
+    const { id, collaboratorId } = req.params as { id: string; collaboratorId: string };
+    const task = await service.removeCollaborator(req.user.sub, id, collaboratorId);
     return reply.send(task);
   });
 

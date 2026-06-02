@@ -13,6 +13,7 @@ function formatBytes(bytes: number): string {
   return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
 }
 import { useTaskStore } from "../../store/taskStore";
+import { useAuthStore } from "../../store/authStore";
 import { useTagStore, type Tag, randomTagColor } from "../../store/tagStore";
 import { client } from "../../api/client";
 import TagPill from "../tags/TagPill";
@@ -24,7 +25,8 @@ interface TaskDetailPanelProps {
 }
 
 export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps) {
-  const { updateTask, replaceTask } = useTaskStore();
+  const { updateTask, replaceTask, addCollaborator, removeCollaborator } = useTaskStore();
+  const currentUser = useAuthStore((s) => s.user);
   const { tags, fetchTags, createTag } = useTagStore();
   const [description, setDescription] = useState("");
   const [preview, setPreview] = useState(false);
@@ -40,9 +42,16 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
   const [reminderType, setReminderType] = useState<"daily" | "weekly">("daily");
   const [reminderDays, setReminderDays] = useState<number[]>([]);
   const [reminderTime, setReminderTime] = useState("09:00");
+  const [shareSearchQuery, setShareSearchQuery] = useState("");
+  const [shareSearchResults, setShareSearchResults] = useState<{ id: string; username: string; displayName: string | null; avatarUrl: string | null }[]>([]);
+  const [showShareDropdown, setShowShareDropdown] = useState(false);
+  const [shareSearching, setShareSearching] = useState(false);
+  const [collaborators, setCollaborators] = useState<{ id: string; username: string; displayName: string | null; avatarUrl: string | null }[]>([]);
   const tagInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const checklistInputRef = useRef<HTMLInputElement>(null);
+  const shareSearchRef = useRef<HTMLInputElement>(null);
+  const shareTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const storeTask = useTaskStore((s) =>
     task ? s.tasks.find((t) => t.id === task.id) : undefined,
@@ -75,6 +84,36 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
   }, [onClose]);
+
+  useEffect(() => {
+    if (!t?.id) return;
+    (async () => {
+      try {
+        const { data } = await client.get(`/tasks/${t.id}/collaborators`);
+        setCollaborators(data);
+      } catch { /* silent */ }
+    })();
+  }, [t?.id]);
+
+  useEffect(() => {
+    if (!shareSearchQuery.trim() || shareSearchQuery.length < 2) {
+      setShareSearchResults([]);
+      setShowShareDropdown(false);
+      return;
+    }
+    if (shareTimerRef.current) clearTimeout(shareTimerRef.current);
+    shareTimerRef.current = setTimeout(async () => {
+      setShareSearching(true);
+      try {
+        const { data } = await client.get(`/auth/users/search?q=${encodeURIComponent(shareSearchQuery)}`);
+        const existingIds = new Set([t?.userId, ...collaborators.map((c) => c.id)]);
+        setShareSearchResults(data.filter((u: { id: string }) => !existingIds.has(u.id)));
+        setShowShareDropdown(true);
+      } catch { /* silent */ }
+      setShareSearching(false);
+    }, 300);
+    return () => { if (shareTimerRef.current) clearTimeout(shareTimerRef.current); };
+  }, [shareSearchQuery, collaborators, t?.userId]);
 
   if (!t) return null;
 
@@ -237,6 +276,29 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
     setTagInput(e.target.value);
     setTagDropdownOpen(true);
   }
+
+  async function handleAddCollaborator(username: string) {
+    try {
+      await addCollaborator(t.id, username);
+      const { data } = await client.get(`/tasks/${t.id}/collaborators`);
+      setCollaborators(data);
+      setShareSearchQuery("");
+      setShowShareDropdown(false);
+    } catch {
+      toast.error("Failed to add collaborator");
+    }
+  }
+
+  async function handleRemoveCollaborator(collaboratorId: string) {
+    try {
+      await removeCollaborator(t.id, collaboratorId);
+      setCollaborators((prev) => prev.filter((c) => c.id !== collaboratorId));
+    } catch {
+      toast.error("Failed to remove collaborator");
+    }
+  }
+
+  const isOwner = currentUser?.id === t.userId;
 
   const usedTagIds = new Set(t.tags?.map((tg: Tag) => tg.id) ?? []);
   const availableTags = tags.filter((tg) => !usedTagIds.has(tg.id));
@@ -657,6 +719,83 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
                   </div>
                 ))}
               </div>
+            )}
+          </div>
+
+          <div className="mb-4">
+            <label className="mb-2 block font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+              Compartir
+            </label>
+            {isOwner && (
+              <div className="relative mb-3">
+                <input
+                  ref={shareSearchRef}
+                  type="text"
+                  value={shareSearchQuery}
+                  onChange={(e) => setShareSearchQuery(e.target.value)}
+                  onFocus={() => shareSearchQuery.length >= 2 && setShowShareDropdown(true)}
+                  placeholder="Buscar usuario por nombre..."
+                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+                />
+                {shareSearching && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                  </div>
+                )}
+                {showShareDropdown && shareSearchResults.length > 0 && (
+                  <div className="absolute left-0 right-0 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-xl border border-gray-200 bg-white p-2 shadow-lg dark:border-gray-700 dark:bg-gray-800">
+                    {shareSearchResults.map((user) => (
+                      <button
+                        key={user.id}
+                        onClick={() => handleAddCollaborator(user.username)}
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-sm text-gray-700 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
+                      >
+                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
+                          {(user.displayName || user.username)[0].toUpperCase()}
+                        </span>
+                        <span>{user.displayName || user.username}</span>
+                        <span className="text-xs text-gray-400">@{user.username}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {showShareDropdown && shareSearchQuery.length >= 2 && !shareSearching && shareSearchResults.length === 0 && (
+                  <div className="absolute left-0 right-0 top-full z-10 mt-1 rounded-xl border border-gray-200 bg-white p-3 shadow-lg dark:border-gray-700 dark:bg-gray-800">
+                    <p className="font-urbanist text-xs text-gray-400">No users found</p>
+                  </div>
+                )}
+              </div>
+            )}
+            {collaborators.length > 0 && (
+              <div className="space-y-2">
+                {collaborators.map((user) => (
+                  <div
+                    key={user.id}
+                    className="group flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 px-3 py-2 dark:border-gray-800 dark:bg-gray-800"
+                  >
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
+                      {(user.displayName || user.username)[0].toUpperCase()}
+                    </span>
+                    <span className="flex-1 font-urbanist text-sm text-gray-700 dark:text-gray-300">
+                      {user.displayName || user.username}
+                    </span>
+                    <span className="font-urbanist text-xs text-gray-400">@{user.username}</span>
+                    {isOwner && (
+                      <button
+                        onClick={() => handleRemoveCollaborator(user.id)}
+                        className="shrink-0 rounded-lg p-1 text-gray-400 opacity-0 transition-all hover:bg-red-50 hover:text-red-500 group-hover:opacity-100 dark:hover:bg-red-900/20"
+                      >
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            {!isOwner && collaborators.length === 0 && (
+              <p className="font-urbanist text-xs text-gray-400">No collaborators</p>
             )}
           </div>
         </div>

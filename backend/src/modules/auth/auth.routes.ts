@@ -179,6 +179,18 @@ export async function authRoutes(app: FastifyInstance) {
   // ── 2FA Management (authenticated) ──────────────
 
   app.get(
+    "/users/search",
+    { onRequest: [app.authenticate] },
+    async (req, reply) => {
+      const { sub } = req.user;
+      const { q } = req.query as { q: string };
+      if (!q || q.length < 1) return reply.send([]);
+      const users = await service.searchUsers(q, sub);
+      return reply.send(users);
+    },
+  );
+
+  app.get(
     "/2fa/status",
     { onRequest: [app.authenticate] },
     async (req, reply) => {

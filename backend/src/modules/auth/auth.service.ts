@@ -403,6 +403,30 @@ export class AuthService {
     };
   }
 
+  async searchUsers(query: string, currentUserId: string) {
+    const users = await prisma.user.findMany({
+      where: {
+        AND: [
+          { id: { not: currentUserId } },
+          {
+            OR: [
+              { username: { contains: query, mode: "insensitive" } },
+              { displayName: { contains: query, mode: "insensitive" } },
+            ],
+          },
+        ],
+      },
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+        avatarUrl: true,
+      },
+      take: 10,
+    });
+    return users;
+  }
+
   async getRecoveryCodes(userId: string, password: string) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new AppError(404, "User not found");

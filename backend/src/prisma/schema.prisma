@@ -72,6 +72,7 @@ model User {
   pomodoroSessions PomodoroSession[]
   refreshTokens    RefreshToken[]
   securityLogs     SecurityLog[]
+  collaborations   TaskCollaborator[]
 }
 
 // ── Task (with subtask self-reference) ───────────
@@ -104,6 +105,8 @@ model Task {
   checklistItems   ChecklistItem[]
   reminderEnabled  Boolean   @default(false)
   reminderConfig   String?   // JSON: {"type":"daily"|"weekly","days":[1,3,5],"reminderTime":"09:00"}
+
+  collaborators TaskCollaborator[]
 
   @@index([userId, isCompleted])
   @@index([userId, dueDate])
@@ -290,4 +293,19 @@ model PomodoroSession {
   task   Task?  @relation(fields: [taskId], references: [id], onDelete: SetNull)
 
   @@index([userId, state])
+}
+
+// ── Task Collaborators ─────────────────────
+
+model TaskCollaborator {
+  id        String   @id @default(cuid())
+  taskId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, userId])
+  @@index([userId])
 }

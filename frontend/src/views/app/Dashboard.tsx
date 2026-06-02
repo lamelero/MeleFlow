@@ -7,6 +7,7 @@ import { useTaskStore, type Task } from "../../store/taskStore";
 import { useHabitStore, type Habit } from "../../store/habitStore";
 import { useTagStore } from "../../store/tagStore";
 import TaskList from "../../components/tasks/TaskList";
+import TaskCard from "../../components/tasks/TaskCard";
 import TaskDetailPanel from "../../components/tasks/TaskDetailPanel";
 import HabitCard from "../../components/habits/HabitCard";
 import HabitFormModal from "../../components/habits/HabitFormModal";
@@ -15,7 +16,7 @@ import AppLayout from "../../components/AppLayout";
 export default function Dashboard() {
   const { t } = useTranslation();
   const { lists, fetchLists, createList } = useListStore();
-  const { createTask } = useTaskStore();
+  const { createTask, fetchSharedTasks, sharedTasks } = useTaskStore();
   const { habits, fetchHabits, createHabit } = useHabitStore();
   const { tags, fetchTags } = useTagStore();
   const [activeListId, setActiveListId] = useState<string | undefined>();
@@ -32,7 +33,8 @@ export default function Dashboard() {
     fetchLists();
     fetchHabits();
     fetchTags();
-  }, [fetchLists, fetchHabits, fetchTags]);
+    fetchSharedTasks();
+  }, [fetchLists, fetchHabits, fetchTags, fetchSharedTasks]);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -224,6 +226,19 @@ export default function Dashboard() {
               }
             />
           </section>
+
+          {sharedTasks.length > 0 && (
+            <section>
+              <h2 className="mb-4 font-outfit text-lg font-semibold text-gray-900 dark:text-gray-100">
+                Shared with me
+              </h2>
+              <div className="space-y-2">
+                {sharedTasks.map((task) => (
+                  <TaskCard key={task.id} task={task} onClick={setSelectedTask} />
+                ))}
+              </div>
+            </section>
+          )}
 
           <section>
             <div className="mb-4 flex items-center justify-between">
