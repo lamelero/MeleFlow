@@ -10,6 +10,8 @@ interface EmailTranslation {
   footerTagline: string;
   footerBrand: string;
   streakBadge: string;
+  taskRecurringSubject: string;
+  taskRecurringBody: string;
 }
 
 const translations: Record<string, EmailTranslation> = {
@@ -25,6 +27,8 @@ const translations: Record<string, EmailTranslation> = {
     footerTagline: "Stay productive! ✨",
     footerBrand: "MeleNotes &mdash; Self-hosted task management",
     streakBadge: "🔥 {{count}} day streak",
+    taskRecurringSubject: "Recurring reminder: '{{title}}'",
+    taskRecurringBody: "Time to work on your task!",
   },
   es: {
     taskSubject: 'Recordatorio: "{{title}}" vence pronto',
@@ -38,6 +42,8 @@ const translations: Record<string, EmailTranslation> = {
     footerTagline: "¡Mantente productivo! ✨",
     footerBrand: "MeleNotes &mdash; Gestión de tareas auto-gestionada",
     streakBadge: "🔥 {{count}} días seguidos",
+    taskRecurringSubject: "Recordatorio recurrente: '{{title}}'",
+    taskRecurringBody: "¡Hora de trabajar en tu tarea!",
   },
 };
 

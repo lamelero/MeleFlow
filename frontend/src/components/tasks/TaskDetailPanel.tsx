@@ -36,6 +36,10 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
   const [taskType, setTaskType] = useState<"TEXT" | "CHECKLIST">("TEXT");
   const [checklistItems, setChecklistItems] = useState<{ id?: string; text: string; isCompleted: boolean; position: number }[]>([]);
   const [newChecklistText, setNewChecklistText] = useState("");
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [reminderType, setReminderType] = useState<"daily" | "weekly">("daily");
+  const [reminderDays, setReminderDays] = useState<number[]>([]);
+  const [reminderTime, setReminderTime] = useState("09:00");
   const tagInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const checklistInputRef = useRef<HTMLInputElement>(null);
@@ -51,6 +55,11 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
       setDueDate(t.dueDate ? new Date(t.dueDate) : null);
       setTaskType(t.type || "TEXT");
       setChecklistItems(t.checklistItems ?? []);
+      const config = t.reminderConfig ? JSON.parse(t.reminderConfig) : null;
+      setReminderEnabled(t.reminderEnabled ?? false);
+      setReminderType(config?.type ?? "daily");
+      setReminderDays(config?.days ?? []);
+      setReminderTime(config?.reminderTime ?? "09:00");
       setPreview(false);
     }
   }, [t?.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -103,6 +112,23 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
     } catch {
       toast.error("Failed to create tag");
     }
+  }
+
+  async function handleReminderSave() {
+    if (!reminderEnabled) {
+      await updateTask(t.id, { reminderEnabled: false, reminderConfig: null });
+      toast.success("Reminder disabled");
+      return;
+    }
+    const config = { type: reminderType, days: reminderType === "weekly" ? reminderDays : [], reminderTime };
+    await updateTask(t.id, { reminderEnabled: true, reminderConfig: JSON.stringify(config) });
+    toast.success("Reminder saved");
+  }
+
+  async function handleDayToggle(day: number) {
+    setReminderDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort(),
+    );
   }
 
   async function handleDateChange(date: Date | null) {
@@ -506,6 +532,79 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
                 </button>
               )}
             </div>
+          </div>
+
+          <div className="mb-4">
+            <div className="mb-2 flex items-center justify-between">
+              <label className="font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                Recurring reminder
+              </label>
+              <button
+                onClick={() => setReminderEnabled(!reminderEnabled)}
+                className={`relative h-6 w-11 rounded-full transition-colors ${reminderEnabled ? "bg-primary" : "bg-gray-300 dark:bg-gray-600"}`}
+              >
+                <span
+                  className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${reminderEnabled ? "translate-x-5" : "translate-x-0"}`}
+                />
+              </button>
+            </div>
+            {reminderEnabled && (
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
+                <div className="mb-3 flex gap-2">
+                  <button
+                    onClick={() => setReminderType("daily")}
+                    className={`flex-1 rounded-lg px-3 py-2 font-urbanist text-sm font-medium transition-all ${
+                      reminderType === "daily"
+                        ? "bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-gray-100"
+                        : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
+                    }`}
+                  >
+                    Daily
+                  </button>
+                  <button
+                    onClick={() => setReminderType("weekly")}
+                    className={`flex-1 rounded-lg px-3 py-2 font-urbanist text-sm font-medium transition-all ${
+                      reminderType === "weekly"
+                        ? "bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-gray-100"
+                        : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
+                    }`}
+                  >
+                    Weekly
+                  </button>
+                </div>
+                {reminderType === "weekly" && (
+                  <div className="mb-3 flex gap-1.5">
+                    {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((name, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handleDayToggle(i)}
+                        className={`h-9 w-9 rounded-lg text-xs font-urbanist font-medium transition-all ${
+                          reminderDays.includes(i)
+                            ? "bg-primary text-white shadow-sm"
+                            : "bg-white text-gray-500 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-400"
+                        }`}
+                      >
+                        {name[0]}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="flex items-center gap-3">
+                  <input
+                    type="time"
+                    value={reminderTime}
+                    onChange={(e) => setReminderTime(e.target.value)}
+                    className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                  />
+                  <button
+                    onClick={handleReminderSave}
+                    className="rounded-xl bg-primary px-4 py-2.5 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600"
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="mb-4">

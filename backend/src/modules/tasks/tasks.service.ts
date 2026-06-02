@@ -27,6 +27,8 @@ const taskSelect = {
   parentTaskId: true,
   createdAt: true,
   updatedAt: true,
+  reminderEnabled: true,
+  reminderConfig: true,
 } as const;
 
 type RawTask = Record<string, unknown>;
@@ -114,6 +116,8 @@ export class TaskService {
         rrule: input.rrule ?? null,
         listId: input.listId ?? null,
         parentTaskId: input.parentTaskId ?? null,
+        reminderEnabled: input.reminderEnabled ?? false,
+        reminderConfig: input.reminderConfig ?? null,
         ...(input.checklistItems && {
           checklistItems: {
             create: input.checklistItems.map((item, i) => ({
@@ -174,6 +178,8 @@ export class TaskService {
       ...(input.parentTaskId !== undefined && {
         parentTaskId: input.parentTaskId,
       }),
+      ...(input.reminderEnabled !== undefined && { reminderEnabled: input.reminderEnabled }),
+      ...(input.reminderConfig !== undefined && { reminderConfig: input.reminderConfig }),
     };
 
     if (input.checklistItems !== undefined) {

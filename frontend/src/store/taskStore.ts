@@ -34,6 +34,8 @@ export interface Task {
   tags?: { id: string; name: string; color: string }[];
   attachments?: Attachment[];
   checklistItems?: ChecklistItem[];
+  reminderEnabled?: boolean;
+  reminderConfig?: string | null;
 }
 
 interface TaskFilters {
@@ -68,6 +70,8 @@ interface TaskState {
     listId: string | null;
     parentTaskId: string | null;
     checklistItems: ChecklistItem[];
+    reminderEnabled: boolean;
+    reminderConfig: string | null;
   }>) => Promise<void>;
   toggleTask: (id: string) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;

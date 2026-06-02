@@ -82,6 +82,88 @@ cron.schedule("* * * * *", async () => {
       console.log(`[Worker] Processed ${tasks.length} task reminder(s)`);
     }
 
+    // ── Task recurring reminders ───────────────────
+    const recurringTasks = await prisma.task.findMany({
+      where: {
+        isCompleted: false,
+        reminderEnabled: true,
+        reminderConfig: { not: null },
+      },
+      include: {
+        user: { select: { id: true, email: true, username: true, notificationEmail: true, language: true, timezone: true } },
+      },
+    });
+
+    for (const task of recurringTasks) {
+      try {
+        const config = JSON.parse(task.reminderConfig!);
+        if (!config.reminderTime) continue;
+
+        const tz = task.user.timezone || "UTC";
+        const now = new Date();
+        const opts: Intl.DateTimeFormatOptions = { timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false };
+        const userTimeStr = new Intl.DateTimeFormat("en-US", opts).format(now);
+        const dayOpts: Intl.DateTimeFormatOptions = { timeZone: tz, weekday: "short" };
+        const dayName = new Intl.DateTimeFormat("en-US", dayOpts).format(now);
+        const dayMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+        const userDay = dayMap[dayName] ?? now.getDay();
+
+        const configTime = config.reminderTime;
+        if (userTimeStr !== configTime) {
+          console.log(`[Worker] Recurring task "${task.title}" — time mismatch (user:${userTimeStr} config:${configTime})`);
+          continue;
+        }
+
+        if (config.type === "weekly") {
+          const days: number[] = config.days || [];
+          if (!days.includes(userDay)) {
+            console.log(`[Worker] Recurring task "${task.title}" — day mismatch (today:${userDay} days:${JSON.stringify(days)})`);
+            continue;
+          }
+        }
+
+        const today = now.toISOString().split("T")[0];
+        const reminderKey = `reminder:task:recurring:${task.id}:${today}:${configTime}`;
+        const alreadySent = await redis.get(reminderKey);
+        if (alreadySent) {
+          console.log(`[Worker] Recurring task already notified at ${configTime}, skipping "${task.title}"`);
+          continue;
+        }
+
+        const emailTo = task.user.notificationEmail || task.user.email;
+        if (!emailTo) {
+          console.log(`[Worker] No email for user "${task.user.username}", skipping recurring task "${task.title}"`);
+          continue;
+        }
+        const lang = task.user.language || "en";
+
+        const subject = t(lang, "taskRecurringSubject").replace("{{title}}", task.title);
+        const html = buildReminderEmail(
+          task.user.username,
+          task.title,
+          t(lang, "taskRecurringBody"),
+          "",
+          appUrl,
+          lang,
+        );
+
+        const sent = await sendEmail(emailTo, subject, html);
+        if (sent) {
+          console.log(`[Worker] Recurring reminder sent to ${emailTo} for task "${task.title}"`);
+        } else {
+          console.log(`[Worker] Recurring reminder skipped (disabled/misconfigured) for task "${task.title}"`);
+        }
+
+        await redis.set(reminderKey, "1", "EX", 86400);
+      } catch (err) {
+        console.error(`[Worker] Error processing recurring reminder for task "${task.title}":`, err);
+      }
+    }
+
+    if (recurringTasks.length > 0) {
+      console.log(`[Worker] Processed ${recurringTasks.length} recurring task reminder(s)`);
+    }
+
     // ── Habit reminders ───────────────────────────
     const habitService = new HabitService();
     const habits = await habitService.findHabitsDueForReminder();

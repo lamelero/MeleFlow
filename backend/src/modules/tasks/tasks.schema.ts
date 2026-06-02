@@ -17,6 +17,8 @@ export const createTaskSchema = z.object({
   listId: z.string().nullable().optional(),
   parentTaskId: z.string().nullable().optional(),
   checklistItems: z.array(checklistItemSchema).optional(),
+  reminderEnabled: z.boolean().optional(),
+  reminderConfig: z.string().nullable().optional(),
 });
 
 export const updateTaskSchema = z.object({
@@ -30,6 +32,8 @@ export const updateTaskSchema = z.object({
   listId: z.string().nullable().optional(),
   parentTaskId: z.string().nullable().optional(),
   checklistItems: z.array(checklistItemSchema).optional(),
+  reminderEnabled: z.boolean().optional(),
+  reminderConfig: z.string().nullable().optional(),
 });
 
 export const taskQuerySchema = z.object({
