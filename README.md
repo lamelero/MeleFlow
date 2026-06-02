@@ -1,11 +1,14 @@
 # MeleNotes
 
-Self-hosted task management web app with full CRUD tasks, lists, tags, habits, Pomodoro timer, and an admin panel.
+![License](https://img.shields.io/badge/license-MIT-blue)
+![Stack](https://img.shields.io/badge/stack-React%2019%20%7C%20Fastify%205%20%7C%20PostgreSQL%2016%20%7C%20Redis%207-14B8A6)
+
+Self-hosted task management web app with tasks, lists, tags, habits, Pomodoro timer, admin panel, email reminders, and i18n (EN/ES).
 
 ## Stack
 
 - **Backend**: Node.js 20, Fastify 5, TypeScript, Prisma ORM (PostgreSQL 16), Redis 7, JWT auth
-- **Frontend**: React 19, Vite, Tailwind CSS v4, Zustand, react-router-dom
+- **Frontend**: React 19, Vite, Tailwind CSS v4, Zustand, react-router-dom, i18next
 - **Infra**: Docker Compose (PostgreSQL, Redis, Backend, Frontend, Worker, Nginx)
 
 ## Prerequisites
@@ -16,7 +19,7 @@ Self-hosted task management web app with full CRUD tasks, lists, tags, habits, P
 
 ```bash
 # 1. Clone and enter the project
-git clone <repo> taskflow && cd taskflow
+git clone <repo> melenote && cd melenote
 
 # 2. Copy environment (defaults work out of the box)
 cp .env.example .env
@@ -48,15 +51,47 @@ See `.env.example` for defaults:
 | `REDIS_URL`           | `redis://redis:6379`                           |
 | `JWT_SECRET`          | (random, change in production)                 |
 | `JWT_REFRESH_SECRET`  | (random, change in production)                 |
+| `JWT_ACCESS_EXPIRES_IN` | `15m`                                        |
+| `JWT_REFRESH_EXPIRES_IN` | `7d`                                        |
+| `ENCRYPTION_KEY`      | (32-char key for AES-256)                      |
+| `NODE_ENV`            | `development`                                  |
+| `PORT`                | `3000`                                         |
+| `HOST`                | `0.0.0.0`                                      |
+| `FRONTEND_URL`        | `http://localhost:5173`                        |
+| `ALLOW_REGISTRATION`  | `true`                                         |
+| `MAX_UPLOAD_SIZE`     | `50` (MB)                                      |
+| `MAX_LOGIN_ATTEMPTS`  | `5`                                            |
+| `LOGIN_LOCKOUT_MINUTES` | `15`                                         |
+
+## Features
+
+- **Tasks** — Full CRUD with subtasks, due dates, attachments, tags, checklists, Markdown descriptions
+- **Lists** — Organize tasks into named lists with colors
+- **Tags** — Categorize tasks with custom tags and colors
+- **Habits** — Track daily/weekly habits with categories, priority, frequency, streaks, and a visual calendar
+- **Pomodoro Timer** — Built-in focus timer with start/pause/resume/complete
+- **Email Reminders** — Cron worker sends task and habit reminders via SMTP (configurable from admin panel)
+- **Two-Factor Auth (2FA)** — TOTP-based 2FA with recovery codes
+- **Admin Panel** — User management, system settings, SMTP config, logo upload, security logs
+- **i18n** — English and Spanish interface
+- **Dark Mode** — Full dark mode support
 
 ## API Endpoints
 
 ### Auth
 - `POST /api/auth/register` — `{ email, username, password }` → `{ accessToken, refreshToken, user }`
-- `POST /api/auth/login` — `{ email, password }` → `{ accessToken, refreshToken, user }`
-- `POST /api/auth/refresh` — `{ refreshToken }` → `{ accessToken, refreshToken }`
-- `POST /api/auth/logout` — `{ refreshToken }`
+- `POST /api/auth/login` — `{ email, password, rememberMe? }` → `{ accessToken, refreshToken, user }`
+- `POST /api/auth/refresh` — `{ rememberMe? }` (reads httpOnly cookie) → `{ accessToken, user }`
+- `POST /api/auth/logout` — Clears refresh token
 - `GET /api/auth/me` — Returns current user
+- `PATCH /api/auth/language` — `{ language }` → updates user language preference
+- `PATCH /api/auth/profile` — `{ displayName?, notificationEmail?, bio?, timezone? }`
+- `POST /api/auth/avatar` — Multipart file upload
+- `POST /api/auth/verify-2fa` — `{ twoFactorToken, code }` → `{ accessToken, user }`
+- `POST /api/auth/2fa/setup` — Initiates 2FA setup (returns QR code)
+- `POST /api/auth/2fa/verify` — `{ code }` → enables 2FA
+- `POST /api/auth/2fa/disable` — `{ password }` → disables 2FA
+- `POST /api/auth/2fa/recovery-codes` — `{ password }` → generates new recovery codes
 
 ### Tasks
 - `GET /api/tasks` — Query params: `listId`, `status` (pending/completed), `search`
@@ -80,9 +115,13 @@ See `.env.example` for defaults:
 
 ### Habits
 - `GET /api/habits` — Returns habits with `streakCount`
-- `POST /api/habits` — `{ name }`
-- `POST /api/habits/:id/check-in` — Check in for today (dedup, recalculates streak)
-- `DELETE /api/habits/:id`
+- `GET /api/habits/:id` — Single habit with logs
+- `POST /api/habits` — `{ name, category, priority?, frequency?, startDate?, endDate?, description? }`
+- `PATCH /api/habits/:id` — Partial update (supports all create fields + `isArchived`)
+- `DELETE /api/habits/:id` — Deletes habit and its logs
+- `POST /api/habits/:id/progress` — `?date=YYYY-MM-DD` (defaults to today). Check in
+- `DELETE /api/habits/:id/progress` — `?date=YYYY-MM-DD`. Undo check-in
+- `POST /api/habits/:id/reset` — Resets all progress (logs + streak)
 
 ### Pomodoro
 - `GET /api/pomodoro/current` — Current active session (if any)
@@ -95,6 +134,12 @@ See `.env.example` for defaults:
 - `GET /api/admin/stats` — Global statistics (users, tasks, completion rate, etc.)
 - `GET /api/admin/users` — All users with task/list/habit counts
 - `PUT /api/admin/users/:id` — Update `{ role?, isActive? }` (self-role-change blocked)
+- `GET /api/admin/settings` — Current system settings
+- `PATCH /api/admin/settings` — Update settings (SMTP, registration, upload limits, etc.)
+- `POST /api/admin/test-email` — `{ to? }` sends test email (defaults to your email)
+- `GET /api/admin/security-logs` — Paginated security audit log
+- `POST /api/admin/logo` — Multipart logo upload (PNG/SVG, max 2MB)
+- `DELETE /api/admin/logo` — Remove logo
 
 ## Making yourself Admin
 
@@ -142,16 +187,17 @@ melenotes/
 ├── backend/
 │   └── src/
 │       ├── config/          # Env, Prisma, Redis singletons
-│       ├── lib/             # AppError, format helper
+│       ├── lib/             # AppError, format helper, email service
 │       ├── modules/         # auth, tasks, lists, tags, habits, pomodoro, admin
-│       ├── prisma/          # schema.prisma
+│       ├── prisma/          # schema.prisma + migrations
 │       ├── app.ts           # Fastify factory
 │       ├── server.ts        # Entry point
-│       └── worker.ts        # Cron reminder worker
+│       └── worker.ts        # Cron reminder worker (task + habit reminders)
 ├── frontend/
 │   └── src/
 │       ├── api/             # Axios client with 401 interceptor
 │       ├── components/      # Reusable UI components
+│       ├── lib/             # Utilities, habit categories, i18n config
 │       ├── store/           # Zustand stores
 │       └── views/           # Page-level views (auth, app)
 ├── nginx/
@@ -159,6 +205,14 @@ melenotes/
 ├── docker-compose.yml
 └── .env.example
 ```
+
+## i18n
+
+MeleNotes supports English and Spanish. Language can be changed from the profile page or the user menu. Your preference is persisted to the database.
+
+## Email Configuration
+
+SMTP settings are configurable from the admin panel under "Email Configuration". Once configured and enabled, the worker sends task and habit reminder emails. You can also send a test email from the admin panel to verify your setup.
 
 ## License
 

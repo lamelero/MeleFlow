@@ -3,11 +3,13 @@ node_modules/
 dist/
 .output/
 
+# Uploads de usuarios
+backend/uploads/
+
 # Logs y bases de datos locales
 *.log
 *.sqlite
 *.sqlite-journal
-dist/
 .DS_Store
 
 # Entorno
@@ -18,3 +20,17 @@ dist/
 prisma/dev.db
 prisma/dev.db-journal
 .prisma/
+
+# TypeScript incremental build
+*.tsbuildinfo
+
+# IDEs
+.idea/
+.vscode/
+
+# Volúmenes locales de Docker
+pgdata/
+redis-data/
+
+# Paquetes npm
+*.tgz
