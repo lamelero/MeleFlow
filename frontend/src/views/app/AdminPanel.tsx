@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../store/authStore";
 import { useAdminStore } from "../../store/adminStore";
 import { useBrandingStore } from "../../store/brandingStore";
@@ -10,6 +11,7 @@ import UsersTable from "../../components/admin/UsersTable";
 import AppLayout from "../../components/AppLayout";
 
 export default function AdminPanel() {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const { stats, settings, fetchUsers, fetchStats, fetchSettings, updateSettings, testEmail, error, clearError } = useAdminStore();
   const [localUploadSize, setLocalUploadSize] = useState(settings.maxUploadSize);
@@ -90,7 +92,7 @@ export default function AdminPanel() {
       <div className="flex min-h-screen items-center justify-center">
         <div className="rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
           <p className="font-urbanist text-sm text-red-500 dark:text-red-400">
-            Access denied. Admin only.
+            {t("admin.accessDenied")}
           </p>
         </div>
       </div>
@@ -98,7 +100,7 @@ export default function AdminPanel() {
   }
 
   return (
-    <AppLayout title="Admin Panel">
+    <AppLayout title={t("admin.title")}>
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -114,7 +116,7 @@ export default function AdminPanel() {
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
-          Back to App
+          {t("admin.backToApp")}
         </Link>
 
         {error && (
@@ -124,7 +126,7 @@ export default function AdminPanel() {
               onClick={clearError}
               className="text-sm text-red-500 hover:text-red-700 dark:text-red-400"
             >
-              Dismiss
+              {t("admin.dismiss")}
             </button>
           </div>
         )}
@@ -134,16 +136,16 @@ export default function AdminPanel() {
         {/* General Settings */}
         <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
           <h2 className="mb-4 font-outfit text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Settings
+            {t("admin.settings")}
           </h2>
           <div className="space-y-5">
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-urbanist text-sm font-medium text-gray-900 dark:text-gray-100">
-                  Allow registration
+                  {t("admin.allowRegistration")}
                 </p>
                 <p className="font-urbanist text-xs text-gray-500 dark:text-gray-400">
-                  Allow new users to sign up
+                  {t("admin.allowRegistrationDesc")}
                 </p>
               </div>
               <button
@@ -165,10 +167,10 @@ export default function AdminPanel() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-urbanist text-sm font-medium text-gray-900 dark:text-gray-100">
-                  Max upload size
+                  {t("admin.maxUploadSize")}
                 </p>
                 <p className="font-urbanist text-xs text-gray-500 dark:text-gray-400">
-                  Maximum file size in MB (1–200)
+                  {t("admin.maxUploadSizeDesc")}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -185,13 +187,13 @@ export default function AdminPanel() {
                     if (localUploadSize >= 1 && localUploadSize <= 200) {
                       updateSettings({ maxUploadSize: localUploadSize });
                     } else {
-                      toast.error("Must be between 1 and 200");
+                      toast.error(t("admin.mustBeRange", { min: 1, max: 200 }));
                     }
                   }}
                   disabled={localUploadSize === settings.maxUploadSize}
                   className="rounded-xl bg-primary px-3 py-1.5 font-urbanist text-xs font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
                 >
-                  Save
+                  {t("admin.save")}
                 </button>
               </div>
             </div>
@@ -199,10 +201,10 @@ export default function AdminPanel() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-urbanist text-sm font-medium text-gray-900 dark:text-gray-100">
-                  Storage quota per user
+                  {t("admin.storageQuota")}
                 </p>
                 <p className="font-urbanist text-xs text-gray-500 dark:text-gray-400">
-                  Max storage per user in GB (1–1024)
+                  {t("admin.storageQuotaDesc")}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -223,7 +225,7 @@ export default function AdminPanel() {
                   disabled={localStorageQuota === Math.round(settings.maxStoragePerUser / (1024 * 1024 * 1024))}
                   className="rounded-xl bg-primary px-3 py-1.5 font-urbanist text-xs font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
                 >
-                  Save
+                  {t("admin.save")}
                 </button>
               </div>
             </div>
@@ -231,10 +233,10 @@ export default function AdminPanel() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-urbanist text-sm font-medium text-gray-900 dark:text-gray-100">
-                  Max login attempts
+                  {t("admin.maxLoginAttempts")}
                 </p>
                 <p className="font-urbanist text-xs text-gray-500 dark:text-gray-400">
-                  Failed attempts before lockout (1–100)
+                  {t("admin.maxLoginAttemptsDesc")}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -251,7 +253,7 @@ export default function AdminPanel() {
                   disabled={localMaxAttempts === settings.maxLoginAttempts}
                   className="rounded-xl bg-primary px-3 py-1.5 font-urbanist text-xs font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
                 >
-                  Save
+                  {t("admin.save")}
                 </button>
               </div>
             </div>
@@ -259,10 +261,10 @@ export default function AdminPanel() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-urbanist text-sm font-medium text-gray-900 dark:text-gray-100">
-                  Lockout duration
+                  {t("admin.lockoutDuration")}
                 </p>
                 <p className="font-urbanist text-xs text-gray-500 dark:text-gray-400">
-                  Minutes locked after failed attempts (1–1440)
+                  {t("admin.lockoutDurationDesc")}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -279,7 +281,7 @@ export default function AdminPanel() {
                   disabled={localLockoutMinutes === settings.loginLockoutMinutes}
                   className="rounded-xl bg-primary px-3 py-1.5 font-urbanist text-xs font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
                 >
-                  Save
+                  {t("admin.save")}
                 </button>
               </div>
             </div>
@@ -290,11 +292,11 @@ export default function AdminPanel() {
         <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-outfit text-lg font-semibold text-gray-900 dark:text-gray-100">
-              Email Configuration
+              {t("admin.emailConfig")}
             </h2>
             <label className="flex items-center gap-2">
               <span className="font-urbanist text-xs font-medium text-gray-500 dark:text-gray-400">
-                {localEmailEnabled ? "Enabled" : "Disabled"}
+                {localEmailEnabled ? t("admin.enabled") : t("admin.disabled")}
               </span>
               <button
                 onClick={() => {
@@ -327,25 +329,25 @@ export default function AdminPanel() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
-                  SMTP Host
+                  {t("admin.smtpHost")}
                 </label>
                 <input
                   type="text"
                   value={localSmtpHost}
                   onChange={(e) => setLocalSmtpHost(e.target.value)}
-                  placeholder="smtp.example.com"
+                  placeholder={t("admin.smtpPlaceholder")}
                   className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                 />
               </div>
               <div>
                 <label className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
-                  SMTP Port
+                  {t("admin.smtpPort")}
                 </label>
                 <input
                   type="number"
                   value={localSmtpPort}
                   onChange={(e) => setLocalSmtpPort(Number(e.target.value))}
-                  placeholder="587"
+                  placeholder={t("admin.portPlaceholder")}
                   className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
                 />
               </div>
@@ -354,25 +356,25 @@ export default function AdminPanel() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
-                  SMTP Username
+                  {t("admin.smtpUser")}
                 </label>
                 <input
                   type="text"
                   value={localSmtpUser}
                   onChange={(e) => setLocalSmtpUser(e.target.value)}
-                  placeholder="user@example.com"
+                  placeholder={t("admin.userPlaceholder")}
                   className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                 />
               </div>
               <div>
                 <label className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
-                  SMTP Password
+                  {t("admin.smtpPassword")}
                 </label>
                 <input
                   type="password"
                   value={localSmtpPassword}
                   onChange={(e) => setLocalSmtpPassword(e.target.value)}
-                  placeholder={settings.smtpPassword ? "•••••••• (leave blank to keep)" : "Enter password"}
+                  placeholder={settings.smtpPassword ? t("admin.passwordKeepPlaceholder") : t("admin.passwordPlaceholder")}
                   className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                 />
               </div>
@@ -381,25 +383,25 @@ export default function AdminPanel() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
-                  From Email
+                  {t("admin.fromEmail")}
                 </label>
                 <input
                   type="email"
                   value={localFromEmail}
                   onChange={(e) => setLocalFromEmail(e.target.value)}
-                  placeholder="noreply@example.com"
+                  placeholder={t("admin.fromPlaceholder")}
                   className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                 />
               </div>
               <div>
                 <label className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Email Subject
+                  {t("admin.emailSubject")}
                 </label>
                 <input
                   type="text"
                   value={localEmailSubject}
                   onChange={(e) => setLocalEmailSubject(e.target.value)}
-                  placeholder="Reminder: {{title}} is due soon"
+                  placeholder={t("admin.subjectPlaceholder")}
                   className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                 />
               </div>
@@ -410,17 +412,17 @@ export default function AdminPanel() {
                 onClick={saveEmailSettings}
                 className="rounded-xl bg-primary px-5 py-2.5 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600"
               >
-                Save Email Settings
+                {t("admin.saveEmail")}
               </button>
               <button
                 onClick={async () => {
-                  const email = window.prompt("Send test email to:", user?.email || "");
+                  const email = window.prompt(t("admin.sendTestEmailPrompt"), user?.email || "");
                   if (email) testEmail(email);
                 }}
                 disabled={!settings.smtpHost || !settings.emailEnabled}
                 className="rounded-xl bg-gray-100 px-5 py-2.5 font-urbanist text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
               >
-                Send Test Email
+                {t("admin.sendTestEmail")}
               </button>
             </div>
           </div>
@@ -429,31 +431,31 @@ export default function AdminPanel() {
         {/* Branding */}
         <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
           <h2 className="mb-4 font-outfit text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Branding
+            {t("admin.branding")}
           </h2>
           <div className="space-y-4">
             <div>
               <p className="mb-2 font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
-                Corporate Logo
+                {t("admin.corporateLogo")}
               </p>
               <p className="mb-3 font-urbanist text-xs text-gray-500 dark:text-gray-400">
-                Upload a PNG or SVG logo (max 2MB). It will replace the site name in the app header and login page.
+                {t("admin.corporateLogoDesc")}
               </p>
               {settings.logoUrl ? (
                 <div className="mb-3 flex items-center gap-4 rounded-xl bg-gray-50 p-4 ring-1 ring-gray-200 dark:bg-gray-800/50 dark:ring-gray-700">
                   <img
                     src={settings.logoUrl}
-                    alt="Logo preview"
+                    alt={t("admin.currentLogo")}
                     className="h-12 w-auto rounded-lg object-contain"
                   />
                   <span className="font-urbanist text-xs text-gray-500 dark:text-gray-400">
-                    Current logo
+                    {t("admin.currentLogo")}
                   </span>
                 </div>
               ) : (
                 <div className="mb-3 flex items-center justify-center rounded-xl bg-gray-50 p-6 ring-1 ring-gray-200 dark:bg-gray-800/50 dark:ring-gray-700">
                   <span className="font-urbanist text-sm text-gray-400 dark:text-gray-500">
-                    No logo uploaded
+                    {t("admin.noLogo")}
                   </span>
                 </div>
               )}
@@ -470,7 +472,7 @@ export default function AdminPanel() {
                   disabled={logoUploading}
                   className="rounded-xl bg-primary px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
                 >
-                  {logoUploading ? "Uploading..." : "Upload Logo"}
+                  {logoUploading ? t("admin.uploading") : t("admin.uploadLogo")}
                 </button>
                 {settings.logoUrl && (
                   <button
@@ -478,7 +480,7 @@ export default function AdminPanel() {
                     disabled={logoUploading}
                     className="rounded-xl bg-red-100 px-4 py-2 font-urbanist text-sm font-medium text-red-600 transition-colors hover:bg-red-200 disabled:opacity-50 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
                   >
-                    Remove
+                    {t("admin.remove")}
                   </button>
                 )}
               </div>
@@ -488,7 +490,7 @@ export default function AdminPanel() {
 
         <div>
           <h2 className="mb-4 font-outfit text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Users
+            {t("admin.users")}
           </h2>
           <UsersTable />
         </div>

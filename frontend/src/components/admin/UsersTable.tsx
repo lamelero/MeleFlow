@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 import { useAdminStore } from "../../store/adminStore";
 
 function formatBytes(bytes: number): string {
@@ -23,6 +24,7 @@ function effectiveQuota(user: { storageQuota: string | null }, globalQuota: numb
 }
 
 export default function UsersTable() {
+  const { t } = useTranslation();
   const { users, updateUser, deleteUser, isLoading, settings } = useAdminStore();
   const [updating, setUpdating] = useState<string | null>(null);
   const [editingUser, setEditingUser] = useState<string | null>(null);
@@ -41,7 +43,7 @@ export default function UsersTable() {
 
   async function handleSaveEdit(userId: string) {
     if (!editForm.email.trim() || !editForm.username.trim()) {
-      toast.error("Email and username are required");
+      toast.error(t("admin.emailRequired"));
       return;
     }
     setUpdating(userId);
@@ -56,7 +58,7 @@ export default function UsersTable() {
         storageQuota,
       });
       setEditingUser(null);
-      toast.success("User updated");
+      toast.success(t("admin.userUpdated"));
     } catch {
       // error handled in store
     } finally {
@@ -76,10 +78,29 @@ export default function UsersTable() {
     }
   }
 
+  async function handleRoleToggle(userId: string, currentRole: string) {
+    try {
+      const newRole = currentRole === "ADMIN" ? "USER" : "ADMIN";
+      await useAdminStore.getState().updateUser(userId, { role: newRole });
+      toast.success(t("admin.roleUpdated", { role: newRole }));
+    } catch {
+      toast.error(t("admin.roleUpdateFailed"));
+    }
+  }
+
+  async function handleToggleActive(userId: string, currentActive: boolean) {
+    try {
+      await useAdminStore.getState().updateUser(userId, { isActive: !currentActive });
+      toast.success(t(currentActive ? "admin.userDeactivated" : "admin.userActivated"));
+    } catch {
+      toast.error(t("admin.userToggleFailed"));
+    }
+  }
+
   if (isLoading && users.length === 0) {
     return (
       <div className="rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
-        <p className="font-urbanist text-sm text-gray-400 dark:text-gray-500">Loading users...</p>
+        <p className="font-urbanist text-sm text-gray-400 dark:text-gray-500">{t("admin.loading")}</p>
       </div>
     );
   }
@@ -87,7 +108,7 @@ export default function UsersTable() {
   if (users.length === 0) {
     return (
       <div className="rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
-        <p className="font-urbanist text-sm text-gray-400 dark:text-gray-500">No users found</p>
+        <p className="font-urbanist text-sm text-gray-400 dark:text-gray-500">{t("admin.noUsers")}</p>
       </div>
     );
   }
@@ -100,25 +121,25 @@ export default function UsersTable() {
             <thead>
               <tr className="border-b border-gray-100 dark:border-gray-800">
                 <th className="px-4 py-3 text-left font-urbanist text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                  Username
+                  {t("admin.tableUsername")}
                 </th>
                 <th className="px-4 py-3 text-left font-urbanist text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                  Email
+                  {t("admin.tableEmail")}
                 </th>
                 <th className="px-4 py-3 text-left font-urbanist text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                  Role
+                  {t("admin.tableRole")}
                 </th>
                 <th className="px-4 py-3 text-left font-urbanist text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                  Active
+                  {t("admin.tableActive")}
                 </th>
                 <th className="px-4 py-3 text-left font-urbanist text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                  Tasks
+                  {t("admin.tableTasks")}
                 </th>
                 <th className="px-4 py-3 text-left font-urbanist text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                  Storage
+                  {t("admin.tableStorage")}
                 </th>
                 <th className="px-4 py-3 text-right font-urbanist text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                  Actions
+                  {t("admin.tableActions")}
                 </th>
               </tr>
             </thead>
@@ -183,26 +204,26 @@ export default function UsersTable() {
                         disabled={updating === user.id}
                         className="rounded-lg bg-gray-100 px-3 py-1.5 font-urbanist text-xs font-medium text-gray-700 transition-colors hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                       >
-                        Toggle role
+                        {t("admin.toggleRole")}
                       </button>
                       <button
                         onClick={() => handleToggleActive(user.id, user.isActive)}
                         disabled={updating === user.id}
                         className="rounded-lg bg-gray-100 px-3 py-1.5 font-urbanist text-xs font-medium text-gray-700 transition-colors hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                       >
-                        {user.isActive ? "Deactivate" : "Activate"}
+                        {user.isActive ? t("admin.deactivate") : t("admin.activate")}
                       </button>
                       <button
                         onClick={() => openEdit(user)}
                         className="rounded-lg bg-blue-50 px-3 py-1.5 font-urbanist text-xs font-medium text-blue-700 transition-colors hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30"
                       >
-                        Edit
+                        {t("admin.edit")}
                       </button>
                       <button
                         onClick={() => setDeletingUser(user.id)}
                         className="rounded-lg bg-red-50 px-3 py-1.5 font-urbanist text-xs font-medium text-red-700 transition-colors hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30"
                       >
-                        Delete
+                        {t("admin.delete")}
                       </button>
                     </div>
                   </td>
@@ -232,12 +253,12 @@ export default function UsersTable() {
               onClick={(e) => e.stopPropagation()}
             >
               <h2 className="mb-4 font-outfit text-lg font-semibold text-gray-900 dark:text-gray-100">
-                Edit User
+                {t("admin.editUser")}
               </h2>
               <div className="space-y-4">
                 <div>
                   <label className="mb-1 block font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Email
+                    {t("auth.email")}
                   </label>
                   <input
                     type="email"
@@ -248,7 +269,7 @@ export default function UsersTable() {
                 </div>
                 <div>
                   <label className="mb-1 block font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Username
+                    {t("auth.username")}
                   </label>
                   <input
                     type="text"
@@ -259,26 +280,26 @@ export default function UsersTable() {
                 </div>
                 <div>
                   <label className="mb-1 block font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Display Name
+                    {t("admin.displayName")}
                   </label>
                   <input
                     type="text"
                     value={editForm.displayName}
                     onChange={(e) => setEditForm((f) => ({ ...f, displayName: e.target.value }))}
-                    placeholder="(empty = same as username)"
+                    placeholder={t("admin.displayNamePlaceholder")}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                   />
                 </div>
                 <div>
                   <label className="mb-1 block font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Storage Quota (GB)
+                    {t("admin.storageQuotaGb")}
                   </label>
                   <input
                     type="number"
                     min={1}
                     value={editForm.storageQuota}
                     onChange={(e) => setEditForm((f) => ({ ...f, storageQuota: e.target.value }))}
-                    placeholder={`(default: ${Math.round(settings.maxStoragePerUser / (1024 * 1024 * 1024))} GB)`}
+                    placeholder={t("admin.storageQuotaDefault", { gb: Math.round(settings.maxStoragePerUser / (1024 * 1024 * 1024)) })}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                   />
                 </div>
@@ -288,14 +309,14 @@ export default function UsersTable() {
                   onClick={() => setEditingUser(null)}
                   className="rounded-xl bg-gray-100 px-5 py-2.5 font-urbanist text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                 >
-                  Cancel
+                  {t("admin.cancel")}
                 </button>
                 <button
                   onClick={() => handleSaveEdit(editingUser)}
                   disabled={updating === editingUser}
                   className="rounded-xl bg-primary px-5 py-2.5 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
                 >
-                  {updating === editingUser ? "Saving..." : "Save"}
+                  {updating === editingUser ? t("admin.saving") : t("admin.save")}
                 </button>
               </div>
             </motion.div>
@@ -327,26 +348,24 @@ export default function UsersTable() {
                 </svg>
               </div>
               <h2 className="mb-2 font-outfit text-lg font-semibold text-gray-900 dark:text-gray-100">
-                Delete user?
+                {t("admin.deleteTitle")}
               </h2>
               <p className="font-urbanist text-sm text-gray-600 dark:text-gray-400">
-                This will permanently remove{" "}
-                <strong>{users.find((u) => u.id === deletingUser)?.username}</strong>{" "}
-                and all their tasks, lists, habits, tags, and data. This action cannot be undone.
+                {t("admin.deleteConfirm", { username: users.find((u) => u.id === deletingUser)?.username })}
               </p>
               <div className="mt-6 flex justify-end gap-3">
                 <button
                   onClick={() => setDeletingUser(null)}
                   className="rounded-xl bg-gray-100 px-5 py-2.5 font-urbanist text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                 >
-                  Cancel
+                  {t("admin.cancel")}
                 </button>
                 <button
                   onClick={() => handleDelete(deletingUser)}
                   disabled={updating === deletingUser}
                   className="rounded-xl bg-red-600 px-5 py-2.5 font-urbanist text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
                 >
-                  {updating === deletingUser ? "Deleting..." : "Delete"}
+                  {updating === deletingUser ? t("admin.deleting") : t("admin.delete")}
                 </button>
               </div>
             </motion.div>
@@ -357,21 +376,4 @@ export default function UsersTable() {
   );
 }
 
-async function handleRoleToggle(userId: string, currentRole: string) {
-  try {
-    const newRole = currentRole === "ADMIN" ? "USER" : "ADMIN";
-    await useAdminStore.getState().updateUser(userId, { role: newRole });
-    toast.success(`User role updated to ${newRole}`);
-  } catch {
-    toast.error("Failed to update role");
-  }
-}
 
-async function handleToggleActive(userId: string, currentActive: boolean) {
-  try {
-    await useAdminStore.getState().updateUser(userId, { isActive: !currentActive });
-    toast.success(`User ${currentActive ? "deactivated" : "activated"}`);
-  } catch {
-    toast.error("Failed to update user");
-  }
-}
