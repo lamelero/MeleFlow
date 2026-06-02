@@ -48,7 +48,7 @@ interface AdminState {
   fetchSettings: () => Promise<void>;
   updateSettings: (data: Partial<SystemSettings>) => Promise<void>;
   updateUser: (id: string, data: { role?: string; isActive?: boolean }) => Promise<void>;
-  testEmail: () => Promise<void>;
+  testEmail: (to?: string) => Promise<void>;
   uploadLogo: (file: File) => Promise<string>;
   removeLogo: () => Promise<void>;
   clearError: () => void;
@@ -140,9 +140,9 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     }
   },
 
-  testEmail: async () => {
+  testEmail: async (to?: string) => {
     try {
-      await client.post("/admin/test-email");
+      await client.post("/admin/test-email", to ? { to } : {});
       toast.success("Test email sent! Check your inbox.");
     } catch (err: unknown) {
       const msg =

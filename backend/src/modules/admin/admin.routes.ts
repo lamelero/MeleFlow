@@ -56,13 +56,14 @@ export async function adminRoutes(app: FastifyInstance) {
 
   app.post("/test-email", async (req, reply) => {
     const { prisma } = await import("../../config/database");
+    const body = req.body as { to?: string } | undefined;
     const user = await prisma.user.findUnique({ where: { id: req.user.sub } });
     if (!user) {
       return reply.code(404).send({ error: "User not found" });
     }
     const { sendEmail } = await import("../../lib/email-service");
     const ok = await sendEmail(
-      user.email,
+      body?.to || user.email,
       "Test email from MeleNotes",
       "<p>If you're reading this, your SMTP configuration works!</p>",
     );

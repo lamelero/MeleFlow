@@ -264,8 +264,17 @@ export default function AdminPanel() {
               </span>
               <button
                 onClick={() => {
-                  setLocalEmailEnabled(!localEmailEnabled);
-                  setTimeout(() => saveEmailSettings(), 0);
+                  const next = !localEmailEnabled;
+                  setLocalEmailEnabled(next);
+                  updateSettings({
+                    smtpHost: localSmtpHost,
+                    smtpPort: localSmtpPort,
+                    smtpUser: localSmtpUser,
+                    smtpPassword: localSmtpPassword || undefined,
+                    fromEmail: localFromEmail,
+                    emailSubject: localEmailSubject,
+                    emailEnabled: next,
+                  });
                 }}
                 className={`relative h-6 w-10 rounded-full transition-colors ${
                   localEmailEnabled ? "bg-primary" : "bg-gray-300 dark:bg-gray-600"
@@ -370,8 +379,11 @@ export default function AdminPanel() {
                 Save Email Settings
               </button>
               <button
-                onClick={testEmail}
-                disabled={!localSmtpHost || !localFromEmail}
+                onClick={async () => {
+                  const email = window.prompt("Send test email to:", user?.email || "");
+                  if (email) testEmail(email);
+                }}
+                disabled={!settings.smtpHost || !settings.emailEnabled}
                 className="rounded-xl bg-gray-100 px-5 py-2.5 font-urbanist text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
               >
                 Send Test Email
