@@ -204,9 +204,6 @@ export class HabitService {
 
   async findHabitsDueForReminder() {
     const now = new Date();
-    const currentHour = String(now.getHours()).padStart(2, "0");
-    const currentMinute = String(now.getMinutes()).padStart(2, "0");
-    const currentDay = now.getDay();
 
     const habits = await prisma.habit.findMany({
       where: {
@@ -223,21 +220,46 @@ export class HabitService {
             username: true,
             notificationEmail: true,
             language: true,
+            timezone: true,
           },
         },
       },
     });
+
+    const tzCache = new Map<string, { hour: string; minute: string; day: number }>();
+
+    function getLocalTime(tz: string | null) {
+      const key = tz || "UTC";
+      if (tzCache.has(key)) return tzCache.get(key)!;
+      const opts: Intl.DateTimeFormatOptions = { timeZone: key, hour: "2-digit", minute: "2-digit", hour12: false };
+      try {
+        const timeStr = new Intl.DateTimeFormat("en-US", opts).format(now);
+        const [hour, minute] = timeStr.split(":");
+        const dayName = new Intl.DateTimeFormat("en-US", { timeZone: key, weekday: "short" }).format(now);
+        const dayMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+        const result = { hour: hour.padStart(2, "0"), minute: minute.padStart(2, "0"), day: dayMap[dayName] ?? now.getUTCDay() };
+        tzCache.set(key, result);
+        return result;
+      } catch {
+        const fallback = { hour: String(now.getUTCHours()).padStart(2, "0"), minute: String(now.getUTCMinutes()).padStart(2, "0"), day: now.getUTCDay() };
+        tzCache.set(key, fallback);
+        return fallback;
+      }
+    }
 
     return habits.filter((h) => {
       try {
         const freq = JSON.parse(h.frequency!);
         if (!freq.reminderTime) return false;
 
-        const [remH, remM] = freq.reminderTime.split(":");
-        if (remH !== currentHour || remM !== currentMinute) return false;
+        const tz = h.user.timezone;
+        const local = getLocalTime(tz);
 
-        if (freq.type === "weekly" && Array.isArray(freq.days)) {
-          return freq.days.includes(currentDay);
+        const [remH, remM] = freq.reminderTime.split(":");
+        if (remH !== local.hour || remM !== local.minute) return false;
+
+        if (freq.type === "weekly") {
+          return Array.isArray(freq.days) && freq.days.includes(local.day);
         }
 
         return true;

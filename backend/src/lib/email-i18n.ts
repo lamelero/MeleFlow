@@ -4,6 +4,7 @@ interface EmailTranslation {
   headerTitle: string;
   greeting: string;
   taskBody: string;
+  habitBody: string;
   dueLabel: string;
   cta: string;
   footerTagline: string;
@@ -14,9 +15,10 @@ const translations: Record<string, EmailTranslation> = {
   en: {
     taskSubject: 'Reminder: "{{title}}" is due soon',
     habitSubject: 'Habit reminder: "{{name}}"',
-    headerTitle: "⏰ Task Reminder",
+    headerTitle: "⏰ Reminder",
     greeting: "Hi <strong>{{username}}</strong>,",
     taskBody: "This is a friendly reminder about your upcoming task:",
+    habitBody: 'Don\'t forget to complete your habit: "{{name}}"',
     dueLabel: "Due:",
     cta: "Open MeleNotes",
     footerTagline: "Stay productive! ✨",
@@ -28,6 +30,7 @@ const translations: Record<string, EmailTranslation> = {
     headerTitle: "⏰ Recordatorio",
     greeting: "Hola <strong>{{username}}</strong>,",
     taskBody: "Este es un recordatorio de tu tarea próxima:",
+    habitBody: 'No olvides completar tu hábito: "{{name}}"',
     dueLabel: "Vence:",
     cta: "Abrir MeleNotes",
     footerTagline: "¡Mantente productivo! ✨",

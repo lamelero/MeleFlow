@@ -8,6 +8,8 @@ import { sendEmail, buildReminderEmail } from "./lib/email-service";
 import { t } from "./lib/email-i18n";
 import { HabitService } from "./modules/habits/habits.service";
 
+const APP_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+
 console.log(" MeleNotes Worker started — checking for reminders every minute");
 
 // ── Reminder check every minute ────────────────
@@ -22,7 +24,7 @@ cron.schedule("* * * * *", async () => {
         dueDate: { gte: now, lte: in24h },
       },
       include: {
-        user: { select: { id: true, email: true, username: true, notificationEmail: true, language: true } },
+        user: { select: { id: true, email: true, username: true, notificationEmail: true, language: true, timezone: true } },
       },
     });
 
@@ -37,12 +39,12 @@ cron.schedule("* * * * *", async () => {
 
       const subject = t(lang, "taskSubject").replace("{{title}}", task.title);
 
-      const body = `${t(lang, "taskBody")}<div class="task-card"><div class="title">${task.title}</div></div>`;
       const html = buildReminderEmail(
         task.user.username,
-        body,
+        task.title,
+        t(lang, "taskBody"),
         task.dueDate?.toISOString() ?? "",
-        "http://localhost:5173/app",
+        APP_URL,
         lang,
       );
 
@@ -66,6 +68,8 @@ cron.schedule("* * * * *", async () => {
     const habitService = new HabitService();
     const habits = await habitService.findHabitsDueForReminder();
 
+    console.log(`[Worker] Found ${habits.length} habit(s) due for reminder`);
+
     for (const habit of habits) {
       const today = new Date().toISOString().split("T")[0];
       const reminderKey = `reminder:habit:${habit.id}:${today}`;
@@ -77,29 +81,27 @@ cron.schedule("* * * * *", async () => {
       const lang = habit.user.language || "en";
 
       const subject = t(lang, "habitSubject").replace("{{name}}", habit.name);
-      const body = t(lang, "habitBody").replace("{{name}}", `<strong>${habit.name}</strong>`);
+      const message = t(lang, "habitBody").replace("{{name}}", `<strong>${habit.name}</strong>`);
       const html = buildReminderEmail(
         habit.user.username,
-        body,
+        habit.name,
+        message,
         "",
-        "http://localhost:5173/app",
+        APP_URL,
         lang,
       );
 
       const sent = await sendEmail(emailTo, subject, html);
 
       if (sent) {
-        console.log(`[Worker] Habit reminder sent to ${emailTo} for "${habit.name}"`);
+        console.log(`[Worker] Habit reminder sent to ${emailTo} for "${habit.name}" (${today})`);
       } else {
-        console.log(`[Worker] Habit reminder skipped (disabled/misconfigured) for "${habit.name}"`);
+        console.log(`[Worker] Habit reminder skipped (disabled/misconfigured) for "${habit.name}" (${today})`);
       }
 
       await redis.set(reminderKey, "1", "EX", 86400);
     }
 
-    if (habits.length > 0) {
-      console.log(`[Worker] Processed ${habits.length} habit reminder(s)`);
-    }
   } catch (err) {
     console.error("[Worker] Error processing reminders:", err);
   }
