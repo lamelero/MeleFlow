@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { prisma } from "../../config/database";
+import { Role } from "@prisma/client";
 import { env } from "../../config/env";
 import { AppError } from "../../lib/app-error";
 import { checkRateLimit, recordFailedAttempt, clearFailedAttempts } from "../../lib/rate-limit";
@@ -39,11 +40,15 @@ export class AuthService {
 
     const passwordHash = await bcrypt.hash(input.password, 12);
 
+    const userCount = await prisma.user.count();
+    const role = userCount === 0 ? Role.ADMIN : Role.USER;
+
     const user = await prisma.user.create({
       data: {
         email: input.email,
         username: input.username,
         passwordHash,
+        role,
       },
     });
 

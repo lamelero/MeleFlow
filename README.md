@@ -29,7 +29,10 @@ docker compose up --build -d
 
 # 4. Apply database schema
 docker compose exec backend npx prisma db push
-# Seed an admin user (optional — register first user normally, then promote)
+
+# The first user to register via the UI is automatically promoted to ADMIN.
+# No manual SQL needed.
+docker compose logs -f
 ```
 
 The app is at **http://localhost**.
@@ -142,6 +145,9 @@ See `.env.example` for defaults:
 - `DELETE /api/admin/logo` — Remove logo
 
 ## Making yourself Admin
+
+The first user to register via the UI is automatically promoted to ADMIN.
+If you need to promote additional users later:
 
 ```bash
 # After registering via the UI, promote via direct DB:
