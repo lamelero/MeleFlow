@@ -762,10 +762,11 @@ export default function AdminPanel() {
                 <li>All tasks, habits, lists, tags</li>
                 <li>All Pomodoro sessions</li>
                 <li>All uploaded files (attachments, avatars, logos)</li>
-                <li>All system settings (SMTP, backups, etc.)</li>
+                <li>All system settings (SMTP, backup config, registration, etc.)</li>
                 <li>All security logs</li>
               </ul>
               <p className="mt-3">After wiping, you will be redirected to the registration page to set up a new account.</p>
+              <p className="mt-2 text-xs text-gray-400">Backup archives (.tar.gz) are preserved. Delete them manually from the Backup section if desired.</p>
             </div>
 
             <div className="mb-4">
