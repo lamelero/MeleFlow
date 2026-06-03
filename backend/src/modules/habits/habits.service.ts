@@ -16,8 +16,9 @@ export function calculateStreak(dates: Date[]): number {
     .sort((a, b) => b.getTime() - a.getTime());
 
   const today = normalizeDate(new Date());
+  const hasToday = sorted[0].getTime() === today.getTime();
+  let expected = hasToday ? today : new Date(today.getTime() - 86400000);
   let streak = 0;
-  let expected = today;
 
   for (const date of sorted) {
     if (date.getTime() === expected.getTime()) {
@@ -34,6 +35,7 @@ export class HabitService {
   async findAll(userId: string, includeArchived = false) {
     const threeMonthsAgo = new Date();
     threeMonthsAgo.setDate(threeMonthsAgo.getDate() - 90);
+    const todayStart = normalizeDate(new Date());
 
     const habits = await prisma.habit.findMany({
       where: {
@@ -46,17 +48,38 @@ export class HabitService {
           orderBy: { date: "desc" },
           select: { date: true, isCompleted: true },
         },
+        _count: { select: { logs: true } },
       },
       orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
     });
 
-    return habits.map((h) => ({
+    // Recalculate streak for all habits from all completed logs
+    const allLogs = await prisma.habitLog.findMany({
+      where: { habit: { userId }, isCompleted: true },
+      select: { habitId: true, date: true },
+    });
+    const streakByHabit = new Map<string, number>();
+    const grouped = new Map<string, Date[]>();
+    for (const log of allLogs) {
+      const arr = grouped.get(log.habitId) ?? [];
+      arr.push(log.date);
+      grouped.set(log.habitId, arr);
+    }
+    for (const [habitId, dates] of grouped) {
+      streakByHabit.set(habitId, calculateStreak(dates));
+    }
+
+    return habits.map(({ _count, ...h }) => ({
       ...h,
+      streakCount: streakByHabit.get(h.id) ?? 0,
       logs: h.logs.map((l) => l.date.toISOString().split("T")[0]),
+      totalDays: _count.logs,
+      completedToday: h.logs.some((l) => l.date.getTime() === todayStart.getTime()),
     }));
   }
 
   async findById(userId: string, id: string) {
+    const todayStart = normalizeDate(new Date());
     const habit = await prisma.habit.findFirst({
       where: { id, userId },
       include: {
@@ -64,6 +87,7 @@ export class HabitService {
           orderBy: { date: "desc" },
           select: { date: true, isCompleted: true },
         },
+        _count: { select: { logs: true } },
       },
     });
     if (!habit) throw new AppError(404, "Habit not found");
@@ -73,6 +97,8 @@ export class HabitService {
         date: l.date.toISOString().split("T")[0],
         isCompleted: l.isCompleted,
       })),
+      totalDays: habit._count.logs,
+      completedToday: habit.logs.some((l) => l.date.getTime() === todayStart.getTime()),
     };
   }
 
@@ -129,7 +155,8 @@ export class HabitService {
     });
 
     if (existing) {
-      return { alreadyCheckedIn: true, streak: habit.streakCount };
+      const totalDays = await prisma.habitLog.count({ where: { habitId, isCompleted: true } });
+      return { alreadyCheckedIn: true, streak: habit.streakCount, totalDays };
     }
 
     await prisma.habitLog.create({
@@ -148,7 +175,7 @@ export class HabitService {
       data: { streakCount: streak },
     });
 
-    return { alreadyCheckedIn: false, streak };
+    return { alreadyCheckedIn: false, streak, totalDays: logs.length };
   }
 
   async undoCheckIn(userId: string, habitId: string, dateStr?: string) {
@@ -176,7 +203,7 @@ export class HabitService {
       data: { streakCount: streak },
     });
 
-    return { streak };
+    return { streak, totalDays: logs.length };
   }
 
   async resetProgress(userId: string, habitId: string) {
@@ -191,7 +218,7 @@ export class HabitService {
       data: { streakCount: 0 },
     });
 
-    return { streak: 0 };
+    return { streak: 0, totalDays: 0 };
   }
 
   async delete(userId: string, habitId: string) {

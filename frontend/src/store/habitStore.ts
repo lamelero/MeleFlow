@@ -13,6 +13,8 @@ export interface Habit {
   endDate: string | null;
   isArchived: boolean;
   streakCount: number;
+  totalDays: number;
+  completedToday: boolean;
   logs: string[];
 }
 
@@ -142,7 +144,7 @@ export const useHabitStore = create<HabitState>((set, get) => ({
       await client.post(`/habits/${id}/reset`);
       set((state) => ({
         habits: state.habits.map((h) =>
-          h.id === id ? { ...h, logs: [], streakCount: 0 } : h,
+          h.id === id ? { ...h, logs: [], streakCount: 0, totalDays: 0, completedToday: false } : h,
         ),
       }));
       toast.success("Progress reset");
