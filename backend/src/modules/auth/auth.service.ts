@@ -10,6 +10,7 @@ import { logSecurityEvent } from "../../lib/security-log";
 import {
   generateSecret,
   encryptSecret,
+  decryptSecret,
   verifyTOTP,
   generateRecoveryCodes,
   verifyRecoveryCode,
@@ -394,12 +395,23 @@ export class AuthService {
   async get2FAStatus(userId: string) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { isTwoFactorEnabled: true, twoFactorSecret: true },
+      select: { isTwoFactorEnabled: true, twoFactorSecret: true, email: true },
     });
+
+    let uri: string | null = null;
+    if (user?.twoFactorSecret && !user.isTwoFactorEnabled) {
+      try {
+        const secret = decryptSecret(user.twoFactorSecret);
+        uri = generateTOTPUri(secret, user.email);
+      } catch {
+        // secret corrupted, will need to re-setup
+      }
+    }
 
     return {
       isTwoFactorEnabled: user?.isTwoFactorEnabled ?? false,
       isConfigured: !!user?.twoFactorSecret,
+      uri,
     };
   }
 

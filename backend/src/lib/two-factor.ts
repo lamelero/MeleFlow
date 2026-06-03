@@ -34,6 +34,10 @@ export function encryptSecret(secret: string): string {
   return encrypt(secret);
 }
 
+export function decryptSecret(encrypted: string): string {
+  return decrypt(encrypted);
+}
+
 export async function generateRecoveryCodes(): Promise<{
   plainCodes: string[];
   hashedCodes: string;

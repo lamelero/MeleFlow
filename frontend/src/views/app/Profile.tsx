@@ -54,6 +54,7 @@ export default function Profile() {
       const { data } = await client.get("/auth/2fa/status");
       setIsTwoFactorEnabled(data.isTwoFactorEnabled);
       setIsTwoFactorConfigured(data.isConfigured);
+      if (data.uri) setQrUri(data.uri);
     } catch {
       // ignore
     }
