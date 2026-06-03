@@ -68,10 +68,8 @@ export const HABIT_CATEGORIES: Record<string, HabitCategoryInfo> = {
     labelEs: "Estudio",
     icon: () => (
       <svg viewBox="0 0 24 24" {...S} {...W} stroke="currentColor">
-        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15Z" />
-        <path d="M12 2v20" />
-        <line x1="8" y1="13" x2="10" y2="13" />
-        <line x1="8" y1="16" x2="14" y2="16" />
+        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
       </svg>
     ),
     color: "#3B82F6",
@@ -96,10 +94,9 @@ export const HABIT_CATEGORIES: Record<string, HabitCategoryInfo> = {
     labelEs: "Deporte",
     icon: () => (
       <svg viewBox="0 0 24 24" {...S} {...W} stroke="currentColor">
-        <circle cx="17" cy="4" r="2" />
-        <path d="M15.59 5.41 9 12" />
-        <path d="m11 10 2 3 3 2 3 2" />
-        <path d="M8 14l3 3 1 4" />
+        <circle cx="12" cy="12" r="8.5" />
+        <path d="M4.5 12c3-7 12-7 15 0" />
+        <path d="M4.5 12c3 7 12 7 15 0" />
       </svg>
     ),
     color: "#14B8A6",
@@ -162,11 +159,10 @@ export const HABIT_CATEGORIES: Record<string, HabitCategoryInfo> = {
     labelEs: "Nutrición",
     icon: () => (
       <svg viewBox="0 0 24 24" {...S} {...W} stroke="currentColor">
-        <circle cx="12" cy="14" r="8" />
-        <path d="M12 6V4c0-1 2-1 2 0v2" />
-        <path d="M10 5c1 .7 2 .7 2 .7s1 0 2-.7" />
-        <path d="M14 14c-1 2-3 2-4 0" />
-        <line x1="12" y1="6" x2="12" y2="8" />
+        <path d="m5 5 2 3 2-3" />
+        <line x1="7" y1="8" x2="7" y2="20" />
+        <path d="M15 11 17 5 19 11 17 13" />
+        <line x1="17" y1="5" x2="17" y2="20" />
       </svg>
     ),
     color: "#84CC16",
