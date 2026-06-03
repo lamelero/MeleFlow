@@ -10,12 +10,21 @@ export default function TwoFactorVerify() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
-  const { verify2FA, error, clearError } = useAuthStore();
+  const { verify2FA, sendOTP, error, clearError } = useAuthStore();
 
-  const twoFactorToken = (location.state as { twoFactorToken?: string })?.twoFactorToken;
+  const state = location.state as {
+    twoFactorToken?: string;
+    method?: "totp" | "email";
+    email?: string;
+  } | null;
+  const twoFactorToken = state?.twoFactorToken;
+  const method = state?.method || "totp";
+  const email = state?.email || "";
 
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [submitting, setSubmitting] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
@@ -78,11 +87,24 @@ export default function TwoFactorVerify() {
     }
   }
 
+  async function handleSendOTP() {
+    if (!twoFactorToken) return;
+    setSendingOtp(true);
+    try {
+      await sendOTP(twoFactorToken);
+      setOtpSent(true);
+    } catch {
+      // error set in store
+    } finally {
+      setSendingOtp(false);
+    }
+  }
+
   return (
     <AuthLayout>
       <div className="flex items-center justify-between">
         <h2 className="font-outfit text-xl font-semibold text-gray-900 dark:text-white">
-          Two-Factor Authentication
+          {t("auth.verifyCode") || "Verify Code"}
         </h2>
         <div className="flex items-center gap-2">
           <ThemeToggle />
@@ -90,7 +112,9 @@ export default function TwoFactorVerify() {
         </div>
       </div>
       <p className="mt-1 font-urbanist text-sm text-gray-500 dark:text-gray-400">
-        Enter the 6-digit code from your authenticator app or a recovery code.
+        {method === "email"
+          ? `Enter the code sent to ${email}`
+          : "Enter the 6-digit code from your authenticator app or a recovery code."}
       </p>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-6">
@@ -125,6 +149,17 @@ export default function TwoFactorVerify() {
         >
           {submitting ? "Verifying..." : "Verify"}
         </button>
+
+        {method === "totp" && (
+          <button
+            type="button"
+            onClick={handleSendOTP}
+            disabled={sendingOtp}
+            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+          >
+            {sendingOtp ? "Sending..." : otpSent ? "Code sent! Check your email" : "Send code to email"}
+          </button>
+        )}
 
         <button
           type="button"

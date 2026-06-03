@@ -73,6 +73,7 @@ model User {
   refreshTokens    RefreshToken[]
   securityLogs     SecurityLog[]
   collaborations   TaskCollaborator[]
+  verificationCodes VerificationCode[]
 }
 
 // ── Task (with subtask self-reference) ───────────
@@ -293,6 +294,24 @@ model PomodoroSession {
   task   Task?  @relation(fields: [taskId], references: [id], onDelete: SetNull)
 
   @@index([userId, state])
+}
+
+// ── Verification Codes (OTP, email auth, etc.) ──
+
+model VerificationCode {
+  id        String   @id @default(cuid())
+  userId    String
+  code      String   // bcrypt hashed
+  type      String   @default("LOGIN_OTP")
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+  @@index([expiresAt])
 }
 
 // ── Task Collaborators ─────────────────────

@@ -42,6 +42,10 @@ export const disable2FASchema = z.object({
   password: z.string().min(1),
 });
 
+export const sendOTPSchema = z.object({
+  twoFactorToken: z.string().min(1),
+});
+
 export const getRecoveryCodesSchema = z.object({
   password: z.string().min(1),
 });

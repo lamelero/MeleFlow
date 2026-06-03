@@ -22,7 +22,13 @@ export default function Login() {
     try {
       const result = await login(email, password, rememberMe);
       if (result.requiresTwoFactor && result.twoFactorToken) {
-        navigate("/login/2fa", { state: { twoFactorToken: result.twoFactorToken } });
+        navigate("/login/2fa", {
+          state: {
+            twoFactorToken: result.twoFactorToken,
+            method: result.twoFactorMethod || "totp",
+            email: result.user?.email || email,
+          },
+        });
       } else {
         navigate("/app");
       }

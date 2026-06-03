@@ -45,6 +45,55 @@ function createTransporter(cfg: EmailConfig) {
   });
 }
 
+export async function isEmailConfigured(): Promise<boolean> {
+  const cfg = await getConfig();
+  return cfg !== null;
+}
+
+export function buildOTPEmail(code: string, lang = "en"): string {
+  return `<!DOCTYPE html>
+<html lang="${lang}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
+  <title>${t(lang, "otpSubject")}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Urbanist:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>${baseStyle("#14B8A6", "#0D9488")}</style>
+</head>
+<body>
+  <div class="outer">
+    <div class="container">
+      <div class="header">
+        <div style="width:36px;height:36px;border-radius:10px;background:rgba(0,0,0,0.12);text-align:center;line-height:36px;flex-shrink:0;min-width:36px;margin-right:16px;color:#fff;">
+          <span style="font-size:20px;line-height:36px;">✓</span>
+        </div>
+        <div class="header-text">
+          <h1>${t(lang, "otpSubject")}</h1>
+          <div class="sub">MeleNotes</div>
+        </div>
+      </div>
+      <div class="body" style="text-align:center;">
+        <p class="greeting" style="text-align:center;">${t(lang, "otpSubject")}</p>
+        <p style="color:#6b7280;font-size:16px;margin:24px 0 12px;text-align:center;">${t(lang, "otpBody").replace("{{code}}", `<span style="font-size:32px;font-weight:700;letter-spacing:8px;color:#14B8A6;font-family:monospace;">${code}</span>`)}</p>
+        <div style="background:#f0fdfa;border-radius:16px;padding:20px;margin:24px auto;max-width:240px;border:1px solid #ccfbf1;">
+          <div style="font-size:40px;font-weight:700;letter-spacing:12px;color:#14B8A6;font-family:monospace;text-align:center;">${code}</div>
+        </div>
+        <p style="color:#9ca3af;font-size:13px;text-align:center;">${t(lang, "footerTagline")}</p>
+      </div>
+      <div class="divider"></div>
+      <div class="footer">
+        <p class="brand">${t(lang, "footerBrand")}</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
 export async function sendEmail(to: string, subject: string, html: string): Promise<boolean> {
   const cfg = await getConfig();
   if (!cfg) return false;

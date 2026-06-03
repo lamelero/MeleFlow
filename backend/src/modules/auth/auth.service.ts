@@ -7,6 +7,8 @@ import { env } from "../../config/env";
 import { AppError } from "../../lib/app-error";
 import { checkRateLimit, recordFailedAttempt, clearFailedAttempts } from "../../lib/rate-limit";
 import { logSecurityEvent } from "../../lib/security-log";
+import { sendEmail, buildOTPEmail, isEmailConfigured } from "../../lib/email-service";
+import { t } from "../../lib/email-i18n";
 import {
   generateSecret,
   encryptSecret,
@@ -104,10 +106,6 @@ export class AuthService {
 
     // If 2FA is enabled, return a temporary token instead of full session
     if (user.isTwoFactorEnabled) {
-      const tempToken = crypto.randomBytes(32).toString("hex");
-      // Store temp token in DB with 5 min expiry (we use a simple approach: store in user record)
-      // Actually, we'll use a temporary approach - store in a field or use a separate mechanism
-      // For simplicity, we'll generate a short-lived JWT
       const twoFactorToken = jwt.sign(
         { sub: user.id, type: "2fa" },
         env.JWT_SECRET,
@@ -125,6 +123,7 @@ export class AuthService {
       return {
         requiresTwoFactor: true,
         twoFactorToken,
+        twoFactorMethod: "totp",
         user: {
           id: user.id,
           email: user.email,
@@ -133,14 +132,39 @@ export class AuthService {
       };
     }
 
+    // If email is not configured, login directly (fresh install with no SMTP yet)
+    const emailConfigured = await isEmailConfigured();
+    if (!emailConfigured) {
+      return this.buildTokens(user.id, user.role, input.rememberMe);
+    }
+
+    // Generate and send OTP email for users without 2FA
+    const otpToken = jwt.sign(
+      { sub: user.id, type: "otp" },
+      env.JWT_SECRET,
+      { expiresIn: "5m" } as jwt.SignOptions,
+    );
+
+    await this.generateAndSendOTP(user);
+
     await logSecurityEvent({
       userId: user.id,
-      action: "LOGIN_SUCCESS",
+      action: "OTP_REQUIRED",
+      details: JSON.stringify({ email: input.email }),
       ip,
       userAgent,
     });
 
-    return this.buildTokens(user.id, user.role, false);
+    return {
+      requiresTwoFactor: true,
+      twoFactorToken: otpToken,
+      twoFactorMethod: "email",
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+      },
+    };
   }
 
   async verify2FA(input: Verify2FALoginInput, ip?: string, userAgent?: string) {
@@ -148,47 +172,90 @@ export class AuthService {
     let payload: { sub: string; type: string };
     try {
       payload = jwt.verify(input.twoFactorToken, env.JWT_SECRET) as { sub: string; type: string };
-      if (payload.type !== "2fa") throw new Error("Invalid token type");
     } catch {
       throw new AppError(401, "Invalid or expired 2FA token. Please login again.");
     }
 
     const user = await prisma.user.findUnique({ where: { id: payload.sub } });
-    if (!user || !user.isTwoFactorEnabled || !user.twoFactorSecret) {
-      throw new AppError(400, "2FA is not enabled for this account");
+    if (!user || !user.isActive) {
+      throw new AppError(400, "User not found or deactivated");
     }
 
-    // Try TOTP code first
-    const totpValid = await verifyTOTP(input.code, user.twoFactorSecret);
+    if (payload.type === "2fa") {
+      if (!user.isTwoFactorEnabled || !user.twoFactorSecret) {
+        throw new AppError(400, "2FA is not enabled for this account");
+      }
 
-    if (totpValid) {
-      await logSecurityEvent({
-        userId: user.id,
-        action: "2FA_VERIFIED",
-        details: JSON.stringify({ method: "totp" }),
-        ip,
-        userAgent,
-      });
-      return this.buildTokens(user.id, user.role, false);
+      // Try TOTP code first
+      const totpValid = await verifyTOTP(input.code, user.twoFactorSecret);
+      if (totpValid) {
+        await logSecurityEvent({
+          userId: user.id,
+          action: "2FA_VERIFIED",
+          details: JSON.stringify({ method: "totp" }),
+          ip,
+          userAgent,
+        });
+        return this.buildTokens(user.id, user.role, false);
+      }
+
+      // Try recovery code
+      const recoveryResult = await verifyRecoveryCode(input.code, user.recoveryCodes);
+      if (recoveryResult.valid) {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { recoveryCodes: recoveryResult.remainingCodesJson },
+        });
+        await logSecurityEvent({
+          userId: user.id,
+          action: "2FA_VERIFIED",
+          details: JSON.stringify({ method: "recovery_code" }),
+          ip,
+          userAgent,
+        });
+        return this.buildTokens(user.id, user.role, false);
+      }
     }
 
-    // Try recovery code
-    const recoveryResult = await verifyRecoveryCode(input.code, user.recoveryCodes);
-    if (recoveryResult.valid) {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { recoveryCodes: recoveryResult.remainingCodesJson },
+    if (payload.type === "otp") {
+      // Find active OTP codes for user
+      const codes = await prisma.verificationCode.findMany({
+        where: {
+          userId: user.id,
+          type: "LOGIN_OTP",
+          usedAt: null,
+          expiresAt: { gt: new Date() },
+          attempts: { lt: 5 },
+        },
+        orderBy: { createdAt: "desc" },
       });
 
-      await logSecurityEvent({
-        userId: user.id,
-        action: "2FA_VERIFIED",
-        details: JSON.stringify({ method: "recovery_code" }),
-        ip,
-        userAgent,
-      });
+      for (const vc of codes) {
+        const valid = await bcrypt.compare(input.code, vc.code);
+        if (valid) {
+          await prisma.verificationCode.update({
+            where: { id: vc.id },
+            data: { usedAt: new Date() },
+          });
+          // Clean up old codes
+          await prisma.verificationCode.deleteMany({
+            where: { userId: user.id, type: "LOGIN_OTP", usedAt: { not: null } },
+          });
+          await logSecurityEvent({
+            userId: user.id,
+            action: "OTP_VERIFIED",
+            ip,
+            userAgent,
+          });
+          return this.buildTokens(user.id, user.role, false);
+        }
+      }
 
-      return this.buildTokens(user.id, user.role, false);
+      // Increment attempts for all active codes
+      await prisma.verificationCode.updateMany({
+        where: { userId: user.id, type: "LOGIN_OTP", usedAt: null, expiresAt: { gt: new Date() } },
+        data: { attempts: { increment: 1 } },
+      });
     }
 
     await logSecurityEvent({
@@ -198,7 +265,74 @@ export class AuthService {
       userAgent,
     });
 
-    throw new AppError(401, "Invalid 2FA code. Please try again.");
+    throw new AppError(401, "Invalid code. Please try again.");
+  }
+
+  async sendOTPCode(twoFactorToken: string) {
+    let payload: { sub: string };
+    try {
+      payload = jwt.verify(twoFactorToken, env.JWT_SECRET) as { sub: string };
+    } catch {
+      throw new AppError(401, "Invalid or expired token. Please login again.");
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: payload.sub } });
+    if (!user || !user.isActive) {
+      throw new AppError(400, "User not found or deactivated");
+    }
+
+    // Check email is configured
+    const emailConfigured = await isEmailConfigured();
+    if (!emailConfigured) {
+      throw new AppError(500, "Email is not configured. Set up SMTP in the admin panel first.");
+    }
+
+    // Rate limit: max 3 OTPs per hour
+    const recentCount = await prisma.verificationCode.count({
+      where: {
+        userId: user.id,
+        type: "LOGIN_OTP",
+        createdAt: { gt: new Date(Date.now() - 60 * 60 * 1000) },
+      },
+    });
+    if (recentCount >= 3) {
+      throw new AppError(429, "Too many OTP requests. Try again in an hour.");
+    }
+
+    await this.generateAndSendOTP(user);
+    return { sent: true };
+  }
+
+  private async generateAndSendOTP(user: { id: string; email: string; notificationEmail?: string | null; language?: string }) {
+    // Invalidate previous unused codes
+    await prisma.verificationCode.updateMany({
+      where: { userId: user.id, type: "LOGIN_OTP", usedAt: null },
+      data: { expiresAt: new Date(0) },
+    });
+
+    // Generate 6-digit code
+    const code = String(crypto.randomInt(100000, 999999));
+    const hashed = await bcrypt.hash(code, 10);
+
+    await prisma.verificationCode.create({
+      data: {
+        userId: user.id,
+        code: hashed,
+        type: "LOGIN_OTP",
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+      },
+    });
+
+    // Send email
+    const lang = user.language || "en";
+    const to = user.notificationEmail || user.email;
+    const subject = t(lang, "otpSubject");
+    const html = buildOTPEmail(code, lang);
+
+    const sent = await sendEmail(to, subject, html);
+    if (!sent) {
+      throw new AppError(500, "Failed to send verification email. Check SMTP configuration.");
+    }
   }
 
   async refreshToken(rawToken: string, rememberMe: boolean) {

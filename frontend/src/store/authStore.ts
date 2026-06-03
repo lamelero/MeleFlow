@@ -20,6 +20,7 @@ export interface LoginResult {
   user?: User;
   requiresTwoFactor?: boolean;
   twoFactorToken?: string;
+  twoFactorMethod?: "totp" | "email";
 }
 
 interface AuthState {
@@ -29,6 +30,7 @@ interface AuthState {
   error: string | null;
   login: (email: string, password: string, rememberMe?: boolean) => Promise<LoginResult>;
   verify2FA: (twoFactorToken: string, code: string) => Promise<void>;
+  sendOTP: (twoFactorToken: string) => Promise<void>;
   register: (email: string, username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   initialize: () => Promise<void>;
@@ -79,6 +81,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         return {
           requiresTwoFactor: true,
           twoFactorToken: data.twoFactorToken,
+          twoFactorMethod: data.twoFactorMethod,
           user: data.user,
         };
       }
@@ -105,6 +108,19 @@ export const useAuthStore = create<AuthState>((set) => ({
       const message =
         (err as { response?: { data?: { error?: string } } })?.response?.data
           ?.error || "Invalid 2FA code";
+      set({ error: message });
+      throw err;
+    }
+  },
+
+  sendOTP: async (twoFactorToken) => {
+    set({ error: null });
+    try {
+      await client.post("/auth/2fa/send-otp", { twoFactorToken });
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { error?: string } } })?.response?.data
+          ?.error || "Failed to send code";
       set({ error: message });
       throw err;
     }

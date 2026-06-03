@@ -13,6 +13,7 @@ import {
   enable2FASchema,
   disable2FASchema,
   getRecoveryCodesSchema,
+  sendOTPSchema,
 } from "./auth.schema";
 import { AuthService } from "./auth.service";
 
@@ -60,19 +61,19 @@ export async function authRoutes(app: FastifyInstance) {
     const userAgent = req.headers["user-agent"];
     const result = await service.login(input, ip, userAgent);
 
-    if ("requiresTwoFactor" in result && result.requiresTwoFactor) {
+    if ("requiresTwoFactor" in result) {
       return reply.send({
         requiresTwoFactor: true,
         twoFactorToken: result.twoFactorToken,
+        twoFactorMethod: result.twoFactorMethod,
         user: result.user,
       });
     }
 
-    const tokens = result as Awaited<ReturnType<typeof service.register>>;
-    setRefreshCookie(reply, tokens.refreshToken, tokens.refreshTokenExpiresAt, input.rememberMe);
+    setRefreshCookie(reply, result.refreshToken, result.refreshTokenExpiresAt, input.rememberMe);
     return reply.send({
-      accessToken: tokens.accessToken,
-      user: tokens.user,
+      accessToken: result.accessToken,
+      user: result.user,
     });
   });
 
@@ -86,6 +87,12 @@ export async function authRoutes(app: FastifyInstance) {
       accessToken: result.accessToken,
       user: result.user,
     });
+  });
+
+  app.post("/2fa/send-otp", async (req, reply) => {
+    const { twoFactorToken } = sendOTPSchema.parse(req.body);
+    await service.sendOTPCode(twoFactorToken);
+    return reply.send({ sent: true });
   });
 
   app.post("/refresh", async (req, reply) => {

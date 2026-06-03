@@ -14,6 +14,8 @@ interface EmailTranslation {
   taskRecurringBody: string;
   taskSharedSubject: string;
   taskSharedBody: string;
+  otpSubject: string;
+  otpBody: string;
 }
 
 const translations: Record<string, EmailTranslation> = {
@@ -33,6 +35,8 @@ const translations: Record<string, EmailTranslation> = {
     taskRecurringBody: "Time to work on your task!",
     taskSharedSubject: "{{inviter}} shared a task with you",
     taskSharedBody: "{{inviter}} has shared the task \"{{title}}\" with you on MeleNotes.",
+    otpSubject: "Your login code",
+    otpBody: "Your verification code is: <strong>{{code}}</strong>. It expires in 10 minutes.",
   },
   es: {
     taskSubject: 'Recordatorio: "{{title}}" vence pronto',
@@ -50,6 +54,8 @@ const translations: Record<string, EmailTranslation> = {
     taskRecurringBody: "¡Hora de trabajar en tu tarea!",
     taskSharedSubject: "{{inviter}} compartió una tarea contigo",
     taskSharedBody: "{{inviter}} ha compartido la tarea \"{{title}}\" contigo en MeleNotes.",
+    otpSubject: "Tu código de inicio de sesión",
+    otpBody: "Tu código de verificación es: <strong>{{code}}</strong>. Expira en 10 minutos.",
   },
 };
 
