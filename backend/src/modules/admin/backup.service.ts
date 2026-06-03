@@ -13,8 +13,8 @@ const UPLOAD_DIR = path.resolve("uploads");
 
 const EXPORTED_MODELS = [
   "user", "list", "tag", "task", "taskTag", "checklistItem",
-  "attachment", "subTask", "habit", "habitLog", "habitStreak",
-  "pomodoroSession", "pomodoroTag", "pomodoroInterval",
+  "attachment", "habit", "habitLog",
+  "pomodoroSession",
   "refreshToken", "securityLog", "systemSetting",
   "taskCollaborator",
 ] as const;
@@ -51,7 +51,7 @@ async function writeTar(dir: string, dbJson: Record<string, unknown[]>): Promise
 
   try {
     await fs.writeFile(path.join(tmpDir, "db.json"), JSON.stringify(dbJson, (_, v) =>
-      typeof v === "bigint" ? v.toString() : v, 2));
+      typeof v === "bigint" ? Number(v) : v, 2));
 
     try {
       const uploadFiles = await fs.readdir(UPLOAD_DIR).catch(() => []);
@@ -125,32 +125,66 @@ function decryptFile(filePath: string): Promise<string> {
   });
 }
 
+async function clearDatabase() {
+  const deleteOrder = [
+    "securityLog", "refreshToken", "pomodoroSession",
+    "habitLog", "habit",
+    "taskCollaborator", "attachment", "checklistItem", "taskTag", "task",
+    "tag", "list", "user",
+    "systemSetting",
+  ];
+
+  const db = prisma as unknown as Record<string, { deleteMany: () => Promise<{ count: number }> }>;
+
+  for (const model of deleteOrder) {
+    try {
+      const { count } = await db[model].deleteMany();
+      if (count > 0) console.log(`[Backup] Cleared ${count} ${model} records`);
+    } catch (err) {
+      console.error(`[Backup] Error clearing ${model}:`, err);
+    }
+  }
+}
+
 async function importDatabase(dbJson: Record<string, unknown[]>) {
   const order = [
-    "user", "list", "tag", "systemSetting",
-    "task", "taskTag", "checklistItem", "attachment", "subTask",
-    "taskCollaborator",
-    "habit", "habitLog", "habitStreak",
-    "pomodoroSession", "pomodoroTag", "pomodoroInterval",
+    "systemSetting",
+    "user", "list", "tag",
+    "task", "taskTag", "checklistItem", "attachment", "taskCollaborator",
+    "habit", "habitLog",
+    "pomodoroSession",
     "refreshToken", "securityLog",
   ];
 
   const db = prisma as unknown as Record<string, { upsert: (args: { where: { id: string }; create: unknown; update: unknown }) => Promise<unknown> }>;
 
+  const errors: string[] = [];
+
   for (const model of order) {
     const records = dbJson[model];
     if (!records || records.length === 0) continue;
-    try {
-      for (const record of records) {
+    let modelErrors = 0;
+    for (const record of records) {
+      try {
         await db[model].upsert({
           where: { id: (record as Record<string, string>).id },
           create: record,
           update: record,
         });
+      } catch (err) {
+        modelErrors++;
+        if (modelErrors === 1) {
+          errors.push(`${model}: ${(err as Error).message}`);
+        }
       }
-    } catch (err) {
-      console.error(`[Backup] Error importing ${model}:`, err);
     }
+    if (modelErrors > 0) {
+      console.error(`[Backup] ${model}: ${modelErrors} record(s) failed`);
+    }
+  }
+
+  if (errors.length > 0) {
+    throw new AppError(500, `Restore completed with errors in: ${errors.join("; ")}`);
   }
 }
 
@@ -224,12 +258,28 @@ export class BackupService {
       cleanupPath = extractPath;
     }
 
+    await this.restoreFromPath(extractPath);
+
+    if (cleanupPath) await fs.unlink(cleanupPath).catch(() => {});
+  }
+
+  async restoreFromUpload(file: { buffer: Buffer; filename: string }): Promise<void> {
+    const tmpPath = path.join(BACKUP_DIR, ".upload-" + Date.now() + path.extname(file.filename));
+    await fs.writeFile(tmpPath, file.buffer);
+    try {
+      await this.restoreFromPath(tmpPath);
+    } finally {
+      await fs.unlink(tmpPath).catch(() => {});
+    }
+  }
+
+  private async restoreFromPath(archivePath: string): Promise<void> {
     const tmpDir = path.join(BACKUP_DIR, ".restore-" + Date.now());
     await fs.mkdir(tmpDir, { recursive: true });
 
     try {
       const { execSync } = await import("child_process");
-      execSync(`tar -xzf "${extractPath}" -C "${tmpDir}"`, { stdio: "pipe" });
+      execSync(`tar -xzf "${archivePath}" -C "${tmpDir}"`, { stdio: "pipe" });
 
       const dbPath = path.join(tmpDir, "db.json");
       const dbJson = JSON.parse(await fs.readFile(dbPath, "utf-8"));
@@ -246,23 +296,14 @@ export class BackupService {
         }
       }
 
+      console.log("[Backup] Clearing existing data...");
+      await clearDatabase();
+
       console.log("[Backup] Importing database...");
       await importDatabase(dbJson);
       console.log("[Backup] Restore complete!");
     } finally {
       await fs.rm(tmpDir, { recursive: true, force: true });
-      if (cleanupPath) await fs.unlink(cleanupPath).catch(() => {});
-    }
-  }
-
-  async restoreFromUpload(file: { buffer: Buffer; filename: string }): Promise<void> {
-    const tmpPath = path.join(BACKUP_DIR, ".upload-" + Date.now() + path.extname(file.filename));
-    await fs.writeFile(tmpPath, file.buffer);
-    try {
-      const name = path.basename(tmpPath);
-      await this.restoreFromDisk(name.replace(/^\.upload-/, "melenote-backup-"));
-    } finally {
-      await fs.unlink(tmpPath).catch(() => {});
     }
   }
 
