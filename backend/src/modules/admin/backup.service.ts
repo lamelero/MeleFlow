@@ -146,7 +146,7 @@ async function clearDatabase() {
   }
 }
 
-async function importDatabase(dbJson: Record<string, unknown[]>) {
+async function importDatabase(dbJson: Record<string, unknown[]>): Promise<{ warnings: string[] }> {
   const order = [
     "systemSetting",
     "user", "list", "tag",
@@ -158,7 +158,7 @@ async function importDatabase(dbJson: Record<string, unknown[]>) {
 
   const db = prisma as unknown as Record<string, { upsert: (args: { where: { id: string }; create: unknown; update: unknown }) => Promise<unknown> }>;
 
-  const errors: string[] = [];
+  const warnings: string[] = [];
 
   for (const model of order) {
     const records = dbJson[model];
@@ -174,18 +174,16 @@ async function importDatabase(dbJson: Record<string, unknown[]>) {
       } catch (err) {
         modelErrors++;
         if (modelErrors === 1) {
-          errors.push(`${model}: ${(err as Error).message}`);
+          warnings.push(`${model}: ${(err as Error).message}`);
         }
       }
     }
     if (modelErrors > 0) {
-      console.error(`[Backup] ${model}: ${modelErrors} record(s) failed`);
+      console.error(`[Backup] ${model}: ${modelErrors} record(s) failed during import`);
     }
   }
 
-  if (errors.length > 0) {
-    throw new AppError(500, `Restore completed with errors in: ${errors.join("; ")}`);
-  }
+  return { warnings };
 }
 
 export class BackupService {
@@ -245,7 +243,7 @@ export class BackupService {
     await fs.unlink(path.join(BACKUP_DIR, name));
   }
 
-  async restoreFromDisk(name: string): Promise<void> {
+  async restoreFromDisk(name: string): Promise<{ warnings: string[] }> {
     const filePath = path.join(BACKUP_DIR, name);
     await this.assertBackupExists(name);
 
@@ -258,22 +256,24 @@ export class BackupService {
       cleanupPath = extractPath;
     }
 
-    await this.restoreFromPath(extractPath);
+    const result = await this.restoreFromPath(extractPath);
 
     if (cleanupPath) await fs.unlink(cleanupPath).catch(() => {});
+
+    return result;
   }
 
-  async restoreFromUpload(file: { buffer: Buffer; filename: string }): Promise<void> {
+  async restoreFromUpload(file: { buffer: Buffer; filename: string }): Promise<{ warnings: string[] }> {
     const tmpPath = path.join(BACKUP_DIR, ".upload-" + Date.now() + path.extname(file.filename));
     await fs.writeFile(tmpPath, file.buffer);
     try {
-      await this.restoreFromPath(tmpPath);
+      return await this.restoreFromPath(tmpPath);
     } finally {
       await fs.unlink(tmpPath).catch(() => {});
     }
   }
 
-  private async restoreFromPath(archivePath: string): Promise<void> {
+  private async restoreFromPath(archivePath: string): Promise<{ warnings: string[] }> {
     const tmpDir = path.join(BACKUP_DIR, ".restore-" + Date.now());
     await fs.mkdir(tmpDir, { recursive: true });
 
@@ -300,8 +300,15 @@ export class BackupService {
       await clearDatabase();
 
       console.log("[Backup] Importing database...");
-      await importDatabase(dbJson);
-      console.log("[Backup] Restore complete!");
+      const { warnings } = await importDatabase(dbJson);
+
+      if (warnings.length > 0) {
+        console.warn(`[Backup] Restore completed with ${warnings.length} warning(s):`, warnings.join("; "));
+      } else {
+        console.log("[Backup] Restore complete!");
+      }
+
+      return { warnings };
     } finally {
       await fs.rm(tmpDir, { recursive: true, force: true });
     }

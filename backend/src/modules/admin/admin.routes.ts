@@ -144,8 +144,12 @@ export async function adminRoutes(app: FastifyInstance) {
 
   app.post("/restore/:name", async (req, reply) => {
     const { name } = req.params as { name: string };
-    await backupService.restoreFromDisk(name);
-    return reply.send({ ok: true, message: "Restore complete. Please log in again." });
+    const { warnings } = await backupService.restoreFromDisk(name);
+    return reply.send({
+      ok: true,
+      message: "Restore complete. Please log in again.",
+      warnings: warnings.length > 0 ? warnings : undefined,
+    });
   });
 
   app.post("/restore", async (req, reply) => {
@@ -158,8 +162,12 @@ export async function adminRoutes(app: FastifyInstance) {
       chunks.push(chunk);
     }
     const buffer = Buffer.concat(chunks);
-    await backupService.restoreFromUpload({ buffer, filename: file.filename });
-    return reply.send({ ok: true, message: "Restore complete. Please log in again." });
+    const { warnings } = await backupService.restoreFromUpload({ buffer, filename: file.filename });
+    return reply.send({
+      ok: true,
+      message: "Restore complete. Please log in again.",
+      warnings: warnings.length > 0 ? warnings : undefined,
+    });
   });
 
   app.get("/backup-settings", async (_req, reply) => {

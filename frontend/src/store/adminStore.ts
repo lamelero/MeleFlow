@@ -273,8 +273,12 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   restoreBackup: async (name) => {
     if (!window.confirm("Restore will overwrite all current data. Users will need to log in again. Continue?")) return;
     try {
-      await client.post(`/admin/restore/${encodeURIComponent(name)}`);
-      toast.success("Restore complete. Please log in again.");
+      const { data } = await client.post(`/admin/restore/${encodeURIComponent(name)}`);
+      if (data.warnings?.length > 0) {
+        toast(`Restore completed with warnings: ${data.warnings.join("; ")}`, { icon: "⚠️" });
+      } else {
+        toast.success("Restore complete. Please log in again.");
+      }
       setTimeout(() => { window.location.href = "/login"; }, 2000);
     } catch {
       toast.error("Failed to restore backup");
