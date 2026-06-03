@@ -6,6 +6,8 @@ import AuthLayout from "./AuthLayout";
 import LanguageSwitcher from "../../components/LanguageSwitcher";
 import ThemeToggle from "../../components/ThemeToggle";
 
+const RESEND_COOLDOWN = 60;
+
 export default function TwoFactorVerify() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -24,7 +26,8 @@ export default function TwoFactorVerify() {
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [submitting, setSubmitting] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
+  const [otpSent, setOtpSent] = useState(method === "email");
+  const [resendCooldown, setResendCooldown] = useState(method === "email" ? RESEND_COOLDOWN : 0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
@@ -36,6 +39,12 @@ export default function TwoFactorVerify() {
   useEffect(() => {
     inputRefs.current[0]?.focus();
   }, []);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const id = setInterval(() => setResendCooldown((c) => c - 1), 1000);
+    return () => clearInterval(id);
+  }, [resendCooldown]);
 
   function handleChange(index: number, value: string) {
     if (value.length > 1) return;
@@ -87,12 +96,13 @@ export default function TwoFactorVerify() {
     }
   }
 
-  async function handleSendOTP() {
-    if (!twoFactorToken) return;
+  async function handleResend() {
+    if (!twoFactorToken || resendCooldown > 0) return;
     setSendingOtp(true);
     try {
       await sendOTP(twoFactorToken);
       setOtpSent(true);
+      setResendCooldown(RESEND_COOLDOWN);
     } catch {
       // error set in store
     } finally {
@@ -150,16 +160,18 @@ export default function TwoFactorVerify() {
           {submitting ? "Verifying..." : "Verify"}
         </button>
 
-        {method === "totp" && (
-          <button
-            type="button"
-            onClick={handleSendOTP}
-            disabled={sendingOtp}
-            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-          >
-            {sendingOtp ? "Sending..." : otpSent ? "Code sent! Check your email" : "Send code to email"}
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={handleResend}
+          disabled={sendingOtp || resendCooldown > 0}
+          className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+        >
+          {sendingOtp
+            ? "Sending..."
+            : resendCooldown > 0
+              ? `Resend (${resendCooldown}s)`
+              : "Resend code"}
+        </button>
 
         <button
           type="button"
