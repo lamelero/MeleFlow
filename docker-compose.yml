@@ -9,17 +9,17 @@ x-shared: &shared-node
     - ./backend/package-lock.json:/usr/src/app/package-lock.json
     - ./backend/tsconfig.json:/usr/src/app/tsconfig.json
     - ./backend/vitest.config.ts:/usr/src/app/vitest.config.ts
-    - melenotes_backend_node_modules:/usr/src/app/node_modules
+    - meleflow_backend_node_modules:/usr/src/app/node_modules
   restart: unless-stopped
   networks:
-    - melenote-net
+    - meleflow-net
 
 services:
 
   # ── Database ──────────────────────────────────
   postgres:
     image: postgres:16-alpine
-    container_name: melenotes-postgres
+    container_name: meleflow-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: taskflow
@@ -33,12 +33,12 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - melenote-net
+      - meleflow-net
 
   # ── Cache / Sessions ─────────────────────────
   redis:
     image: redis:7-alpine
-    container_name: melenotes-redis
+    container_name: meleflow-redis
     restart: unless-stopped
     volumes:
       - redis_data:/data
@@ -48,12 +48,12 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - melenote-net
+      - meleflow-net
 
   # ── Backend API ──────────────────────────────
   backend:
     <<: *shared-node
-    container_name: melenotes-backend
+    container_name: meleflow-backend
     command: >
       sh -c "
         npm install &&
@@ -73,15 +73,15 @@ services:
       - ./backend/tsconfig.json:/usr/src/app/tsconfig.json
       - ./backend/vitest.config.ts:/usr/src/app/vitest.config.ts
       - ./backend/uploads:/usr/src/app/uploads
-      - melenotes_backend_node_modules:/usr/src/app/node_modules
-      - melenotes_backend_node_modules:/usr/src/app/node_modules
+      - meleflow_backend_node_modules:/usr/src/app/node_modules
+      - meleflow_backend_node_modules:/usr/src/app/node_modules
     env_file:
       - .env
 
   # ── Worker (Reminders / Cron) ────────────────
   worker:
     <<: *shared-node
-    container_name: melenotes-worker
+    container_name: meleflow-worker
     command: sh -c "npm install && npx prisma generate && npm run dev:worker"
     depends_on:
       postgres:
@@ -95,7 +95,7 @@ services:
   # ── Frontend (Vite Dev Server) ───────────────
   frontend:
     image: node:20-alpine
-    container_name: melenotes-frontend
+    container_name: meleflow-frontend
     working_dir: /usr/src/app
     restart: unless-stopped
     command: sh -c "npm install && npm run dev"
@@ -107,18 +107,18 @@ services:
       - ./frontend/tsconfig.json:/usr/src/app/tsconfig.json
       - ./frontend/vite.config.ts:/usr/src/app/vite.config.ts
       - ./frontend/index.html:/usr/src/app/index.html
-      - melenotes_frontend_node_modules:/usr/src/app/node_modules
+      - meleflow_frontend_node_modules:/usr/src/app/node_modules
     depends_on:
       - backend
     env_file:
       - .env
     networks:
-      - melenote-net
+      - meleflow-net
 
   # ── Reverse Proxy ────────────────────────────
   nginx:
     image: nginx:alpine
-    container_name: melenotes-nginx
+    container_name: meleflow-nginx
     restart: unless-stopped
     ports:
       - "3001:80"
@@ -129,10 +129,10 @@ services:
       backend:
         condition: service_started
     networks:
-      - melenote-net
+      - meleflow-net
 
 networks:
-  melenote-net:
+  meleflow-net:
     driver: bridge
 
 volumes:
@@ -140,7 +140,7 @@ volumes:
     driver: local
   redis_data:
     driver: local
-  melenotes_backend_node_modules:
+  meleflow_backend_node_modules:
     driver: local
-  melenotes_frontend_node_modules:
+  meleflow_frontend_node_modules:
     driver: local

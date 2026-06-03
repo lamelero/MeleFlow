@@ -72,7 +72,7 @@ export async function adminRoutes(app: FastifyInstance) {
     const { sendEmail } = await import("../../lib/email-service");
     const ok = await sendEmail(
       body?.to || user.email,
-      "Test email from MeleNotes",
+      "Test email from MeleFlow",
       "<p>If you're reading this, your SMTP configuration works!</p>",
     );
     if (ok) {

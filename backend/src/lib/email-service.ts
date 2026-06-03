@@ -73,7 +73,7 @@ export function buildOTPEmail(code: string, lang = "en"): string {
         </div>
         <div class="header-text">
           <h1>${t(lang, "otpSubject")}</h1>
-          <div class="sub">MeleNotes</div>
+          <div class="sub">MeleFlow</div>
         </div>
       </div>
       <div class="body" style="text-align:center;">
@@ -189,7 +189,7 @@ export function buildReminderEmail(
         </div>
         <div class="header-text">
           <h1>${t(lang, "headerTitle")}</h1>
-          <div class="sub">MeleNotes</div>
+          <div class="sub">MeleFlow</div>
         </div>
       </div>
       <div class="body">
@@ -270,7 +270,7 @@ export function buildHabitReminderEmail(
         </div>
         <div class="header-text">
           <h1>${habitName}</h1>
-          <div class="sub">MeleNotes</div>
+          <div class="sub">MeleFlow</div>
         </div>
       </div>
       <div class="body">

@@ -10,7 +10,7 @@ export function generateSecret(): string {
   return otplib.generateSecret();
 }
 
-export function generateTOTPUri(secret: string, email: string, issuer = "MeleNotes"): string {
+export function generateTOTPUri(secret: string, email: string, issuer = "MeleFlow"): string {
   return otplib.generateURI({
     issuer,
     label: email,

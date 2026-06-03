@@ -1,4 +1,4 @@
-# MeleNotes 📝
+# MeleFlow 🏄
 
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Stack](https://img.shields.io/badge/stack-React%2019%20%7C%20Fastify%205%20%7C%20PostgreSQL%2016%20%7C%20Redis%207-14B8A6)
@@ -19,7 +19,7 @@ Self-hosted task management web app with tasks, lists, tags, habits, Pomodoro ti
 
 ```bash
 # 1. Clone and enter the project
-git clone <repo> melenote && cd melenote
+git clone <repo> meleflow && cd meleflow
 
 # 2. Copy environment (defaults work out of the box)
 cp .env.example .env
@@ -210,7 +210,7 @@ npx vitest run
 ## Project Structure
 
 ```
-melenotes/
+  meleflow/
 ├── backend/
 │   └── src/
 │       ├── config/          # Env, Prisma, Redis singletons
@@ -235,7 +235,7 @@ melenotes/
 
 ## i18n
 
-MeleNotes supports English and Spanish. Language can be changed from the profile page or the user menu. Your preference is persisted to the database.
+MeleFlow supports English and Spanish. Language can be changed from the profile page or the user menu. Your preference is persisted to the database.
 
 ## Email Configuration
 

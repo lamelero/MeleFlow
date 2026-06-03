@@ -70,7 +70,7 @@ async function writeTar(dir: string, dbJson: Record<string, unknown[]>): Promise
       // uploads copy is non-critical
     }
 
-    const tarName = `melenote-backup-${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}.tar.gz`;
+    const tarName = `meleflow-backup-${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}.tar.gz`;
     const tarPath = path.join(BACKUP_DIR, tarName);
 
     // Use tar CLI for simplicity
@@ -216,7 +216,7 @@ export class BackupService {
     const backups = [];
 
     for (const file of files) {
-      if (!file.startsWith("melenote-backup")) continue;
+      if (!file.startsWith("meleflow-backup")) continue;
       const filePath = path.join(BACKUP_DIR, file);
       const stat = await fs.stat(filePath).catch(() => null);
       if (!stat?.isFile()) continue;

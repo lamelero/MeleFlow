@@ -6,7 +6,7 @@ const IV_LENGTH = 16;
 const TAG_LENGTH = 16;
 
 function getKey(): Buffer {
-  return crypto.scryptSync(env.ENCRYPTION_KEY, "melenotes-salt", 32);
+  return crypto.scryptSync(env.ENCRYPTION_KEY, "meleflow-salt", 32);
 }
 
 export function encrypt(text: string): string {

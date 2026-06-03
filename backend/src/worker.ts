@@ -21,7 +21,7 @@ async function getAppUrl(): Promise<string> {
   return DEFAULT_URL;
 }
 
-console.log(" MeleNotes Worker started — checking for reminders every minute");
+console.log(" MeleFlow Worker started — checking for reminders every minute");
 
 // ── Reminder check every minute ────────────────
 cron.schedule("* * * * *", async () => {
