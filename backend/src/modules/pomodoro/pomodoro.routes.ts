@@ -36,6 +36,12 @@ export async function pomodoroRoutes(app: FastifyInstance) {
     return reply.send(session);
   });
 
+  app.post("/:id/cancel", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const session = await service.cancel(req.user.sub, id);
+    return reply.send(session);
+  });
+
   app.get("/settings", async (req, reply) => {
     const settings = await service.getSettings(req.user.sub);
     return reply.send(settings);

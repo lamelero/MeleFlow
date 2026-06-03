@@ -104,6 +104,21 @@ export class PomodoroService {
     return completed;
   }
 
+  async cancel(userId: string, sessionId: string) {
+    const session = await prisma.pomodoroSession.findFirst({
+      where: { id: sessionId, userId, state: { in: ["RUNNING", "PAUSED"] } },
+    });
+
+    if (!session) {
+      throw new AppError(404, "No active session found");
+    }
+
+    return prisma.pomodoroSession.update({
+      where: { id: sessionId },
+      data: { state: "CANCELLED" },
+    });
+  }
+
   async getSettings(userId: string) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -158,13 +173,23 @@ export class PomodoroService {
     });
 
     const cycles = user.pomodoroCycles;
+
+    const lastSession = await prisma.pomodoroSession.findFirst({
+      where: {
+        userId,
+        state: "COMPLETED",
+        completedAt: { gte: todayStart, lte: todayEnd },
+      },
+      orderBy: { completedAt: "desc" },
+    });
+
     let nextPhase: "FOCUS" | "SHORT_BREAK" | "LONG_BREAK";
-    if (focusCompleted === 0) {
+    if (!lastSession) {
       nextPhase = "FOCUS";
-    } else if (focusCompleted % cycles === 0) {
-      nextPhase = "LONG_BREAK";
+    } else if (lastSession.type === "FOCUS") {
+      nextPhase = focusCompleted % cycles === 0 ? "LONG_BREAK" : "SHORT_BREAK";
     } else {
-      nextPhase = "SHORT_BREAK";
+      nextPhase = "FOCUS";
     }
 
     return {

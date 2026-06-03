@@ -38,6 +38,7 @@ interface PomodoroState {
   pause: () => Promise<void>;
   resume: () => Promise<void>;
   complete: () => Promise<void>;
+  cancel: () => Promise<void>;
   tick: () => void;
   fetchSettings: () => Promise<void>;
   updateSettings: (s: Partial<PomodoroSettings>) => Promise<void>;
@@ -113,7 +114,15 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
     if (!session) return;
     const { data } = await client.post(`/pomodoro/${session.id}/complete`);
     set({ session: data, remainingSeconds: 0 });
-    get().fetchStats();
+    await get().fetchStats();
+  },
+
+  cancel: async () => {
+    const { session } = get();
+    if (!session) return;
+    await client.post(`/pomodoro/${session.id}/cancel`);
+    set({ session: null, remainingSeconds: 0 });
+    await get().fetchStats();
   },
 
   tick: () => {
