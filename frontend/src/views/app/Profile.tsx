@@ -69,9 +69,9 @@ export default function Profile() {
         bio: bio || undefined,
         timezone: timezone || undefined,
       });
-      toast.success("Profile updated");
+      toast.success(t("profile.toasts.profileUpdated"));
     } catch {
-      toast.error("Failed to save profile");
+      toast.error(t("profile.toasts.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -81,19 +81,19 @@ export default function Profile() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file");
+      toast.error(t("profile.toasts.selectImage"));
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image must be under 5MB");
+      toast.error(t("profile.toasts.imageTooLarge"));
       return;
     }
     setUploading(true);
     try {
       const url = await uploadAvatar(file);
-      toast.success("Avatar updated");
+      toast.success(t("profile.toasts.avatarUpdated"));
     } catch {
-      toast.error("Failed to upload avatar");
+      toast.error(t("profile.toasts.avatarFailed"));
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -107,9 +107,9 @@ export default function Profile() {
       setRecoveryCodes(data.recoveryCodes);
       setShowRecoveryCodes(true);
       setIsTwoFactorConfigured(true);
-      toast.success("2FA setup initiated");
+      toast.success(t("profile.toasts.twoFactorSetup"));
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || "Failed to setup 2FA";
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || t("profile.toasts.twoFactorSetupFailed");
       toast.error(msg);
     }
   }
@@ -120,9 +120,9 @@ export default function Profile() {
       await client.post("/auth/2fa/enable", { code: setupCode });
       setIsTwoFactorEnabled(true);
       setSetupCode("");
-      toast.success("2FA enabled successfully");
+      toast.success(t("profile.toasts.twoFactorEnabled"));
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || "Invalid code";
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || t("profile.toasts.invalidCode");
       toast.error(msg);
     }
   }
@@ -136,25 +136,25 @@ export default function Profile() {
       setQrUri("");
       setRecoveryCodes([]);
       setPasswordInput("");
-      toast.success("2FA disabled");
+      toast.success(t("profile.toasts.twoFactorDisabled"));
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || "Failed to disable 2FA";
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || t("profile.toasts.twoFactorDisableFailed");
       toast.error(msg);
     }
   }
 
   async function handleRegenerateRecoveryCodes() {
     if (!passwordInput) {
-      toast.error("Enter your password first");
+      toast.error(t("profile.toasts.enterPasswordFirst"));
       return;
     }
     try {
       const { data } = await client.post("/auth/2fa/recovery-codes", { password: passwordInput });
       setRecoveryCodes(data.recoveryCodes);
       setShowRecoveryCodes(true);
-      toast.success("New recovery codes generated");
+      toast.success(t("profile.toasts.codesGenerated"));
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || "Failed to generate codes";
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || t("profile.toasts.codesGenerateFailed");
       toast.error(msg);
     }
   }
@@ -166,12 +166,12 @@ export default function Profile() {
   ];
 
   const tabs = [
-    { id: "general" as const, label: "General" },
-    { id: "security" as const, label: "Security" },
+    { id: "general" as const, label: t("profile.general") },
+    { id: "security" as const, label: t("profile.security") },
   ];
 
   return (
-    <AppLayout title="Profile">
+    <AppLayout title={t("profile.title")}>
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -251,24 +251,24 @@ export default function Profile() {
         <div className="space-y-6">
           <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
             <h3 className="mb-5 font-outfit text-base font-semibold text-gray-900 dark:text-gray-100">
-              Personal Info
+              {t("profile.personalInfo")}
             </h3>
             <div className="space-y-5">
               <div>
                 <label className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Display Name
+                  {t("profile.displayName")}
                 </label>
                 <input
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder={user?.username || "Your display name"}
+                  placeholder={user?.username || t("profile.displayNamePlaceholder")}
                   className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                 />
               </div>
               <div>
                 <label className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Email
+                  {t("profile.email")}
                 </label>
                 <p className="mt-1 font-urbanist text-sm text-gray-500 dark:text-gray-400">
                   {user?.email}
@@ -276,27 +276,27 @@ export default function Profile() {
               </div>
               <div>
                 <label className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Notification Email
+                  {t("profile.notificationEmail")}
                 </label>
                 <input
                   type="email"
                   value={notificationEmail}
                   onChange={(e) => setNotificationEmail(e.target.value)}
-                  placeholder={user?.email || "email@example.com"}
+                  placeholder={user?.email || t("profile.notificationEmailPlaceholder")}
                   className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                 />
                 <p className="mt-1.5 font-urbanist text-xs text-gray-400 dark:text-gray-500">
-                  Separate email for task reminders. Leave blank to use your account email.
+                  {t("profile.notificationEmailDesc")}
                 </p>
               </div>
               <div>
                 <label className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Bio
+                  {t("profile.bio")}
                 </label>
                 <textarea
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
-                  placeholder="A few words about yourself..."
+                  placeholder={t("profile.bioPlaceholder")}
                   rows={3}
                   maxLength={500}
                   className="mt-1 w-full resize-none rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
@@ -307,14 +307,14 @@ export default function Profile() {
               </div>
               <div>
                 <label className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Timezone
+                  {t("profile.timezone")}
                 </label>
                 <select
                   value={timezone}
                   onChange={(e) => setTimezone(e.target.value)}
                   className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
                 >
-                  <option value="">Auto-detect</option>
+                  <option value="">{t("profile.autodetect")}</option>
                   {timezones.map((tz) => (
                     <option key={tz} value={tz}>
                       {tz}
@@ -329,16 +329,16 @@ export default function Profile() {
                 disabled={saving}
                 className="rounded-xl bg-primary px-6 py-2.5 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-60"
               >
-                {saving ? "Saving..." : "Save Changes"}
+                {saving ? t("common.saving") : t("profile.saveChanges")}
               </button>
               <div>
-                <label className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
+                <label className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">{t("profile.role")}</label>
                 <span className="ml-2 rounded-full bg-gray-100 px-3 py-1 font-urbanist text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300">
                   {user?.role}
                 </span>
               </div>
               <div>
-                <label className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">Language</label>
+                <label className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">{t("profile.language")}</label>
                 <div className="ml-2 inline-flex gap-1">
                   {["en", "es"].map((lang) => (
                     <button
@@ -364,19 +364,19 @@ export default function Profile() {
         <div className="space-y-6">
           <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
             <h3 className="mb-4 font-outfit text-base font-semibold text-gray-900 dark:text-gray-100">
-              Two-Factor Authentication (2FA)
+              {t("profile.twoFactor.title")}
             </h3>
 
             {!isTwoFactorConfigured && !isTwoFactorEnabled && (
               <div>
                 <p className="mb-4 font-urbanist text-sm text-gray-500 dark:text-gray-400">
-                  Add an extra layer of security to your account by enabling 2FA.
+                  {t("profile.twoFactor.description")}
                 </p>
                 <button
                   onClick={handleSetup2FA}
                   className="rounded-xl bg-primary px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600"
                 >
-                  Setup 2FA
+                  {t("profile.twoFactor.setup")}
                 </button>
               </div>
             )}
@@ -384,21 +384,20 @@ export default function Profile() {
             {isTwoFactorConfigured && !isTwoFactorEnabled && qrUri && (
               <div className="space-y-4">
                 <p className="font-urbanist text-sm text-gray-500 dark:text-gray-400">
-                  Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.),
-                  then enter the 6-digit code below to enable.
+                  {t("profile.twoFactor.scanQRLong")}
                 </p>
                 <div className="flex justify-center">
                   <div className="rounded-xl border border-gray-200 p-4 dark:border-gray-700 dark:bg-gray-800">
                     <img
                       src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUri)}`}
-                      alt="2FA QR Code"
+                      alt={t("profile.twoFactor.title")}
                       className="h-48 w-48"
                     />
                   </div>
                 </div>
                 <div>
                   <label className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Verification Code
+                    {t("profile.twoFactor.verificationCode")}
                   </label>
                   <div className="mt-1 flex gap-2">
                     <input
@@ -407,7 +406,7 @@ export default function Profile() {
                       maxLength={6}
                       value={setupCode}
                       onChange={(e) => setSetupCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                      placeholder="000000"
+                      placeholder={t("profile.twoFactor.verificationPlaceholder")}
                       className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm text-center tracking-widest outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                     />
                     <button
@@ -415,17 +414,17 @@ export default function Profile() {
                       disabled={setupCode.length !== 6}
                       className="rounded-xl bg-primary px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
                     >
-                      Enable
+                      {t("profile.twoFactor.enable")}
                     </button>
                   </div>
                 </div>
                 {showRecoveryCodes && recoveryCodes.length > 0 && (
                   <div className="rounded-xl bg-amber-50 p-4 ring-1 ring-amber-200 dark:bg-amber-900/20 dark:ring-amber-700/30">
                     <p className="mb-2 font-urbanist text-sm font-semibold text-amber-800 dark:text-amber-300">
-                      Recovery Codes — Save these safely!
+                      {t("profile.twoFactor.recoveryCodesTitle")}
                     </p>
                     <p className="mb-3 font-urbanist text-xs text-amber-700 dark:text-amber-400">
-                      Each code can be used only once. Store them in a secure location.
+                      {t("profile.twoFactor.recoveryCodesDesc")}
                     </p>
                     <div className="grid grid-cols-2 gap-1">
                       {recoveryCodes.map((code, i) => (
@@ -444,18 +443,18 @@ export default function Profile() {
                 <div className="flex items-center gap-2">
                   <div className="h-2 w-2 rounded-full bg-green-500" />
                   <span className="font-urbanist text-sm font-medium text-green-700 dark:text-green-400">
-                    2FA is enabled
+                    {t("profile.twoFactor.enabled")}
                   </span>
                 </div>
                 <div className="rounded-xl bg-gray-50 p-4 dark:bg-gray-800">
                   <label className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Enter your password to disable 2FA or manage recovery codes
+                    {t("profile.twoFactor.enterPassword")}
                   </label>
                   <input
                     type="password"
                     value={passwordInput}
                     onChange={(e) => setPasswordInput(e.target.value)}
-                    placeholder="Your password"
+                    placeholder={t("profile.twoFactor.passwordPlaceholder")}
                     className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                   />
                   <div className="mt-3 flex flex-wrap gap-2">
@@ -464,24 +463,24 @@ export default function Profile() {
                       disabled={!passwordInput}
                       className="rounded-xl bg-red-500 px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-red-600 disabled:opacity-50"
                     >
-                      Disable 2FA
+                      {t("profile.twoFactor.disable")}
                     </button>
                     <button
                       onClick={handleRegenerateRecoveryCodes}
                       disabled={!passwordInput}
                       className="rounded-xl bg-gray-200 px-4 py-2 font-urbanist text-sm font-medium text-gray-700 transition-colors hover:bg-gray-300 disabled:opacity-50 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
                     >
-                      Generate new recovery codes
+                      {t("profile.twoFactor.generateNewCodes")}
                     </button>
                   </div>
                 </div>
                 {showRecoveryCodes && recoveryCodes.length > 0 && (
                   <div className="rounded-xl bg-amber-50 p-4 ring-1 ring-amber-200 dark:bg-amber-900/20 dark:ring-amber-700/30">
                     <p className="mb-2 font-urbanist text-sm font-semibold text-amber-800 dark:text-amber-300">
-                      New Recovery Codes
+                      {t("profile.twoFactor.recoveryCodesNewTitle")}
                     </p>
                     <p className="mb-3 font-urbanist text-xs text-amber-700 dark:text-amber-400">
-                      Save these immediately. They won't be shown again.
+                      {t("profile.twoFactor.recoveryCodesNewWarning")}
                     </p>
                     <div className="grid grid-cols-2 gap-1">
                       {recoveryCodes.map((code, i) => (

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import type { Task } from "../../store/taskStore";
 import { useTaskStore } from "../../store/taskStore";
 import TagPill from "../tags/TagPill";
@@ -28,6 +29,7 @@ const checkVariants = {
 };
 
 export default function TaskCard({ task, onClick }: TaskCardProps) {
+  const { i18n } = useTranslation();
   const { toggleTask, deleteTask } = useTaskStore();
   const [deleting, setDeleting] = useState(false);
 
@@ -126,7 +128,7 @@ export default function TaskCard({ task, onClick }: TaskCardProps) {
         <div className="mt-2 flex items-center gap-3">
           {task.dueDate && (
             <span className="font-urbanist text-xs text-gray-400 dark:text-gray-500">
-              {new Date(task.dueDate).toLocaleDateString("en-US", {
+              {new Date(task.dueDate).toLocaleDateString(i18n.language, {
                 month: "short",
                 day: "numeric",
               })}

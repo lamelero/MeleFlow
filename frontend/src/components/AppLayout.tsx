@@ -1,11 +1,13 @@
 import { useEffect } from "react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import PomodoroTimer from "./pomodoro/PomodoroTimer";
 import UserMenu from "./UserMenu";
 import { useBrandingStore } from "../store/brandingStore";
 
 export default function AppLayout({ title, children }: { title: string; children: ReactNode }) {
+  const { t } = useTranslation();
   const { logoUrl, fetchLogo } = useBrandingStore();
 
   useEffect(() => {
@@ -19,9 +21,9 @@ export default function AppLayout({ title, children }: { title: string; children
           <div className="flex items-center gap-3">
             <Link to="/app" className="no-underline">
               {logoUrl ? (
-                <img src={logoUrl} alt="Logo" className="h-8 w-auto" />
+                <img src={logoUrl} alt={t("common.logoAlt")} className="h-8 w-auto" />
               ) : (
-                <span className="font-outfit text-xl font-bold text-primary">MeleNotes</span>
+                <span className="font-outfit text-xl font-bold text-primary">{t("auth.taskflow")}</span>
               )}
             </Link>
             {title && (

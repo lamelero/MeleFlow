@@ -106,11 +106,11 @@ export default function AdminPanel() {
     setWipeRunning(true);
     try {
       await useAdminStore.getState().wipeAllData(wipePassword);
-      toast.success("All data wiped. Redirecting to register...");
+      toast.success(t("admin.wipeSuccess"));
       handleCloseWipeModal();
       setTimeout(() => { window.location.href = "/register"; }, 2000);
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || "Failed to wipe data";
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || t("admin.wipeFailed");
       toast.error(msg);
       setWipeRunning(false);
     }
@@ -363,7 +363,7 @@ export default function AdminPanel() {
                   type="text"
                   value={localFrontendUrl}
                   onChange={(e) => setLocalFrontendUrl(e.target.value)}
-                  placeholder="http://localhost:3001"
+                  placeholder={t("admin.frontendUrlPlaceholder")}
                   className="w-56 rounded-xl border border-gray-200 bg-white px-3 py-1.5 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
                 />
                 <button
@@ -581,29 +581,29 @@ export default function AdminPanel() {
         {/* Backup & Restore */}
         <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
           <h2 className="mb-4 font-outfit text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Backup & Restore
+            {t("admin.backupRestore")}
           </h2>
 
           {/* Settings */}
           <div className="mb-6 grid gap-4 sm:grid-cols-3">
             <div>
               <label className="mb-1 block font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                Schedule
+                {t("admin.schedule")}
               </label>
               <select
                 value={backupSettings.backupInterval}
                 onChange={(e) => updateBackupSettings({ backupInterval: e.target.value })}
                 className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
               >
-                <option value="manual">Manual only</option>
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-                <option value="monthly">Monthly</option>
+                <option value="manual">{t("admin.scheduleManual")}</option>
+                <option value="daily">{t("admin.scheduleDaily")}</option>
+                <option value="weekly">{t("admin.scheduleWeekly")}</option>
+                <option value="monthly">{t("admin.scheduleMonthly")}</option>
               </select>
             </div>
             <div>
               <label className="mb-1 block font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                Retention (max backups)
+                {t("admin.retention")}
               </label>
               <input
                 type="number"
@@ -620,7 +620,7 @@ export default function AdminPanel() {
             <div className="flex items-end pb-2">
               <label className="flex items-center gap-2">
                 <span className="font-urbanist text-xs font-medium text-gray-500 dark:text-gray-400">
-                  Encrypt with AES-256
+                  {t("admin.encrypt")}
                 </span>
                 <button
                   onClick={() => updateBackupSettings({ backupEncrypted: !backupSettings.backupEncrypted })}
@@ -648,10 +648,10 @@ export default function AdminPanel() {
               {backupCreating ? (
                 <span className="flex items-center gap-2">
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  Creating...
+                  {t("admin.creating")}
                 </span>
               ) : (
-                "Generate backup now"
+                t("admin.generateBackup")
               )}
             </button>
           </div>
@@ -660,7 +660,7 @@ export default function AdminPanel() {
           {backups.length === 0 ? (
             <div className="rounded-xl bg-gray-50 p-6 text-center ring-1 ring-gray-200 dark:bg-gray-800/50 dark:ring-gray-700">
               <p className="font-urbanist text-sm text-gray-400 dark:text-gray-500">
-                No backups yet. Generate one above.
+                {t("admin.noBackups")}
               </p>
             </div>
           ) : (
@@ -680,7 +680,7 @@ export default function AdminPanel() {
                       {backup.name}
                       {backup.encrypted && (
                         <span className="ml-2 rounded bg-yellow-100 px-1.5 py-0.5 text-xs font-medium text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
-                          Encrypted
+                          {t("admin.encrypted")}
                         </span>
                       )}
                     </p>
@@ -692,7 +692,7 @@ export default function AdminPanel() {
                     <a
                       href={`/api/admin/backups/${encodeURIComponent(backup.name)}/download`}
                       className="rounded-lg p-2 text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-gray-700"
-                      title="Download"
+                      title={t("admin.download")}
                     >
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V3" />
@@ -701,7 +701,7 @@ export default function AdminPanel() {
                     <button
                       onClick={() => restoreBackup(backup.name)}
                       className="rounded-lg p-2 text-gray-400 hover:bg-orange-100 hover:text-orange-600 dark:hover:bg-orange-900/30"
-                      title="Restore"
+                      title={t("admin.restore")}
                     >
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -710,7 +710,7 @@ export default function AdminPanel() {
                     <button
                       onClick={() => deleteBackup(backup.name)}
                       className="rounded-lg p-2 text-gray-400 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30"
-                      title="Delete"
+                      title={t("admin.delete")}
                     >
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -733,17 +733,16 @@ export default function AdminPanel() {
         {/* Factory Reset */}
         <div className="rounded-2xl border border-red-200 bg-red-50 p-6 dark:border-red-900/30 dark:bg-red-900/10">
           <h2 className="mb-2 font-outfit text-lg font-semibold text-red-700 dark:text-red-400">
-            Factory reset
+            {t("admin.factoryReset")}
           </h2>
           <p className="mb-4 font-urbanist text-sm text-red-600 dark:text-red-300">
-            This will permanently delete all tasks, habits, users, settings, and uploaded files.
-            The application will return to its initial state as if freshly installed.
+            {t("admin.factoryResetDesc")}
           </p>
           <button
             onClick={handleOpenWipeModal}
             className="rounded-xl bg-red-600 px-5 py-2.5 font-urbanist text-sm font-medium text-white transition-colors hover:bg-red-700"
           >
-            Wipe all data
+            {t("admin.wipeAllData")}
           </button>
         </div>
       </div>
@@ -753,31 +752,31 @@ export default function AdminPanel() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="mx-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-900">
             <h3 className="mb-3 font-outfit text-lg font-semibold text-red-600 dark:text-red-400">
-              ⚠️ Wipe all data?
+              {t("admin.wipeModalTitle")}
             </h3>
             <div className="mb-4 space-y-2 font-urbanist text-sm text-gray-600 dark:text-gray-300">
-              <p>This action <strong>cannot be undone</strong>. The following will be deleted:</p>
+              <p dangerouslySetInnerHTML={{ __html: t("admin.wipeModalWarning") }} />
               <ul className="list-disc pl-5 space-y-1">
-                <li>All users (including you)</li>
-                <li>All tasks, habits, lists, tags</li>
-                <li>All Pomodoro sessions</li>
-                <li>All uploaded files (attachments, avatars, logos)</li>
-                <li>All system settings (SMTP, backup config, registration, etc.)</li>
-                <li>All security logs</li>
+                <li>{t("admin.wipeModalItemUsers")}</li>
+                <li>{t("admin.wipeModalItemData")}</li>
+                <li>{t("admin.wipeModalItemPomodoro")}</li>
+                <li>{t("admin.wipeModalItemFiles")}</li>
+                <li>{t("admin.wipeModalItemSettings")}</li>
+                <li>{t("admin.wipeModalItemLogs")}</li>
               </ul>
-              <p className="mt-3">After wiping, you will be redirected to the registration page to set up a new account.</p>
-              <p className="mt-2 text-xs text-gray-400">Backup archives (.tar.gz) are preserved. Delete them manually from the Backup section if desired.</p>
+              <p className="mt-3">{t("admin.wipeModalRedirect")}</p>
+              <p className="mt-2 text-xs text-gray-400">{t("admin.wipeModalPreserved")}</p>
             </div>
 
             <div className="mb-4">
               <label className="mb-1 block font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
-                Enter your admin password to confirm
+                {t("admin.wipeModalPassword")}
               </label>
               <input
                 type="password"
                 value={wipePassword}
                 onChange={(e) => setWipePassword(e.target.value)}
-                placeholder="Current admin password"
+                placeholder={t("admin.wipeModalPasswordPlaceholder")}
                 className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                 disabled={wipeRunning}
               />
@@ -789,7 +788,7 @@ export default function AdminPanel() {
                 disabled={wipeRunning}
                 className="flex-1 rounded-xl bg-gray-100 px-4 py-2.5 font-urbanist text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
               >
-                Cancel
+                {t("admin.wipeCancel")}
               </button>
               <button
                 onClick={handleConfirmWipe}
@@ -799,12 +798,12 @@ export default function AdminPanel() {
                 {wipeRunning ? (
                   <span className="flex items-center justify-center gap-2">
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    Wiping...
+                    {t("admin.wiping")}
                   </span>
                 ) : wipeConfirmEnabled ? (
-                  "Wipe everything"
+                  t("admin.wipeConfirm")
                 ) : (
-                  `Wait ${wipeCountdown}s to confirm`
+                  t("admin.waitToConfirm", { count: wipeCountdown })
                 )}
               </button>
             </div>

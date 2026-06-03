@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { HABIT_CATEGORIES, HABIT_CATEGORY_KEYS } from "../../lib/habit-categories";
 import type { Habit } from "../../store/habitStore";
 
@@ -17,16 +18,6 @@ interface HabitFormModalProps {
   }) => Promise<void>;
   habit?: Habit | null;
 }
-
-const WEEK_DAYS = [
-  { value: 1, label: "M" },
-  { value: 2, label: "T" },
-  { value: 3, label: "W" },
-  { value: 4, label: "T" },
-  { value: 5, label: "F" },
-  { value: 6, label: "S" },
-  { value: 0, label: "S" },
-];
 
 function parseFrequency(freq: string | null): {
   type: "daily" | "weekly" | "monthly";
@@ -52,6 +43,17 @@ export default function HabitFormModal({
   onSave,
   habit,
 }: HabitFormModalProps) {
+  const { t } = useTranslation();
+  const dayHeaders = t("calendar.dayHeaders", { returnObjects: true }) as string[];
+  const WEEK_DAYS = [
+    { value: 1, label: dayHeaders[0] },
+    { value: 2, label: dayHeaders[1] },
+    { value: 3, label: dayHeaders[2] },
+    { value: 4, label: dayHeaders[3] },
+    { value: 5, label: dayHeaders[4] },
+    { value: 6, label: dayHeaders[5] },
+    { value: 0, label: dayHeaders[6] },
+  ];
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("OTROS");
@@ -142,7 +144,7 @@ export default function HabitFormModal({
             <div className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white/97 p-6 shadow-2xl dark:border-gray-700 dark:bg-gray-900/97">
               <div className="mb-6 flex items-center justify-between">
                 <h2 className="font-outfit text-xl font-semibold text-gray-900 dark:text-gray-100">
-                  {habit ? "Edit Habit" : "New Habit"}
+                  {habit ? t("habits.editHabit") : t("habits.newHabit")}
                 </h2>
                 <button
                   onClick={onClose}
@@ -157,13 +159,13 @@ export default function HabitFormModal({
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
                   <label className="mb-1.5 block font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Name
+                    {t("habits.name")}
                   </label>
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Morning run"
+                    placeholder={t("habits.namePlaceholder")}
                     required
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm text-gray-900 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                   />
@@ -171,7 +173,7 @@ export default function HabitFormModal({
 
                 <div>
                   <label className="mb-1.5 block font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Category
+                    {t("habits.category")}
                   </label>
                   <div className="grid grid-cols-5 gap-2">
                     {HABIT_CATEGORY_KEYS.map((key) => {
@@ -200,9 +202,9 @@ export default function HabitFormModal({
 
                 <div className="flex gap-4">
                   <div className="flex-1">
-                    <label className="mb-1.5 block font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Priority
-                    </label>
+                  <label className="mb-1.5 block font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {t("habits.priority")}
+                  </label>
                     <div className="flex gap-1">
                       {[1, 2, 3, 4, 5].map((p) => (
                         <button
@@ -225,7 +227,7 @@ export default function HabitFormModal({
 
                 <div>
                   <label className="mb-1.5 block font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Frequency
+                    {t("habits.frequency")}
                   </label>
                   <div className="flex gap-2">
                     {(["daily", "weekly", "monthly"] as const).map((type) => (
@@ -242,7 +244,7 @@ export default function HabitFormModal({
                           color: freqType === type ? catInfo.color : "#6B7280",
                         }}
                       >
-                        {type}
+                        {t("habits." + type)}
                       </button>
                     ))}
                   </div>
@@ -251,7 +253,7 @@ export default function HabitFormModal({
                 {freqType === "weekly" && (
                   <div>
                     <label className="mb-1.5 block font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Days of week
+                      {t("habits.daysOfWeek")}
                     </label>
                     <div className="flex gap-1.5">
                       {WEEK_DAYS.map((d) => {
@@ -288,8 +290,8 @@ export default function HabitFormModal({
 
                 <div>
                   <label className="mb-1.5 block font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Reminder time{" "}
-                    <span className="font-normal text-gray-400 dark:text-gray-500">(optional)</span>
+                    {t("habits.reminderTime")}{" "}
+                    <span className="font-normal text-gray-400 dark:text-gray-500">{t("habits.optional")}</span>
                   </label>
                   <input
                     type="time"
@@ -302,7 +304,7 @@ export default function HabitFormModal({
                 <div className="flex gap-4">
                   <div className="flex-1">
                     <label className="mb-1.5 block font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Start date
+                      {t("habits.startDate")}
                     </label>
                     <input
                       type="date"
@@ -313,8 +315,8 @@ export default function HabitFormModal({
                   </div>
                   <div className="flex-1">
                     <label className="mb-1.5 block font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
-                      End date{" "}
-                      <span className="font-normal text-gray-400 dark:text-gray-500">(optional)</span>
+                      {t("habits.endDate")}{" "}
+                      <span className="font-normal text-gray-400 dark:text-gray-500">{t("habits.optional")}</span>
                     </label>
                     <input
                       type="date"
@@ -327,16 +329,36 @@ export default function HabitFormModal({
 
                 <div>
                   <label className="mb-1.5 block font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Description{" "}
-                    <span className="font-normal text-gray-400 dark:text-gray-500">(optional)</span>
+                    {t("habits.description")}{" "}
+                    <span className="font-normal text-gray-400 dark:text-gray-500">{t("habits.optional")}</span>
                   </label>
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={2}
-                    placeholder="Add a note..."
-                    className="w-full resize-none rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm text-gray-900 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+                    placeholder={t("habits.descriptionPlaceholder")}
+                    className="w-full resize-none rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                   />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="flex-1 rounded-xl bg-gray-100 px-4 py-2.5 font-urbanist text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                  >
+                    {t("habits.cancel")}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving || !name.trim()}
+                    className="flex-1 rounded-xl px-4 py-2.5 font-urbanist text-sm font-medium text-white transition-colors disabled:opacity-50"
+                    style={{
+                      backgroundColor: catInfo.color,
+                    }}
+                  >
+                    {saving ? t("habits.saving") : habit ? t("habits.saveChanges") : t("habits.createHabit")}
+                  </button>
                 </div>
 
                 <div className="flex gap-3 pt-2">

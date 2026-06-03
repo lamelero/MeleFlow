@@ -1,11 +1,6 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import type { Task } from "../../store/taskStore";
-
-const DAY_HEADERS = ["L", "M", "X", "J", "V", "S", "D"];
-const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
 
 interface TaskCalendarProps {
   tasks: Task[];
@@ -21,6 +16,9 @@ function normalizeDate(d: Date): string {
 }
 
 export default function TaskCalendar({ tasks, currentDate, onPrevMonth, onNextMonth, onTaskClick, listColors }: TaskCalendarProps) {
+  const { t } = useTranslation();
+  const dayHeaders = t("calendar.dayHeaders", { returnObjects: true }) as string[];
+  const monthNames = t("calendar.monthNames", { returnObjects: true }) as string[];
   const tasksByDate = useMemo(() => {
     const map = new Map<string, Task[]>();
     for (const task of tasks) {
@@ -84,7 +82,7 @@ export default function TaskCalendar({ tasks, currentDate, onPrevMonth, onNextMo
       {/* Navigation header */}
       <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3 dark:border-gray-800">
         <h2 className="font-outfit text-base font-semibold text-gray-900 dark:text-gray-100">
-          {MONTH_NAMES[currentDate.getMonth()]} {currentDate.getFullYear()}
+          {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
         </h2>
         <div className="flex items-center gap-1">
           <button onClick={onPrevMonth}
@@ -104,7 +102,7 @@ export default function TaskCalendar({ tasks, currentDate, onPrevMonth, onNextMo
 
       {/* Day headers */}
       <div className="grid grid-cols-7 border-b border-gray-100 dark:border-gray-800">
-        {DAY_HEADERS.map((label) => (
+        {dayHeaders.map((label) => (
           <div key={label}
             className="py-2 text-center font-urbanist text-xs font-medium text-gray-400 dark:text-gray-500">
             {label}
@@ -146,7 +144,7 @@ export default function TaskCalendar({ tasks, currentDate, onPrevMonth, onNextMo
                   ))}
                   {extra > 0 && (
                     <span className="block truncate px-1 font-urbanist text-[10px] font-medium text-gray-400 dark:text-gray-500">
-                      +{extra} more
+                      {t("calendar.more", { count: extra })}
                     </span>
                   )}
                 </div>

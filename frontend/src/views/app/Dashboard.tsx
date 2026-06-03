@@ -179,7 +179,7 @@ export default function Dashboard() {
                   <rect x="3" y="4" width="18" height="18" rx="2" />
                   <path d="M16 2v4M8 2v4M3 10h18" />
                 </svg>
-                Calendar
+                {t("dashboard.calendar")}
               </Link>
               {lists.map((list) => (
                 <div key={list.id} className="relative">
@@ -250,7 +250,7 @@ export default function Dashboard() {
                         }}
                         className="flex w-full items-center gap-2 px-3 py-2 font-urbanist text-xs text-gray-700 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
                       >
-                        Rename
+                        {t("dashboard.rename")}
                       </button>
                       <button
                         onClick={() => {
@@ -259,7 +259,7 @@ export default function Dashboard() {
                         }}
                         className="flex w-full items-center gap-2 px-3 py-2 font-urbanist text-xs text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20"
                       >
-                        Delete
+                        {t("dashboard.delete")}
                       </button>
                     </div>
                   )}
@@ -338,7 +338,7 @@ export default function Dashboard() {
           {sharedTasks.length > 0 && (
             <section>
               <h2 className="mb-4 font-outfit text-lg font-semibold text-gray-900 dark:text-gray-100">
-                Shared with me
+                {t("dashboard.sharedWithMe")}
               </h2>
               <div className="space-y-2">
                 {sharedTasks.map((task) => (
@@ -458,23 +458,23 @@ export default function Dashboard() {
           <div className="mx-4 w-full max-w-xs rounded-2xl border border-gray-200/50 bg-white p-6 shadow-2xl dark:border-gray-700/50 dark:bg-gray-900"
             onClick={(e) => e.stopPropagation()}>
             <h3 className="font-urbanist text-sm font-semibold text-gray-900 dark:text-gray-100">
-              Delete list?
+              {t("dashboard.deleteList")}
             </h3>
             <p className="mt-2 font-urbanist text-xs text-gray-500 dark:text-gray-400">
-              Tasks will be moved to "All Tasks" without a list.
+              {t("dashboard.deleteListWarning")}
             </p>
             <div className="mt-4 flex justify-end gap-2">
               <button
                 onClick={() => setDeleteConfirmListId(null)}
                 className="rounded-lg bg-gray-100 px-4 py-2 font-urbanist text-xs font-medium text-gray-600 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
               >
-                Cancel
+                {t("dashboard.cancel")}
               </button>
               <button
                 onClick={handleDeleteConfirm}
                 className="rounded-lg bg-red-500 px-4 py-2 font-urbanist text-xs font-medium text-white transition-colors hover:bg-red-600"
               >
-                Delete
+                {t("dashboard.delete")}
               </button>
             </div>
           </div>

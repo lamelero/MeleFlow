@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import type { Task } from "../../store/taskStore";
 import { useTaskStore } from "../../store/taskStore";
 import TaskCard from "./TaskCard";
@@ -22,9 +23,11 @@ const containerVariants = {
 
 export default function TaskList({
   filter,
-  emptyMessage = "No tasks yet",
+  emptyMessage,
   onTaskClick,
 }: TaskListProps) {
+  const { t } = useTranslation();
+  const effectiveEmptyMessage = emptyMessage ?? t("habits.noTasks");
   const { tasks, isLoading, error, fetchTasks } = useTaskStore();
 
   useEffect(() => {
@@ -79,7 +82,7 @@ export default function TaskList({
           <circle cx="48" cy="48" r="10" fill="rgba(20,184,166,0.1)" stroke="#14B8A6" strokeWidth="1.5" />
           <path d="M45 48l2 2 4-4" stroke="#14B8A6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
-        <p className="font-urbanist text-sm text-gray-400">{emptyMessage}</p>
+        <p className="font-urbanist text-sm text-gray-400">{effectiveEmptyMessage}</p>
       </motion.div>
     );
   }

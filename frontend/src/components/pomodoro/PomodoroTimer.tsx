@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { usePomodoroStore, type PomodoroSettings } from "../../store/pomodoroStore";
 
 const SIZE = 36;
@@ -26,18 +27,6 @@ function playBeep() {
   }
 }
 
-const PHASE_LABELS: Record<string, { icon: string; label: string; color: string }> = {
-  FOCUS: { icon: "🎯", label: "Focus", color: "#14B8A6" },
-  SHORT_BREAK: { icon: "☕", label: "Break", color: "#F59E0B" },
-  LONG_BREAK: { icon: "🌴", label: "Long Break", color: "#3B82F6" },
-};
-
-const PHASE_OPTIONS: { value: "FOCUS" | "SHORT_BREAK" | "LONG_BREAK"; label: string }[] = [
-  { value: "FOCUS", label: "Focus" },
-  { value: "SHORT_BREAK", label: "Short Break" },
-  { value: "LONG_BREAK", label: "Long Break" },
-];
-
 function formatTime(seconds: number) {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
@@ -45,6 +34,18 @@ function formatTime(seconds: number) {
 }
 
 export default function PomodoroTimer() {
+  const { t } = useTranslation();
+  const PHASE_LABELS: Record<string, { icon: string; label: string; color: string }> = {
+    FOCUS: { icon: "🎯", label: t("pomodoro.focus"), color: "#14B8A6" },
+    SHORT_BREAK: { icon: "☕", label: t("pomodoro.shortBreak"), color: "#F59E0B" },
+    LONG_BREAK: { icon: "🌴", label: t("pomodoro.longBreak"), color: "#3B82F6" },
+  };
+  const PHASE_OPTIONS: { value: "FOCUS" | "SHORT_BREAK" | "LONG_BREAK"; label: string }[] = [
+    { value: "FOCUS", label: t("pomodoro.focus") },
+    { value: "SHORT_BREAK", label: t("pomodoro.shortBreak") },
+    { value: "LONG_BREAK", label: t("pomodoro.longBreak") },
+  ];
+
   const {
     session, remainingSeconds, isLoading, settings, stats,
     fetchCurrent, start, pause, resume, complete, cancel, tick,
@@ -75,8 +76,8 @@ export default function PomodoroTimer() {
       playBeep();
       if ("Notification" in window && Notification.permission === "granted") {
         const phase = PHASE_LABELS[session.type] ?? PHASE_LABELS.FOCUS;
-        new Notification(`${phase.label} Complete!`, {
-          body: `${formatTime(session.duration * 60)} session finished.`,
+        new Notification(t("pomodoro.notificationTitle", { phase: phase.label }), {
+          body: t("pomodoro.notificationBody", { duration: formatTime(session.duration * 60) }),
         });
       }
     }
@@ -210,7 +211,7 @@ export default function PomodoroTimer() {
                 </div>
                 <button onClick={() => { setShowSettings(!showSettings); }}
                   className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
-                  title="Settings">
+                  title={t("pomodoro.settings")}>
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -247,7 +248,7 @@ export default function PomodoroTimer() {
                   </span>
                 ))}
                 <span className="ml-1 text-xs text-gray-400 dark:text-gray-500">
-                  {completedCount > 0 ? `${completedCount} today` : ""}
+                  {completedCount > 0 ? t("pomodoro.completedToday", { count: completedCount }) : ""}
                 </span>
               </div>
 
@@ -277,7 +278,7 @@ export default function PomodoroTimer() {
                   <motion.button onClick={handleStart}
                     whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                     className="flex-1 rounded-xl bg-primary px-4 py-2.5 font-urbanist text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-dark">
-                    {readyLabel.icon} Start {readyLabel.label}
+                    {readyLabel.icon} {t("pomodoro.start")} {readyLabel.label}
                   </motion.button>
                 )}
 
@@ -286,17 +287,17 @@ export default function PomodoroTimer() {
                     <motion.button onClick={pause}
                       whileTap={{ scale: 0.95 }}
                       className="rounded-xl bg-gray-100 px-4 py-2.5 font-urbanist text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
-                      Pause
+                      {t("pomodoro.pause")}
                     </motion.button>
                     <motion.button onClick={complete}
                       whileTap={{ scale: 0.95 }}
                       className="rounded-xl bg-green-50 px-4 py-2.5 font-urbanist text-sm font-medium text-green-700 transition-colors hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50">
-                      ✓ Complete
+                      ✓ {t("pomodoro.complete")}
                     </motion.button>
                     <motion.button onClick={cancel}
                       whileTap={{ scale: 0.95 }}
                       className="rounded-xl px-4 py-2.5 font-urbanist text-sm font-medium text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-500 dark:hover:bg-gray-800 dark:hover:text-red-400">
-                      ✕ Cancel
+                      ✕ {t("pomodoro.cancel")}
                     </motion.button>
                   </>
                 )}
@@ -306,17 +307,17 @@ export default function PomodoroTimer() {
                     <motion.button onClick={resume}
                       whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                       className="rounded-xl bg-primary px-4 py-2.5 font-urbanist text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-dark">
-                      Resume
+                      {t("pomodoro.resume")}
                     </motion.button>
                     <motion.button onClick={complete}
                       whileTap={{ scale: 0.95 }}
                       className="rounded-xl bg-green-50 px-4 py-2.5 font-urbanist text-sm font-medium text-green-700 transition-colors hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50">
-                      ✓ Complete
+                      ✓ {t("pomodoro.complete")}
                     </motion.button>
                     <motion.button onClick={cancel}
                       whileTap={{ scale: 0.95 }}
                       className="rounded-xl px-4 py-2.5 font-urbanist text-sm font-medium text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-500 dark:hover:bg-gray-800 dark:hover:text-red-400">
-                      ✕ Cancel
+                      ✕ {t("pomodoro.cancel")}
                     </motion.button>
                   </>
                 )}
@@ -325,7 +326,7 @@ export default function PomodoroTimer() {
                   <motion.button onClick={handleStart}
                     whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                     className="flex-1 rounded-xl bg-primary px-4 py-2.5 font-urbanist text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-dark">
-                    {readyLabel.icon} Start {readyLabel.label}
+                    {readyLabel.icon} {t("pomodoro.start")} {readyLabel.label}
                   </motion.button>
                 )}
               </div>
@@ -343,6 +344,7 @@ function SettingsForm({ settings, onSave, onClose }: {
   onSave: (s: Partial<PomodoroSettings>) => Promise<void>;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const [work, setWork] = useState(settings.work);
   const [shortBreak, setShortBreak] = useState(settings.shortBreak);
   const [longBreak, setLongBreak] = useState(settings.longBreak);
@@ -350,19 +352,19 @@ function SettingsForm({ settings, onSave, onClose }: {
 
   return (
     <div className="space-y-3">
-      <SliderField label="Work" value={work} min={1} max={120} step={1} suffix="min" onChange={setWork} />
-      <SliderField label="Short Break" value={shortBreak} min={1} max={30} step={1} suffix="min" onChange={setShortBreak} />
-      <SliderField label="Long Break" value={longBreak} min={1} max={60} step={1} suffix="min" onChange={setLongBreak} />
-      <SliderField label="Cycles" value={cycles} min={1} max={10} step={1} suffix="" onChange={setCycles} />
+      <SliderField label={t("pomodoro.work")} value={work} min={1} max={120} step={1} suffix="min" onChange={setWork} />
+      <SliderField label={t("pomodoro.shortBreak")} value={shortBreak} min={1} max={30} step={1} suffix="min" onChange={setShortBreak} />
+      <SliderField label={t("pomodoro.longBreak")} value={longBreak} min={1} max={60} step={1} suffix="min" onChange={setLongBreak} />
+      <SliderField label={t("pomodoro.cycles")} value={cycles} min={1} max={10} step={1} suffix="" onChange={setCycles} />
 
       <div className="flex gap-2 pt-1">
         <button onClick={onClose}
           className="flex-1 rounded-lg bg-gray-200 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">
-          Cancel
+          {t("pomodoro.cancelSettings")}
         </button>
         <button onClick={() => onSave({ work, shortBreak, longBreak, cycles })}
           className="flex-1 rounded-lg bg-primary py-1.5 text-xs font-medium text-white transition-colors hover:bg-primary-dark">
-          Save
+          {t("pomodoro.save")}
         </button>
       </div>
     </div>

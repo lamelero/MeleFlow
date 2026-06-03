@@ -7,7 +7,7 @@ const languages = [
 ];
 
 export default function LanguageSwitcher() {
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
   const updateLanguage = useAuthStore((s) => s.updateLanguage);
 
   function toggleLanguage() {
@@ -22,7 +22,7 @@ export default function LanguageSwitcher() {
     <button
       onClick={toggleLanguage}
       className="rounded-xl bg-gray-100 px-3 py-1.5 font-urbanist text-xs font-semibold uppercase tracking-wider text-gray-600 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
-      title="Switch language"
+      title={t("usermenu.language")}
     >
       {i18n.language === "es" ? "EN" : "ES"}
     </button>

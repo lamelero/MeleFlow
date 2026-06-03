@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import type { Habit } from "../../store/habitStore";
 import { useHabitStore } from "../../store/habitStore";
 import { HABIT_CATEGORIES } from "../../lib/habit-categories";
@@ -11,6 +12,7 @@ interface HabitCardProps {
 }
 
 export default function HabitCard({ habit, onEdit }: HabitCardProps) {
+  const { t } = useTranslation();
   const { checkIn, undoCheckIn, deleteHabit, resetProgress } = useHabitStore();
   const catInfo = HABIT_CATEGORIES[habit.category] || HABIT_CATEGORIES.OTROS;
   const today = new Date().toISOString().split("T")[0];
@@ -38,14 +40,14 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
   }
 
   function handleDelete() {
-    if (window.confirm(`Delete "${habit.name}"? This cannot be undone.`)) {
+    if (window.confirm(t("habits.deleteConfirm", { name: habit.name }))) {
       deleteHabit(habit.id);
     }
     setMenuOpen(false);
   }
 
   function handleReset() {
-    if (window.confirm(`Reset progress for "${habit.name}"?`)) {
+    if (window.confirm(t("habits.resetConfirm", { name: habit.name }))) {
       resetProgress(habit.id);
     }
     setMenuOpen(false);
@@ -146,26 +148,26 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
                   onClick={() => { onEdit(habit); setMenuOpen(false); }}
                   className="flex w-full items-center gap-2 px-3 py-2 font-urbanist text-xs text-gray-700 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
                 >
-                  Edit
+                  {t("habits.edit")}
                 </button>
                 <button
                   onClick={handleReset}
                   className="flex w-full items-center gap-2 px-3 py-2 font-urbanist text-xs text-gray-700 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
                 >
-                  Reset
+                  {t("habits.reset")}
                 </button>
                 <button
                   onClick={handleArchive}
                   className="flex w-full items-center gap-2 px-3 py-2 font-urbanist text-xs text-gray-700 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
                 >
-                  Archive
+                  {t("habits.archive")}
                 </button>
                 <div className="border-t border-gray-100 dark:border-gray-700" />
                 <button
                   onClick={handleDelete}
                   className="flex w-full items-center gap-2 px-3 py-2 font-urbanist text-xs text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20"
                 >
-                  Delete
+                  {t("habits.delete")}
                 </button>
               </div>
             )}
@@ -195,14 +197,14 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
-            Done today
+            {t("habits.doneToday")}
           </span>
         ) : (
           <span className="flex items-center justify-center gap-1">
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
-            Check in
+            {t("habits.checkIn")}
           </span>
         )}
       </button>

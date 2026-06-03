@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import DatePicker from "react-datepicker";
 import Markdown from "react-markdown";
 import toast from "react-hot-toast";
@@ -25,6 +26,7 @@ interface TaskDetailPanelProps {
 }
 
 export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps) {
+  const { t: trans } = useTranslation();
   const { updateTask, replaceTask, addCollaborator, removeCollaborator } = useTaskStore();
   const currentUser = useAuthStore((s) => s.user);
   const { tags, fetchTags, createTag } = useTagStore();
@@ -133,7 +135,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
       setTagDropdownOpen(false);
       tagInputRef.current?.focus();
     } catch {
-      toast.error("Failed to add tag");
+      toast.error(trans("common.toasts.failedAddTag"));
     }
   }
 
@@ -142,7 +144,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
       const { data } = await client.delete(`/tasks/${t.id}/tags/${tagId}`);
       replaceTask(data);
     } catch {
-      toast.error("Failed to remove tag");
+      toast.error(trans("common.toasts.failedRemoveTag"));
     }
   }
 
@@ -151,19 +153,19 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
       const tag = await createTag({ name, color: randomTagColor() });
       await handleAddTag(tag);
     } catch {
-      toast.error("Failed to create tag");
+      toast.error(trans("common.toasts.failedCreateTag"));
     }
   }
 
   async function handleReminderSave() {
     if (!reminderEnabled) {
       await updateTask(t.id, { reminderEnabled: false, reminderConfig: null });
-      toast.success("Reminder disabled");
+      toast.success(trans("common.toasts.reminderDisabled"));
       return;
     }
     const config = { type: reminderType, days: reminderType === "weekly" ? reminderDays : [], reminderTime };
     await updateTask(t.id, { reminderEnabled: true, reminderConfig: JSON.stringify(config) });
-    toast.success("Reminder saved");
+    toast.success(trans("common.toasts.reminderSaved"));
   }
 
   async function handleDayToggle(day: number) {
@@ -175,7 +177,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
   async function handleDateChange(date: Date | null) {
     setDueDate(date);
     await updateTask(t.id, { dueDate: date ? date.toISOString() : null });
-    toast.success(date ? "Due date set" : "Due date removed");
+    toast.success(date ? trans("common.toasts.dueDateSet") : trans("common.toasts.dueDateRemoved"));
   }
 
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -191,14 +193,14 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
         ...t,
         attachments: [...(t.attachments ?? []), data],
       });
-      toast.success("File uploaded");
+      toast.success(trans("common.toasts.fileUploaded"));
     } catch (err: unknown) {
       const msg =
         err && typeof err === "object" && "response" in err
           ? (err as { response: { data: { error?: string } } }).response?.data
               ?.error
           : null;
-      toast.error(msg || "Failed to upload file");
+      toast.error(msg || trans("common.toasts.uploadFailed"));
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -212,9 +214,9 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
         ...t,
         attachments: (t.attachments ?? []).filter((a) => a.id !== attachment.id),
       });
-      toast.success("Attachment deleted");
+      toast.success(trans("common.toasts.attachmentDeleted"));
     } catch {
-      toast.error("Failed to delete attachment");
+      toast.error(trans("common.toasts.attachmentDeleteFailed"));
     }
   }
 
@@ -319,7 +321,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
       setShareSearchQuery("");
       setShowShareDropdown(false);
     } catch {
-      toast.error("Failed to add collaborator");
+      toast.error(trans("common.toasts.failedAddCollaborator"));
     }
   }
 
@@ -328,7 +330,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
       await removeCollaborator(t.id, collaboratorId);
       setCollaborators((prev) => prev.filter((c) => c.id !== collaboratorId));
     } catch {
-      toast.error("Failed to remove collaborator");
+      toast.error(trans("common.toasts.failedRemoveCollaborator"));
     }
   }
 
@@ -404,7 +406,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
           {t.tags && t.tags.length > 0 && (
             <div className="mb-4">
               <label className="mb-2 block font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                Tags
+                {trans("common.tags")}
               </label>
               <div className="flex flex-wrap gap-1.5">
                 {t.tags.map((tag: Tag) => (
@@ -418,19 +420,19 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
             </div>
           )}
 
-          <div className="mb-4">
-            <label className="mb-2 block font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
-              Add tag
-            </label>
-            <div className="relative">
-              <input
-                ref={tagInputRef}
-                type="text"
-                value={tagInput}
-                onChange={handleTagInputChange}
-                onFocus={() => setTagDropdownOpen(true)}
-                onKeyDown={handleTagKeyDown}
-                placeholder="Search or create tag..."
+            <div className="mb-4">
+              <label className="mb-2 block font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                {trans("common.addTag")}
+              </label>
+              <div className="relative">
+                <input
+                  ref={tagInputRef}
+                  type="text"
+                  value={tagInput}
+                  onChange={handleTagInputChange}
+                  onFocus={() => setTagDropdownOpen(true)}
+                  onKeyDown={handleTagKeyDown}
+                  placeholder={trans("common.searchOrCreateTag")}
                 className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
               />
               {showCreate && (
@@ -442,7 +444,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                     </svg>
-                    Create "{tagInput}"
+                    {trans("common.create")} "{tagInput}"
                   </button>
                 </div>
               )}
@@ -466,7 +468,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
               {tagDropdownOpen && !tagInput && availableTags.length === 0 && !showCreate && (
                 <div className="absolute left-0 right-0 top-full z-10 mt-1 rounded-xl border border-gray-200 bg-white p-3 shadow-lg dark:border-gray-700 dark:bg-gray-800">
                   <p className="font-urbanist text-xs text-gray-400">
-                    All tags are already assigned
+                    {trans("common.allTagsAssigned")}
                   </p>
                 </div>
               )}
@@ -474,29 +476,29 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
           </div>
 
           <div className="mb-4">
-            <label className="mb-2 block font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
-              Type
-            </label>
-            <div className="flex rounded-xl border border-gray-200 bg-gray-50 p-0.5 dark:border-gray-700 dark:bg-gray-800">
-              <button
-                onClick={() => handleTypeChange("TEXT")}
-                className={`flex-1 rounded-lg px-3 py-2 font-urbanist text-sm font-medium transition-all ${
-                  taskType === "TEXT"
-                    ? "bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-gray-100"
-                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-                }`}
-              >
-                Text
-              </button>
-              <button
-                onClick={() => handleTypeChange("CHECKLIST")}
-                className={`flex-1 rounded-lg px-3 py-2 font-urbanist text-sm font-medium transition-all ${
-                  taskType === "CHECKLIST"
-                    ? "bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-gray-100"
-                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-                }`}
-              >
-                Checklist
+              <label className="mb-2 block font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                {trans("common.type")}
+              </label>
+              <div className="flex rounded-xl border border-gray-200 bg-gray-50 p-0.5 dark:border-gray-700 dark:bg-gray-800">
+                <button
+                  onClick={() => handleTypeChange("TEXT")}
+                  className={`flex-1 rounded-lg px-3 py-2 font-urbanist text-sm font-medium transition-all ${
+                    taskType === "TEXT"
+                      ? "bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-gray-100"
+                      : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                  }`}
+                >
+                  {trans("common.text")}
+                </button>
+                <button
+                  onClick={() => handleTypeChange("CHECKLIST")}
+                  className={`flex-1 rounded-lg px-3 py-2 font-urbanist text-sm font-medium transition-all ${
+                    taskType === "CHECKLIST"
+                      ? "bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-gray-100"
+                      : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                  }`}
+                >
+                  {trans("common.checklist")}
               </button>
             </div>
           </div>
@@ -504,7 +506,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
           {taskType === "CHECKLIST" ? (
             <div className="mb-4">
               <label className="mb-2 block font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                Items
+                {trans("common.items")}
               </label>
               <div className="mb-3 flex gap-2">
                 <input
@@ -513,7 +515,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
                   value={newChecklistText}
                   onChange={(e) => setNewChecklistText(e.target.value)}
                   onKeyDown={handleChecklistItemKeyDown}
-                  placeholder="Add an item..."
+                  placeholder={trans("common.addItem")}
                   className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                 />
                 <button
@@ -521,12 +523,12 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
                   disabled={!newChecklistText.trim()}
                   className="rounded-xl bg-primary px-4 py-2.5 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
                 >
-                  Add
+                  {trans("common.add")}
                 </button>
               </div>
               {checklistItems.length === 0 ? (
                 <p className="font-urbanist text-xs text-gray-400 dark:text-gray-500">
-                  No items yet. Add one above.
+                  {trans("common.noItems")}
                 </p>
               ) : (
                 <div className="space-y-1">
@@ -586,14 +588,14 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
             <div className="mb-4">
               <div className="mb-2 flex items-center justify-between">
                 <label className="font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                  Description
+                  {trans("common.description")}
                 </label>
                 <button
                   type="button"
                   onClick={() => setPreview(!preview)}
                   className="rounded-lg px-2 py-1 font-urbanist text-xs text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
                 >
-                  {preview ? "Edit" : "Preview"}
+                  {preview ? trans("common.edit") : trans("common.preview")}
                 </button>
               </div>
 
@@ -602,14 +604,14 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
                   {description ? (
                     <Markdown>{description}</Markdown>
                   ) : (
-                    <span className="text-gray-400">No description</span>
+                    <span className="text-gray-400">{trans("common.noDescription")}</span>
                   )}
                 </div>
               ) : (
                 <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Add a description (Markdown supported)..."
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder={trans("common.description") + "..."}
                   rows={5}
                   className="w-full resize-none rounded-xl border border-gray-200 bg-white px-4 py-3 font-urbanist text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                 />
@@ -619,14 +621,14 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
 
           <div className="mb-4">
             <label className="mb-2 block font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
-              Due date
+              {trans("common.dueDate")}
             </label>
             <div className="relative">
               <DatePicker
                 selected={dueDate}
                 onChange={handleDateChange}
                 dateFormat="MMM d, yyyy"
-                placeholderText="Set due date..."
+                placeholderText={trans("common.setDueDate")}
                 isClearable
                 className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
               />
@@ -646,7 +648,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
           <div className="mb-4">
             <div className="mb-2 flex items-center justify-between">
               <label className="font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                Recurring reminder
+                {trans("common.recurringReminder")}
               </label>
               <button
                 onClick={() => setReminderEnabled(!reminderEnabled)}
@@ -668,7 +670,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
                         : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
                     }`}
                   >
-                    Daily
+                    {trans("common.daily")}
                   </button>
                   <button
                     onClick={() => setReminderType("weekly")}
@@ -678,12 +680,12 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
                         : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
                     }`}
                   >
-                    Weekly
+                    {trans("common.weekly")}
                   </button>
                 </div>
                 {reminderType === "weekly" && (
                   <div className="mb-3 flex gap-1.5">
-                    {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((name, i) => (
+                    {(() => { const d = trans("calendar.dayHeaders", { returnObjects: true }) as string[]; return d; })().map((name, i) => (
                       <button
                         key={i}
                         onClick={() => handleDayToggle(i)}
@@ -693,7 +695,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
                             : "bg-white text-gray-500 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-400"
                         }`}
                       >
-                        {name[0]}
+                        {name}
                       </button>
                     ))}
                   </div>
@@ -709,7 +711,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
                     onClick={handleReminderSave}
                     className="rounded-xl bg-primary px-4 py-2.5 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600"
                   >
-                    Save
+                    {trans("common.save")}
                   </button>
                 </div>
               </div>
@@ -718,7 +720,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
 
           <div className="mb-4">
             <label className="mb-2 block font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
-              Attachments
+              {trans("common.attachments")}
             </label>
             <input
               ref={fileInputRef}
@@ -730,7 +732,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
             {uploading && (
               <div className="mt-2 flex items-center gap-2 text-xs text-gray-400">
                 <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                Uploading...
+                {trans("common.uploading")}
               </div>
             )}
             {t.attachments && t.attachments.length > 0 && (
@@ -771,7 +773,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
 
           <div className="mb-4">
             <label className="mb-2 block font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
-              Compartir
+              {trans("common.share")}
             </label>
             {isOwner && (
               <div className="relative mb-3">
@@ -781,7 +783,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
                   value={shareSearchQuery}
                   onChange={(e) => setShareSearchQuery(e.target.value)}
                   onFocus={() => shareSearchQuery.length >= 2 && setShowShareDropdown(true)}
-                  placeholder="Buscar usuario por nombre..."
+                  placeholder={trans("common.searchUser")}
                   className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                 />
                 {shareSearching && (
@@ -808,7 +810,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
                 )}
                 {showShareDropdown && shareSearchQuery.length >= 2 && !shareSearching && shareSearchResults.length === 0 && (
                   <div className="absolute left-0 right-0 top-full z-10 mt-1 rounded-xl border border-gray-200 bg-white p-3 shadow-lg dark:border-gray-700 dark:bg-gray-800">
-                    <p className="font-urbanist text-xs text-gray-400">No users found</p>
+                    <p className="font-urbanist text-xs text-gray-400">{trans("common.noUsersFound")}</p>
                   </div>
                 )}
               </div>
@@ -842,7 +844,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
               </div>
             )}
             {!isOwner && collaborators.length === 0 && (
-              <p className="font-urbanist text-xs text-gray-400">No collaborators</p>
+              <p className="font-urbanist text-xs text-gray-400">{trans("common.noCollaborators")}</p>
             )}
           </div>
         </div>
@@ -854,7 +856,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
               disabled={saving}
               className="w-full rounded-xl bg-primary px-4 py-2.5 font-outfit font-semibold text-white transition-colors hover:bg-teal-600 disabled:opacity-60"
             >
-              {saving ? "Saving..." : "Save"}
+              {saving ? trans("common.saving") : trans("common.save")}
             </button>
           </div>
         )}

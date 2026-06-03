@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import AppLayout from "../../components/AppLayout";
 import TaskCalendar from "../../components/tasks/TaskCalendar";
 import TaskDetailPanel from "../../components/tasks/TaskDetailPanel";
@@ -6,6 +7,7 @@ import { useTaskStore, type Task } from "../../store/taskStore";
 import { useListStore } from "../../store/listStore";
 
 export default function CalendarView() {
+  const { t } = useTranslation();
   const { tasks, fetchTasks } = useTaskStore();
   const { lists, fetchLists } = useListStore();
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -44,7 +46,7 @@ export default function CalendarView() {
   }
 
   return (
-    <AppLayout title="Calendar">
+    <AppLayout title={t("calendar.title")}>
       <div className="mx-auto w-full max-w-6xl p-4">
         <TaskCalendar
           tasks={tasks}

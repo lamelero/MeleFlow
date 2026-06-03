@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { useTagStore, type Tag } from "../../store/tagStore";
 import TagPill from "../../components/tags/TagPill";
 import AppLayout from "../../components/AppLayout";
@@ -11,6 +12,7 @@ const TAG_COLORS = [
 ];
 
 export default function TagManager() {
+  const { t } = useTranslation();
   const { tags, fetchTags, updateTag, deleteTag } = useTagStore();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
@@ -48,14 +50,14 @@ export default function TagManager() {
   }
 
   async function handleDelete(tag: Tag) {
-    if (window.confirm(`Delete tag "${tag.name}"? It will be removed from all tasks.`)) {
+    if (window.confirm(t("tags.deleteConfirm", { name: tag.name }))) {
       await deleteTag(tag.id);
     }
   }
 
   if (tags.length === 0) {
     return (
-      <AppLayout title="Tags">
+      <AppLayout title={t("tags.title")}>
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -65,7 +67,7 @@ export default function TagManager() {
           <div className="mx-auto mt-20 max-w-2xl px-4">
             <div className="rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
               <p className="font-urbanist text-sm text-gray-400">
-                No tags yet. Create one from the task detail panel.
+                {t("tags.noTags")}
               </p>
             </div>
           </div>
@@ -75,7 +77,7 @@ export default function TagManager() {
   }
 
   return (
-    <AppLayout title="Tags">
+    <AppLayout title={t("tags.title")}>
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -85,14 +87,14 @@ export default function TagManager() {
         <div className="mx-auto max-w-2xl space-y-4 p-4">
         <div className="flex items-center justify-between">
           <h2 className="font-outfit text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Manage Tags
+            {t("tags.manageTags")}
           </h2>
           <div className="flex items-center gap-2">
           <Link
             to="/app"
             className="rounded-xl bg-gray-100 px-4 py-2 font-urbanist text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
           >
-            Back
+            {t("tags.back")}
           </Link>
           </div>
         </div>
@@ -156,24 +158,24 @@ export default function TagManager() {
               )}
 
               <span className="font-urbanist text-xs text-gray-400 dark:text-gray-500">
-                {tag._count?.tasks ?? 0} tasks
+                {t("tags.taskCount", { count: tag._count?.tasks ?? 0 })}
               </span>
 
               <div className="flex gap-1">
                 {editingId === tag.id ? (
                   <>
-                    <button
-                      onClick={() => saveEdit(tag)}
-                      className="rounded-lg bg-primary px-3 py-1.5 font-urbanist text-xs font-medium text-white"
-                    >
-                      Save
-                    </button>
-                    <button
-                      onClick={cancelEdit}
-                      className="rounded-lg bg-gray-100 px-3 py-1.5 font-urbanist text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-400"
-                    >
-                      Cancel
-                    </button>
+                      <button
+                        onClick={() => saveEdit(tag)}
+                        className="rounded-lg bg-primary px-3 py-1.5 font-urbanist text-xs font-medium text-white"
+                      >
+                        {t("tags.save")}
+                      </button>
+                      <button
+                        onClick={cancelEdit}
+                        className="rounded-lg bg-gray-100 px-3 py-1.5 font-urbanist text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                      >
+                        {t("tags.cancel")}
+                      </button>
                   </>
                 ) : (
                   <>
@@ -181,13 +183,13 @@ export default function TagManager() {
                       onClick={() => startEdit(tag)}
                       className="rounded-lg bg-gray-100 px-3 py-1.5 font-urbanist text-xs font-medium text-gray-600 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
                     >
-                      Edit
+                      {t("tags.edit")}
                     </button>
                     <button
                       onClick={() => handleDelete(tag)}
                       className="rounded-lg bg-red-50 px-3 py-1.5 font-urbanist text-xs font-medium text-red-600 transition-colors hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30"
                     >
-                      Delete
+                      {t("tags.delete")}
                     </button>
                   </>
                 )}
