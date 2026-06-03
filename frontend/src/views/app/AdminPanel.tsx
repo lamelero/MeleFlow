@@ -45,6 +45,12 @@ export default function AdminPanel() {
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [logoUploading, setLogoUploading] = useState(false);
   const { fetchLogo } = useBrandingStore();
+  const [wipeModalOpen, setWipeModalOpen] = useState(false);
+  const [wipePassword, setWipePassword] = useState("");
+  const [wipeCountdown, setWipeCountdown] = useState(10);
+  const [wipeConfirmEnabled, setWipeConfirmEnabled] = useState(false);
+  const [wipeRunning, setWipeRunning] = useState(false);
+  const wipeTimerRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
   const handleLogoSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -70,6 +76,45 @@ export default function AdminPanel() {
     }
     setLogoUploading(false);
   }, [fetchLogo]);
+
+  function handleOpenWipeModal() {
+    setWipeModalOpen(true);
+    setWipePassword("");
+    setWipeCountdown(10);
+    setWipeConfirmEnabled(false);
+    setWipeRunning(false);
+    if (wipeTimerRef.current) clearInterval(wipeTimerRef.current);
+    wipeTimerRef.current = setInterval(() => {
+      setWipeCountdown((prev) => {
+        if (prev <= 1) {
+          if (wipeTimerRef.current) clearInterval(wipeTimerRef.current);
+          setWipeConfirmEnabled(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }
+
+  function handleCloseWipeModal() {
+    setWipeModalOpen(false);
+    if (wipeTimerRef.current) clearInterval(wipeTimerRef.current);
+  }
+
+  async function handleConfirmWipe() {
+    if (!wipePassword) return;
+    setWipeRunning(true);
+    try {
+      await useAdminStore.getState().wipeAllData(wipePassword);
+      toast.success("All data wiped. Redirecting to register...");
+      handleCloseWipeModal();
+      setTimeout(() => { window.location.href = "/register"; }, 2000);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || "Failed to wipe data";
+      toast.error(msg);
+      setWipeRunning(false);
+    }
+  }
 
   useEffect(() => {
     fetchStats();
@@ -684,7 +729,87 @@ export default function AdminPanel() {
           </h2>
           <UsersTable />
         </div>
+
+        {/* Factory Reset */}
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 dark:border-red-900/30 dark:bg-red-900/10">
+          <h2 className="mb-2 font-outfit text-lg font-semibold text-red-700 dark:text-red-400">
+            Factory reset
+          </h2>
+          <p className="mb-4 font-urbanist text-sm text-red-600 dark:text-red-300">
+            This will permanently delete all tasks, habits, users, settings, and uploaded files.
+            The application will return to its initial state as if freshly installed.
+          </p>
+          <button
+            onClick={handleOpenWipeModal}
+            className="rounded-xl bg-red-600 px-5 py-2.5 font-urbanist text-sm font-medium text-white transition-colors hover:bg-red-700"
+          >
+            Wipe all data
+          </button>
+        </div>
       </div>
+
+      {/* Wipe confirmation modal */}
+      {wipeModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="mx-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-900">
+            <h3 className="mb-3 font-outfit text-lg font-semibold text-red-600 dark:text-red-400">
+              ⚠️ Wipe all data?
+            </h3>
+            <div className="mb-4 space-y-2 font-urbanist text-sm text-gray-600 dark:text-gray-300">
+              <p>This action <strong>cannot be undone</strong>. The following will be deleted:</p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>All users (including you)</li>
+                <li>All tasks, habits, lists, tags</li>
+                <li>All Pomodoro sessions</li>
+                <li>All uploaded files (attachments, avatars, logos)</li>
+                <li>All system settings (SMTP, backups, etc.)</li>
+                <li>All security logs</li>
+              </ul>
+              <p className="mt-3">After wiping, you will be redirected to the registration page to set up a new account.</p>
+            </div>
+
+            <div className="mb-4">
+              <label className="mb-1 block font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
+                Enter your admin password to confirm
+              </label>
+              <input
+                type="password"
+                value={wipePassword}
+                onChange={(e) => setWipePassword(e.target.value)}
+                placeholder="Current admin password"
+                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+                disabled={wipeRunning}
+              />
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleCloseWipeModal}
+                disabled={wipeRunning}
+                className="flex-1 rounded-xl bg-gray-100 px-4 py-2.5 font-urbanist text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmWipe}
+                disabled={!wipeConfirmEnabled || !wipePassword || wipeRunning}
+                className="flex-1 rounded-xl bg-red-600 px-4 py-2.5 font-urbanist text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+              >
+                {wipeRunning ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    Wiping...
+                  </span>
+                ) : wipeConfirmEnabled ? (
+                  "Wipe everything"
+                ) : (
+                  `Wait ${wipeCountdown}s to confirm`
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </motion.div>
     </AppLayout>
   );

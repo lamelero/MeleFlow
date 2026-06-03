@@ -30,5 +30,10 @@ export const updateSettingsSchema = z.object({
   backupEncrypted: z.boolean().optional(),
 });
 
+export const wipeDataSchema = z.object({
+  password: z.string().min(1),
+});
+
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 export type UpdateSettingsInput = z.infer<typeof updateSettingsSchema>;
+export type WipeDataInput = z.infer<typeof wipeDataSchema>;

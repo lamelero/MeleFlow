@@ -1,6 +1,8 @@
 import path from "path";
 import fs from "fs/promises";
+import bcrypt from "bcryptjs";
 import { prisma } from "../../config/database";
+import { redis } from "../../config/redis";
 import { env } from "../../config/env";
 import { AppError } from "../../lib/app-error";
 import type { UpdateUserInput, UpdateSettingsInput } from "./admin.schema";
@@ -247,5 +249,52 @@ export class AdminService {
       totalHabits,
       totalPomodoros,
     };
+  }
+
+  async wipeAllData(adminId: string, password: string) {
+    const admin = await prisma.user.findUnique({ where: { id: adminId } });
+    if (!admin) throw new AppError(404, "Admin not found");
+
+    const valid = await bcrypt.compare(password, admin.passwordHash);
+    if (!valid) throw new AppError(403, "Invalid password");
+
+    const uploadDir = path.resolve("uploads");
+
+    await prisma.$transaction([
+      prisma.taskCollaborator.deleteMany(),
+      prisma.taskTag.deleteMany(),
+      prisma.checklistItem.deleteMany(),
+      prisma.attachment.deleteMany(),
+      prisma.pomodoroSession.deleteMany(),
+      prisma.task.deleteMany(),
+      prisma.habitLog.deleteMany(),
+      prisma.habit.deleteMany(),
+      prisma.list.deleteMany(),
+      prisma.tag.deleteMany(),
+      prisma.refreshToken.deleteMany(),
+      prisma.securityLog.deleteMany(),
+      prisma.failedLoginAttempt.deleteMany(),
+      prisma.user.deleteMany(),
+      prisma.systemSetting.deleteMany(),
+    ]);
+
+    // Remove uploaded files
+    try {
+      const files = await fs.readdir(uploadDir);
+      for (const file of files) {
+        await fs.unlink(path.join(uploadDir, file)).catch(() => {});
+      }
+    } catch {
+      // uploads dir might not exist
+    }
+
+    // Flush Redis
+    try {
+      await redis.flushall();
+    } catch {
+      // Redis might not be available
+    }
+
+    return { wiped: true };
   }
 }

@@ -83,6 +83,7 @@ interface AdminState {
   deleteBackup: (name: string) => Promise<void>;
   restoreBackup: (name: string) => Promise<void>;
   updateBackupSettings: (data: Partial<BackupSettings>) => Promise<void>;
+  wipeAllData: (password: string) => Promise<void>;
 }
 
 const defaultSettings: SystemSettings = {
@@ -288,6 +289,10 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     } catch {
       toast.error("Failed to save backup settings");
     }
+  },
+
+  wipeAllData: async (password) => {
+    await client.post("/admin/wipe", { password });
   },
 
   clearError: () => set({ error: null }),

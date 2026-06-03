@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import { updateUserSchema, updateSettingsSchema } from "./admin.schema";
+import { updateUserSchema, updateSettingsSchema, wipeDataSchema } from "./admin.schema";
 import { AdminService } from "./admin.service";
 import { BackupService } from "./backup.service";
 
@@ -171,5 +171,11 @@ export async function adminRoutes(app: FastifyInstance) {
     const body = req.body as { backupInterval?: string; backupRetention?: number; backupEncrypted?: boolean };
     const settings = await backupService.updateSettings(body);
     return reply.send(settings);
+  });
+
+  app.post("/wipe", async (req, reply) => {
+    const { password } = wipeDataSchema.parse(req.body);
+    await service.wipeAllData(req.user.sub, password);
+    return reply.send({ ok: true, message: "All data wiped. App is now fresh." });
   });
 }
