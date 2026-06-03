@@ -14,10 +14,19 @@ export default function TagManager() {
   const { tags, fetchTags, updateTag, deleteTag } = useTagStore();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+  const [colorDropdownId, setColorDropdownId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTags();
   }, [fetchTags]);
+
+  useEffect(() => {
+    function handleClick() { setColorDropdownId(null); }
+    if (colorDropdownId) {
+      document.addEventListener("click", handleClick);
+      return () => document.removeEventListener("click", handleClick);
+    }
+  }, [colorDropdownId]);
 
   function startEdit(tag: Tag) {
     setEditingId(tag.id);
@@ -95,21 +104,37 @@ export default function TagManager() {
               className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800"
             >
               <div className="relative">
-                <span
-                  className="inline-block h-5 w-5 rounded-full"
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setColorDropdownId(colorDropdownId === tag.id ? null : tag.id);
+                  }}
+                  className="inline-block h-5 w-5 rounded-full ring-2 ring-transparent transition-all hover:ring-gray-300 focus:outline-none"
                   style={{ backgroundColor: tag.color }}
                 />
-                <select
-                  value={tag.color}
-                  onChange={(e) => handleColorChange(tag, e.target.value)}
-                  className="absolute inset-0 cursor-pointer opacity-0"
-                >
-                  {TAG_COLORS.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
+                {colorDropdownId === tag.id && (
+                  <div
+                    className="absolute left-0 top-7 z-20 w-36 rounded-xl border border-gray-200 bg-white p-2 shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {TAG_COLORS.map((c) => (
+                      <button
+                        key={c}
+                        onClick={() => {
+                          handleColorChange(tag, c);
+                          setColorDropdownId(null);
+                        }}
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left font-urbanist text-xs text-gray-700 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
+                      >
+                        <span
+                          className="inline-block h-3 w-3 shrink-0 rounded-full"
+                          style={{ backgroundColor: c }}
+                        />
+                        {c}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {editingId === tag.id ? (
