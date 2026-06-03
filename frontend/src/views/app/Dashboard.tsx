@@ -15,7 +15,7 @@ import AppLayout from "../../components/AppLayout";
 
 export default function Dashboard() {
   const { t } = useTranslation();
-  const { lists, fetchLists, createList } = useListStore();
+  const { lists, fetchLists, createList, updateList, deleteList } = useListStore();
   const { createTask, fetchSharedTasks, sharedTasks } = useTaskStore();
   const { habits, fetchHabits, createHabit } = useHabitStore();
   const { tags, fetchTags } = useTagStore();
@@ -27,7 +27,13 @@ export default function Dashboard() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [habitFormOpen, setHabitFormOpen] = useState(false);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
+  const [editingListId, setEditingListId] = useState<string | null>(null);
+  const [editingListName, setEditingListName] = useState("");
+  const [menuOpenListId, setMenuOpenListId] = useState<string | null>(null);
+  const [deleteConfirmListId, setDeleteConfirmListId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const renameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchLists();
@@ -39,6 +45,37 @@ export default function Dashboard() {
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  useEffect(() => {
+    if (editingListId) renameInputRef.current?.focus();
+  }, [editingListId]);
+
+  // Close menu on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpenListId(null);
+      }
+    }
+    if (menuOpenListId) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [menuOpenListId]);
+
+  async function handleRename(listId: string) {
+    const name = editingListName.trim();
+    if (name && name !== lists.find((l) => l.id === listId)?.name) {
+      await updateList(listId, { name });
+    }
+    setEditingListId(null);
+    setEditingListName("");
+  }
+
+  async function handleDeleteConfirm() {
+    if (!deleteConfirmListId) return;
+    await deleteList(deleteConfirmListId);
+    if (activeListId === deleteConfirmListId) setActiveListId(undefined);
+    setDeleteConfirmListId(null);
+  }
 
   async function handleCreateTask(e: React.FormEvent) {
     e.preventDefault();
@@ -135,27 +172,88 @@ export default function Dashboard() {
                 {t("dashboard.allTasks")}
               </button>
               {lists.map((list) => (
-                <button
-                  key={list.id}
-                  onClick={() => {
-                    setActiveListId(list.id);
-                    setActiveTagId(undefined);
-                  }}
-                  className={`flex items-center w-full rounded-lg px-3 py-2 text-left font-urbanist text-sm transition-colors ${
-                    activeListId === list.id
-                      ? "bg-primary/10 font-medium text-primary"
-                      : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
-                  }`}
-                >
-                  <span
-                    className="mr-2 inline-block h-2 w-2 rounded-full"
-                    style={{ backgroundColor: list.color }}
-                  />
-                  {list.name}
-                  <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">
-                    {list._count.tasks}
-                  </span>
-                </button>
+                <div key={list.id} className="relative">
+                  <div className="flex items-center">
+                    {editingListId === list.id ? (
+                      <div className="flex flex-1 items-center gap-1 rounded-lg px-3 py-2">
+                        <span className="mr-2 inline-block h-2 w-2 shrink-0 rounded-full"
+                          style={{ backgroundColor: list.color }} />
+                        <input
+                          ref={renameInputRef}
+                          type="text"
+                          value={editingListName}
+                          onChange={(e) => setEditingListName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleRename(list.id);
+                            if (e.key === "Escape") { setEditingListId(null); setEditingListName(""); }
+                          }}
+                          onBlur={() => handleRename(list.id)}
+                          className="flex-1 rounded-md border border-gray-300 bg-white px-2 py-1 font-urbanist text-sm outline-none focus:border-primary dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                          autoFocus
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => {
+                            setActiveListId(list.id);
+                            setActiveTagId(undefined);
+                          }}
+                          className={`flex flex-1 items-center rounded-lg px-3 py-2 text-left font-urbanist text-sm transition-colors ${
+                            activeListId === list.id
+                              ? "bg-primary/10 font-medium text-primary"
+                              : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
+                          }`}
+                        >
+                          <span
+                            className="mr-2 inline-block h-2 w-2 shrink-0 rounded-full"
+                            style={{ backgroundColor: list.color }}
+                          />
+                          <span className="truncate">{list.name}</span>
+                          <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">
+                            {list._count.tasks}
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => setMenuOpenListId(menuOpenListId === list.id ? null : list.id)}
+                          className="flex shrink-0 items-center justify-center rounded-lg px-1.5 py-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                            <circle cx="8" cy="3" r="1.5" />
+                            <circle cx="8" cy="8" r="1.5" />
+                            <circle cx="8" cy="13" r="1.5" />
+                          </svg>
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  {menuOpenListId === list.id && (
+                    <div ref={menuRef}
+                      className="absolute right-0 top-full z-20 mt-1 w-32 overflow-hidden rounded-lg border bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                    >
+                      <button
+                        onClick={() => {
+                          setEditingListId(list.id);
+                          setEditingListName(list.name);
+                          setMenuOpenListId(null);
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-2 font-urbanist text-xs text-gray-700 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
+                      >
+                        Rename
+                      </button>
+                      <button
+                        onClick={() => {
+                          setDeleteConfirmListId(list.id);
+                          setMenuOpenListId(null);
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-2 font-urbanist text-xs text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
               ))}
             </nav>
           </div>
@@ -342,6 +440,35 @@ export default function Dashboard() {
           task={selectedTask}
           onClose={() => setSelectedTask(null)}
         />
+      )}
+
+      {deleteConfirmListId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+          onClick={() => setDeleteConfirmListId(null)}>
+          <div className="mx-4 w-full max-w-xs rounded-2xl border border-gray-200/50 bg-white p-6 shadow-2xl dark:border-gray-700/50 dark:bg-gray-900"
+            onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-urbanist text-sm font-semibold text-gray-900 dark:text-gray-100">
+              Delete list?
+            </h3>
+            <p className="mt-2 font-urbanist text-xs text-gray-500 dark:text-gray-400">
+              Tasks will be moved to "All Tasks" without a list.
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                onClick={() => setDeleteConfirmListId(null)}
+                className="rounded-lg bg-gray-100 px-4 py-2 font-urbanist text-xs font-medium text-gray-600 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                className="rounded-lg bg-red-500 px-4 py-2 font-urbanist text-xs font-medium text-white transition-colors hover:bg-red-600"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
       )}
       </motion.div>
     </AppLayout>
