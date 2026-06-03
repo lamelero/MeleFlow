@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Task } from "../../store/taskStore";
 import { useTaskStore } from "../../store/taskStore";
@@ -30,6 +30,18 @@ export default function TaskList({
   useEffect(() => {
     fetchTasks(filter);
   }, [filter?.listId, filter?.status, filter?.tagId, fetchTasks]);
+
+  const sortedTasks = useMemo(() => {
+    return [...tasks].sort((a, b) => {
+      if (a.isCompleted !== b.isCompleted) {
+        return a.isCompleted ? 1 : -1;
+      }
+      if (a.isCompleted) {
+        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+      }
+      return a.priority - b.priority;
+    });
+  }, [tasks]);
 
   if (isLoading) {
     return (
@@ -80,7 +92,7 @@ export default function TaskList({
       animate="animate"
     >
       <AnimatePresence mode="popLayout">
-        {tasks.map((task: Task) => (
+        {sortedTasks.map((task: Task) => (
           <TaskCard key={task.id} task={task} onClick={onTaskClick} />
         ))}
       </AnimatePresence>

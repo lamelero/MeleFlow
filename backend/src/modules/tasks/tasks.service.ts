@@ -89,6 +89,12 @@ export class TaskService {
       where.tags = { some: { tagId: query.tagId } };
     }
 
+    if (query.dueDateFrom || query.dueDateTo) {
+      where.dueDate = {};
+      if (query.dueDateFrom) (where.dueDate as Record<string, Date>).gte = new Date(query.dueDateFrom);
+      if (query.dueDateTo) (where.dueDate as Record<string, Date>).lte = new Date(query.dueDateTo);
+    }
+
     const tasks = await prisma.task.findMany({
       where,
       include: taskInclude,

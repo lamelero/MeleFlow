@@ -41,6 +41,8 @@ export const taskQuerySchema = z.object({
   status: z.enum(["completed", "pending"]).optional(),
   priority: z.coerce.number().int().min(1).max(4).optional(),
   tagId: z.string().optional(),
+  dueDateFrom: z.string().optional(),
+  dueDateTo: z.string().optional(),
 });
 
 export const taskTagSchema = z.object({

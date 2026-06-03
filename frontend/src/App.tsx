@@ -8,6 +8,7 @@ import Login from "./views/auth/Login";
 import Register from "./views/auth/Register";
 import TwoFactorVerify from "./views/auth/TwoFactorVerify";
 import Dashboard from "./views/app/Dashboard";
+import CalendarView from "./views/app/CalendarView";
 import Profile from "./views/app/Profile";
 import AdminPanel from "./views/app/AdminPanel";
 import TagManager from "./views/app/TagManager";
@@ -52,6 +53,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/calendar"
+            element={
+              <ProtectedRoute>
+                <CalendarView />
               </ProtectedRoute>
             }
           />

@@ -171,6 +171,16 @@ export default function Dashboard() {
               >
                 {t("dashboard.allTasks")}
               </button>
+              <Link
+                to="/app/calendar"
+                className="flex items-center gap-2 rounded-lg px-3 py-2 font-urbanist text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
+              >
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <rect x="3" y="4" width="18" height="18" rx="2" />
+                  <path d="M16 2v4M8 2v4M3 10h18" />
+                </svg>
+                Calendar
+              </Link>
               {lists.map((list) => (
                 <div key={list.id} className="relative">
                   <div className="flex items-center">
@@ -313,7 +323,7 @@ export default function Dashboard() {
             </form>
 
             <TaskList
-              filter={{ listId: activeListId, tagId: activeTagId, status: "pending" }}
+              filter={{ listId: activeListId, tagId: activeTagId }}
               onTaskClick={setSelectedTask}
               emptyMessage={
                 activeListId
