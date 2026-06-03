@@ -141,7 +141,7 @@ export default function Dashboard() {
                     setActiveListId(list.id);
                     setActiveTagId(undefined);
                   }}
-                  className={`w-full rounded-lg px-3 py-2 text-left font-urbanist text-sm transition-colors ${
+                  className={`flex items-center w-full rounded-lg px-3 py-2 text-left font-urbanist text-sm transition-colors ${
                     activeListId === list.id
                       ? "bg-primary/10 font-medium text-primary"
                       : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
@@ -181,7 +181,7 @@ export default function Dashboard() {
                   <button
                     key={tag.id}
                     onClick={() => handleTagClick(tag.id)}
-                    className={`w-full rounded-lg px-3 py-2 text-left font-urbanist text-sm transition-colors ${
+                  className={`flex items-center w-full rounded-lg px-3 py-2 text-left font-urbanist text-sm transition-colors ${
                       activeTagId === tag.id
                         ? "bg-primary/10 font-medium text-primary"
                         : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
