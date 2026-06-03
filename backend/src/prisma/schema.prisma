@@ -65,6 +65,12 @@ model User {
   isTwoFactorEnabled   Boolean @default(false)
   recoveryCodes        String? // JSON array of bcrypt hashed recovery codes
 
+  // Pomodoro preferences
+  pomodoroWork        Int @default(25)
+  pomodoroShortBreak  Int @default(5)
+  pomodoroLongBreak   Int @default(15)
+  pomodoroCycles      Int @default(4)
+
   tasks            Task[]
   lists            List[]
   habits           Habit[]
@@ -279,6 +285,7 @@ model SystemSetting {
 model PomodoroSession {
   id            String    @id @default(cuid())
   state         String    @default("RUNNING") // RUNNING | PAUSED | COMPLETED | CANCELLED
+  type          String    @default("FOCUS")   // FOCUS | SHORT_BREAK | LONG_BREAK
   duration      Int       @default(25) // minutes
   breakDuration Int       @default(5)  // minutes
   startedAt     DateTime  @default(now())

@@ -4,6 +4,7 @@ import { client } from "../api/client";
 export interface PomodoroSession {
   id: string;
   state: "RUNNING" | "PAUSED" | "COMPLETED" | "CANCELLED";
+  type: "FOCUS" | "SHORT_BREAK" | "LONG_BREAK";
   duration: number;
   startedAt: string;
   pausedAt: string | null;
@@ -12,16 +13,35 @@ export interface PomodoroSession {
   task?: { id: string; title: string } | null;
 }
 
+export interface PomodoroSettings {
+  work: number;
+  shortBreak: number;
+  longBreak: number;
+  cycles: number;
+}
+
+export interface PomodoroStats {
+  completedToday: number;
+  focusCompleted: number;
+  nextPhase: "FOCUS" | "SHORT_BREAK" | "LONG_BREAK";
+  cycles: number;
+}
+
 interface PomodoroState {
   session: PomodoroSession | null;
   remainingSeconds: number;
   isLoading: boolean;
+  settings: PomodoroSettings;
+  stats: PomodoroStats | null;
   fetchCurrent: () => Promise<void>;
-  start: (duration?: number, taskId?: string) => Promise<void>;
+  start: (type?: "FOCUS" | "SHORT_BREAK" | "LONG_BREAK", taskId?: string) => Promise<void>;
   pause: () => Promise<void>;
   resume: () => Promise<void>;
   complete: () => Promise<void>;
   tick: () => void;
+  fetchSettings: () => Promise<void>;
+  updateSettings: (s: Partial<PomodoroSettings>) => Promise<void>;
+  fetchStats: () => Promise<void>;
 }
 
 function calcRemaining(session: PomodoroSession): number {
@@ -43,6 +63,8 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
   session: null,
   remainingSeconds: 0,
   isLoading: false,
+  settings: { work: 25, shortBreak: 5, longBreak: 15, cycles: 4 },
+  stats: null,
 
   fetchCurrent: async () => {
     set({ isLoading: true });
@@ -59,8 +81,14 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
     }
   },
 
-  start: async (duration = 25, taskId?: string) => {
-    const { data } = await client.post("/pomodoro/start", { duration, taskId });
+  start: async (type?: "FOCUS" | "SHORT_BREAK" | "LONG_BREAK", taskId?: string) => {
+    const { settings } = get();
+    const body: Record<string, unknown> = {};
+    if (type) body.type = type;
+    if (taskId) body.taskId = taskId;
+
+    const { data } = await client.post("/pomodoro/start", body);
+    const duration = data.duration ?? settings.work;
     set({ session: data, remainingSeconds: duration * 60 });
   },
 
@@ -85,6 +113,7 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
     if (!session) return;
     const { data } = await client.post(`/pomodoro/${session.id}/complete`);
     set({ session: data, remainingSeconds: 0 });
+    get().fetchStats();
   },
 
   tick: () => {
@@ -95,5 +124,33 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
       return;
     }
     set({ remainingSeconds: remainingSeconds - 1 });
+  },
+
+  fetchSettings: async () => {
+    try {
+      const { data } = await client.get("/pomodoro/settings");
+      if (data) set({ settings: data });
+    } catch {
+      // keep defaults
+    }
+  },
+
+  updateSettings: async (s: Partial<PomodoroSettings>) => {
+    const body: Record<string, number> = {};
+    if (s.work !== undefined) body.pomodoroWork = s.work;
+    if (s.shortBreak !== undefined) body.pomodoroShortBreak = s.shortBreak;
+    if (s.longBreak !== undefined) body.pomodoroLongBreak = s.longBreak;
+    if (s.cycles !== undefined) body.pomodoroCycles = s.cycles;
+    const { data } = await client.put("/pomodoro/settings", body);
+    set({ settings: data });
+  },
+
+  fetchStats: async () => {
+    try {
+      const { data } = await client.get("/pomodoro/stats");
+      if (data) set({ stats: data });
+    } catch {
+      // ignore
+    }
   },
 }));

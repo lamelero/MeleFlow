@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { startSessionSchema } from "./pomodoro.schema";
+import { startSessionSchema, updateSettingsSchema } from "./pomodoro.schema";
 import { PomodoroService } from "./pomodoro.service";
 
 const service = new PomodoroService();
@@ -34,5 +34,21 @@ export async function pomodoroRoutes(app: FastifyInstance) {
     const { id } = req.params as { id: string };
     const session = await service.complete(req.user.sub, id);
     return reply.send(session);
+  });
+
+  app.get("/settings", async (req, reply) => {
+    const settings = await service.getSettings(req.user.sub);
+    return reply.send(settings);
+  });
+
+  app.put("/settings", async (req, reply) => {
+    const input = updateSettingsSchema.parse(req.body);
+    const settings = await service.updateSettings(req.user.sub, input);
+    return reply.send(settings);
+  });
+
+  app.get("/stats", async (req, reply) => {
+    const stats = await service.getStats(req.user.sub);
+    return reply.send(stats);
   });
 }

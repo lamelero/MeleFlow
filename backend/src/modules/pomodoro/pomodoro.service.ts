@@ -1,6 +1,6 @@
 import { prisma } from "../../config/database";
 import { AppError } from "../../lib/app-error";
-import type { StartSessionInput } from "./pomodoro.schema";
+import type { StartSessionInput, UpdateSettingsInput } from "./pomodoro.schema";
 
 export class PomodoroService {
   async getCurrent(userId: string) {
@@ -14,7 +14,30 @@ export class PomodoroService {
   }
 
   async start(userId: string, input: StartSessionInput) {
-    // Complete any existing running/paused sessions
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        pomodoroWork: true,
+        pomodoroShortBreak: true,
+        pomodoroLongBreak: true,
+        pomodoroCycles: true,
+      },
+    });
+    if (!user) throw new AppError(404, "User not found");
+
+    const type = input.type ?? "FOCUS";
+    let duration = input.duration;
+
+    if (!duration) {
+      duration =
+        type === "FOCUS"
+          ? user.pomodoroWork
+          : type === "SHORT_BREAK"
+            ? user.pomodoroShortBreak
+            : user.pomodoroLongBreak;
+    }
+
+    // Cancel any existing running/paused sessions
     await prisma.pomodoroSession.updateMany({
       where: { userId, state: { in: ["RUNNING", "PAUSED"] } },
       data: { state: "CANCELLED" },
@@ -23,7 +46,8 @@ export class PomodoroService {
     const session = await prisma.pomodoroSession.create({
       data: {
         userId,
-        duration: input.duration,
+        type,
+        duration,
         state: "RUNNING",
         startedAt: new Date(),
         taskId: input.taskId ?? null,
@@ -78,5 +102,76 @@ export class PomodoroService {
     });
 
     return completed;
+  }
+
+  async getSettings(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        pomodoroWork: true,
+        pomodoroShortBreak: true,
+        pomodoroLongBreak: true,
+        pomodoroCycles: true,
+      },
+    });
+    if (!user) throw new AppError(404, "User not found");
+
+    return {
+      work: user.pomodoroWork,
+      shortBreak: user.pomodoroShortBreak,
+      longBreak: user.pomodoroLongBreak,
+      cycles: user.pomodoroCycles,
+    };
+  }
+
+  async updateSettings(userId: string, input: UpdateSettingsInput) {
+    const data: Record<string, number> = {};
+    if (input.pomodoroWork !== undefined) data.pomodoroWork = input.pomodoroWork;
+    if (input.pomodoroShortBreak !== undefined) data.pomodoroShortBreak = input.pomodoroShortBreak;
+    if (input.pomodoroLongBreak !== undefined) data.pomodoroLongBreak = input.pomodoroLongBreak;
+    if (input.pomodoroCycles !== undefined) data.pomodoroCycles = input.pomodoroCycles;
+
+    await prisma.user.update({ where: { id: userId }, data });
+
+    return this.getSettings(userId);
+  }
+
+  async getStats(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { pomodoroCycles: true },
+    });
+    if (!user) throw new AppError(404, "User not found");
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const focusCompleted = await prisma.pomodoroSession.count({
+      where: {
+        userId,
+        type: "FOCUS",
+        state: "COMPLETED",
+        completedAt: { gte: todayStart, lte: todayEnd },
+      },
+    });
+
+    const cycles = user.pomodoroCycles;
+    let nextPhase: "FOCUS" | "SHORT_BREAK" | "LONG_BREAK";
+    if (focusCompleted === 0) {
+      nextPhase = "FOCUS";
+    } else if (focusCompleted % cycles === 0) {
+      nextPhase = "LONG_BREAK";
+    } else {
+      nextPhase = "SHORT_BREAK";
+    }
+
+    return {
+      completedToday: focusCompleted,
+      focusCompleted,
+      nextPhase,
+      cycles,
+    };
   }
 }
