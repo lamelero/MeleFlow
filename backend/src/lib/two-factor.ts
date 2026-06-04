@@ -17,14 +17,15 @@ export function generateTOTPUri(secret: string, email: string, issuer = "MeleFlo
     secret,
     strategy: "totp",
     digits: 6,
-    step: 30,
+    period: 30,
   });
 }
 
 export async function verifyTOTP(token: string, encryptedSecret: string): Promise<boolean> {
   try {
     const secret = decrypt(encryptedSecret);
-    return await otplib.verify({ token, secret });
+    const result = await otplib.verify({ token, secret });
+    return result.valid;
   } catch {
     return false;
   }

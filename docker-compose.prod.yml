@@ -1,0 +1,126 @@
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: meleflow-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: taskflow
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-taskflow}
+      POSTGRES_DB: taskflow
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - meleflow-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: meleflow-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - meleflow-net
+
+  backend:
+    image: ${DOCKER_USER:-meleflow}/meleflow-backend:${TAG:-latest}
+    container_name: meleflow-backend
+    restart: unless-stopped
+    command: sh -c "sleep 3 && npx prisma migrate deploy && node --import tsx/esm dist/server.js"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_ACCESS_EXPIRES_IN: ${JWT_ACCESS_EXPIRES_IN:-15m}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      PORT: "3000"
+      HOST: "0.0.0.0"
+      FRONTEND_URL: ${FRONTEND_URL}
+      ALLOW_REGISTRATION: ${ALLOW_REGISTRATION:-true}
+      MAX_UPLOAD_SIZE: ${MAX_UPLOAD_SIZE:-50}
+      MAX_LOGIN_ATTEMPTS: ${MAX_LOGIN_ATTEMPTS:-5}
+      LOGIN_LOCKOUT_MINUTES: ${LOGIN_LOCKOUT_MINUTES:-15}
+    volumes:
+      - uploads:/usr/src/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - meleflow-net
+
+  worker:
+    image: ${DOCKER_USER:-meleflow}/meleflow-backend:${TAG:-latest}
+    container_name: meleflow-worker
+    restart: unless-stopped
+    command: node --import tsx/esm dist/worker.js
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      FRONTEND_URL: ${FRONTEND_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - meleflow-net
+
+  nginx:
+    image: ${DOCKER_USER:-meleflow}/meleflow-frontend:${TAG:-latest}
+    container_name: meleflow-nginx
+    restart: unless-stopped
+    ports:
+      - "${NGINX_PORT:-3001}:80"
+    volumes:
+      - uploads:/var/www/uploads:ro
+    depends_on:
+      backend:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - meleflow-net
+
+networks:
+  meleflow-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  uploads:
+    driver: local
