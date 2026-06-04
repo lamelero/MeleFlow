@@ -84,8 +84,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
                 initial={{ y: -6, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.15 }}
-                className="font-outfit text-3xl font-bold tracking-tight dark:text-white"
-                style={{ color: "#1a1a2e" }}
+                className="font-outfit text-3xl font-bold tracking-tight text-[#1a1a2e] dark:text-white"
               >
                 {t("auth.taskflow")}
               </motion.h1>
@@ -95,8 +94,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
             initial={{ y: -4, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="mt-1 font-urbanist text-sm dark:text-gray-400"
-            style={{ color: "#6B7280" }}
+            className="mt-1 font-urbanist text-sm text-gray-500 dark:text-gray-400"
           >
             {t("auth.taskflowTagline")}
           </motion.p>
