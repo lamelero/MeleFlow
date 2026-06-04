@@ -39,6 +39,7 @@ export interface SystemSettings {
   emailEnabled: boolean;
   emailSubject: string;
   logoUrl: string;
+  logoUrlDark: string;
   frontendUrl: string;
   backupInterval?: string;
   backupRetention?: number;
@@ -71,8 +72,8 @@ interface AdminState {
   updateUser: (id: string, data: { email?: string; username?: string; displayName?: string; role?: string; isActive?: boolean; storageQuota?: number | null }) => Promise<void>;
   deleteUser: (id: string) => Promise<void>;
   testEmail: (to?: string) => Promise<void>;
-  uploadLogo: (file: File) => Promise<string>;
-  removeLogo: () => Promise<void>;
+  uploadLogo: (file: File, variant?: "light" | "dark") => Promise<string>;
+  removeLogo: (variant?: "light" | "dark") => Promise<void>;
   clearError: () => void;
   backups: BackupEntry[];
   backupSettings: BackupSettings;
@@ -100,6 +101,7 @@ const defaultSettings: SystemSettings = {
   emailEnabled: false,
   emailSubject: "Reminder: {{title}} is due soon",
   logoUrl: "",
+  logoUrlDark: "",
   frontendUrl: "http://localhost:3001",
   backupInterval: "manual",
   backupRetention: 10,
@@ -211,25 +213,29 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     }
   },
 
-  uploadLogo: async (file: File) => {
+  uploadLogo: async (file: File, variant: "light" | "dark" = "light") => {
     const formData = new FormData();
     formData.append("file", file);
-    const { data } = await client.post("/admin/logo", formData, {
+    const params = variant === "dark" ? "?variant=dark" : "";
+    const { data } = await client.post(`/admin/logo${params}`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
+    const key = variant === "dark" ? "logoUrlDark" : "logoUrl";
     set((state) => ({
-      settings: { ...state.settings, logoUrl: data.logoUrl },
+      settings: { ...state.settings, [key]: data[key] },
     }));
-    toast.success("Logo uploaded");
-    return data.logoUrl;
+    toast.success(variant === "dark" ? "Dark logo uploaded" : "Logo uploaded");
+    return data[key];
   },
 
-  removeLogo: async () => {
-    await client.delete("/admin/logo");
+  removeLogo: async (variant: "light" | "dark" = "light") => {
+    const params = variant === "dark" ? "?variant=dark" : "";
+    await client.delete(`/admin/logo${params}`);
+    const key = variant === "dark" ? "logoUrlDark" : "logoUrl";
     set((state) => ({
-      settings: { ...state.settings, logoUrl: "" },
+      settings: { ...state.settings, [key]: "" },
     }));
-    toast.success("Logo removed");
+    toast.success(variant === "dark" ? "Dark logo removed" : "Logo removed");
   },
 
   // ── Backup methods ──────────────────────────

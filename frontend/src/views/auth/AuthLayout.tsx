@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useBrandingStore } from "../../store/brandingStore";
+import { useThemeStore } from "../../store/themeStore";
 
 const gridBg = `url("data:image/svg+xml,${encodeURIComponent(
   '<svg width="60" height="60" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="g" patternUnits="userSpaceOnUse" width="60" height="60"><path d="M 60 0 L 0 0 0 60" fill="none" stroke="rgba(20,184,166,0.03)" stroke-width="1"/></pattern></defs><rect width="100%" height="100%" fill="url(#g)"/></svg>',
@@ -10,7 +11,9 @@ const gridBg = `url("data:image/svg+xml,${encodeURIComponent(
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
-  const { logoUrl, fetchLogo } = useBrandingStore();
+  const { logoUrl, logoUrlDark, fetchLogo } = useBrandingStore();
+  const { theme } = useThemeStore();
+  const activeLogo = theme === "dark" && logoUrlDark ? logoUrlDark : logoUrl;
 
   useEffect(() => {
     fetchLogo();
@@ -56,12 +59,12 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         className="relative w-full max-w-md"
       >
         <div className="mb-8 text-center">
-          {logoUrl ? (
+          {activeLogo ? (
             <motion.img
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.1, type: "spring", damping: 15 }}
-              src={logoUrl}
+              src={activeLogo}
               alt="Logo"
               className="mx-auto mb-6 h-12 w-auto"
             />

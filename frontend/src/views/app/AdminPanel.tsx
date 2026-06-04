@@ -42,8 +42,10 @@ export default function AdminPanel() {
   const [localFromEmail, setLocalFromEmail] = useState(settings.fromEmail);
   const [localEmailSubject, setLocalEmailSubject] = useState(settings.emailSubject);
   const [localEmailEnabled, setLocalEmailEnabled] = useState(settings.emailEnabled);
-  const logoInputRef = useRef<HTMLInputElement>(null);
-  const [logoUploading, setLogoUploading] = useState(false);
+  const logoLightInputRef = useRef<HTMLInputElement>(null);
+  const logoDarkInputRef = useRef<HTMLInputElement>(null);
+  const [logoUploadingLight, setLogoUploadingLight] = useState(false);
+  const [logoUploadingDark, setLogoUploadingDark] = useState(false);
   const { fetchLogo } = useBrandingStore();
   const [wipeModalOpen, setWipeModalOpen] = useState(false);
   const [wipePassword, setWipePassword] = useState("");
@@ -52,29 +54,54 @@ export default function AdminPanel() {
   const [wipeRunning, setWipeRunning] = useState(false);
   const wipeTimerRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
-  const handleLogoSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoSelectLight = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setLogoUploading(true);
+    setLogoUploadingLight(true);
     try {
-      await useAdminStore.getState().uploadLogo(file);
+      await useAdminStore.getState().uploadLogo(file, "light");
       await fetchLogo();
     } catch {
       // error handled in store
     }
-    setLogoUploading(false);
-    if (logoInputRef.current) logoInputRef.current.value = "";
+    setLogoUploadingLight(false);
+    if (logoLightInputRef.current) logoLightInputRef.current.value = "";
   }, [fetchLogo]);
 
-  const handleLogoRemove = useCallback(async () => {
-    setLogoUploading(true);
+  const handleLogoRemoveLight = useCallback(async () => {
+    setLogoUploadingLight(true);
     try {
-      await useAdminStore.getState().removeLogo();
+      await useAdminStore.getState().removeLogo("light");
       await fetchLogo();
     } catch {
       // error handled in store
     }
-    setLogoUploading(false);
+    setLogoUploadingLight(false);
+  }, [fetchLogo]);
+
+  const handleLogoSelectDark = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoUploadingDark(true);
+    try {
+      await useAdminStore.getState().uploadLogo(file, "dark");
+      await fetchLogo();
+    } catch {
+      // error handled in store
+    }
+    setLogoUploadingDark(false);
+    if (logoDarkInputRef.current) logoDarkInputRef.current.value = "";
+  }, [fetchLogo]);
+
+  const handleLogoRemoveDark = useCallback(async () => {
+    setLogoUploadingDark(true);
+    try {
+      await useAdminStore.getState().removeLogo("dark");
+      await fetchLogo();
+    } catch {
+      // error handled in store
+    }
+    setLogoUploadingDark(false);
   }, [fetchLogo]);
 
   function handleOpenWipeModal() {
@@ -531,48 +558,106 @@ export default function AdminPanel() {
               <p className="mb-3 font-urbanist text-xs text-gray-500 dark:text-gray-400">
                 {t("admin.corporateLogoDesc")}
               </p>
-              {settings.logoUrl ? (
-                <div className="mb-3 flex items-center gap-4 rounded-xl bg-gray-50 p-4 ring-1 ring-gray-200 dark:bg-gray-800/50 dark:ring-gray-700">
-                  <img
-                    src={settings.logoUrl}
-                    alt={t("admin.currentLogo")}
-                    className="h-12 w-auto rounded-lg object-contain"
+              <div className="grid gap-6 sm:grid-cols-2">
+                {/* Light Logo */}
+                <div className="rounded-xl border border-dashed border-gray-200 p-4 dark:border-gray-700">
+                  <p className="mb-2 font-urbanist text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                    {t("admin.lightVariant")}
+                  </p>
+                  {settings.logoUrl ? (
+                    <div className="mb-3 flex items-center gap-4 rounded-lg bg-gray-50 p-3 ring-1 ring-gray-200 dark:bg-gray-800/50 dark:ring-gray-700">
+                      <img
+                        src={settings.logoUrl}
+                        alt={t("admin.currentLogo")}
+                        className="h-10 w-auto rounded-lg object-contain"
+                      />
+                      <span className="font-urbanist text-xs text-gray-500 dark:text-gray-400">
+                        {t("admin.currentLogo")}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="mb-3 flex items-center justify-center rounded-lg bg-gray-50 p-4 ring-1 ring-gray-200 dark:bg-gray-800/50 dark:ring-gray-700">
+                      <span className="font-urbanist text-sm text-gray-400 dark:text-gray-500">
+                        {t("admin.noLogo")}
+                      </span>
+                    </div>
+                  )}
+                  <input
+                    ref={logoLightInputRef}
+                    type="file"
+                    accept=".png,.svg"
+                    className="hidden"
+                    onChange={handleLogoSelectLight}
                   />
-                  <span className="font-urbanist text-xs text-gray-500 dark:text-gray-400">
-                    {t("admin.currentLogo")}
-                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => logoLightInputRef.current?.click()}
+                      disabled={logoUploadingLight}
+                      className="rounded-lg bg-primary px-3 py-1.5 font-urbanist text-xs font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
+                    >
+                      {logoUploadingLight ? t("admin.uploading") : t("admin.uploadLogo")}
+                    </button>
+                    {settings.logoUrl && (
+                      <button
+                        onClick={handleLogoRemoveLight}
+                        disabled={logoUploadingLight}
+                        className="rounded-lg bg-red-100 px-3 py-1.5 font-urbanist text-xs font-medium text-red-600 transition-colors hover:bg-red-200 disabled:opacity-50 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
+                      >
+                        {t("admin.remove")}
+                      </button>
+                    )}
+                  </div>
                 </div>
-              ) : (
-                <div className="mb-3 flex items-center justify-center rounded-xl bg-gray-50 p-6 ring-1 ring-gray-200 dark:bg-gray-800/50 dark:ring-gray-700">
-                  <span className="font-urbanist text-sm text-gray-400 dark:text-gray-500">
-                    {t("admin.noLogo")}
-                  </span>
+
+                {/* Dark Logo */}
+                <div className="rounded-xl border border-dashed border-gray-200 p-4 dark:border-gray-700 dark:bg-gray-900/30">
+                  <p className="mb-2 font-urbanist text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                    {t("admin.darkVariant")}
+                  </p>
+                  {settings.logoUrlDark ? (
+                    <div className="mb-3 flex items-center gap-4 rounded-lg bg-gray-800 p-3 ring-1 ring-gray-700">
+                      <img
+                        src={settings.logoUrlDark}
+                        alt={t("admin.currentLogoDark")}
+                        className="h-10 w-auto rounded-lg object-contain"
+                      />
+                      <span className="font-urbanist text-xs text-gray-400">
+                        {t("admin.currentLogo")}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="mb-3 flex items-center justify-center rounded-lg bg-gray-800 p-4 ring-1 ring-gray-700">
+                      <span className="font-urbanist text-sm text-gray-500">
+                        {t("admin.noLogo")}
+                      </span>
+                    </div>
+                  )}
+                  <input
+                    ref={logoDarkInputRef}
+                    type="file"
+                    accept=".png,.svg"
+                    className="hidden"
+                    onChange={handleLogoSelectDark}
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => logoDarkInputRef.current?.click()}
+                      disabled={logoUploadingDark}
+                      className="rounded-lg bg-primary px-3 py-1.5 font-urbanist text-xs font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
+                    >
+                      {logoUploadingDark ? t("admin.uploading") : t("admin.uploadLogo")}
+                    </button>
+                    {settings.logoUrlDark && (
+                      <button
+                        onClick={handleLogoRemoveDark}
+                        disabled={logoUploadingDark}
+                        className="rounded-lg bg-red-100 px-3 py-1.5 font-urbanist text-xs font-medium text-red-600 transition-colors hover:bg-red-200 disabled:opacity-50 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
+                      >
+                        {t("admin.remove")}
+                      </button>
+                    )}
+                  </div>
                 </div>
-              )}
-              <input
-                ref={logoInputRef}
-                type="file"
-                accept=".png,.svg"
-                className="hidden"
-                onChange={handleLogoSelect}
-              />
-              <div className="flex gap-3">
-                <button
-                  onClick={() => logoInputRef.current?.click()}
-                  disabled={logoUploading}
-                  className="rounded-xl bg-primary px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
-                >
-                  {logoUploading ? t("admin.uploading") : t("admin.uploadLogo")}
-                </button>
-                {settings.logoUrl && (
-                  <button
-                    onClick={handleLogoRemove}
-                    disabled={logoUploading}
-                    className="rounded-xl bg-red-100 px-4 py-2 font-urbanist text-sm font-medium text-red-600 transition-colors hover:bg-red-200 disabled:opacity-50 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
-                  >
-                    {t("admin.remove")}
-                  </button>
-                )}
               </div>
             </div>
           </div>

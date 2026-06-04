@@ -92,6 +92,7 @@ export async function adminRoutes(app: FastifyInstance) {
       return reply.code(400).send({ error: "Only PNG and SVG files are allowed" });
     }
 
+    const variant = (req.query as { variant?: string }).variant === "dark" ? "dark" : "light";
     const ext = file.mimetype === "image/png" ? ".png" : ".svg";
     const maxSize = 2 * 1024 * 1024;
     const chunks: Buffer[] = [];
@@ -106,12 +107,13 @@ export async function adminRoutes(app: FastifyInstance) {
     }
 
     const data = Buffer.concat(chunks);
-    const result = await service.uploadLogo(data, ext);
+    const result = await service.uploadLogo(data, ext, variant);
     return reply.send(result);
   });
 
-  app.delete("/logo", async (_req, reply) => {
-    const result = await service.removeLogo();
+  app.delete("/logo", async (req, reply) => {
+    const variant = (req.query as { variant?: string }).variant === "dark" ? "dark" : "light";
+    const result = await service.removeLogo(variant);
     return reply.send(result);
   });
 

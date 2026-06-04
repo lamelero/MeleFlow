@@ -118,41 +118,45 @@ export class AdminService {
     };
   }
 
-  async uploadLogo(data: Buffer, ext: string) {
-    const filename = `logo-${Date.now()}${ext}`;
+  async uploadLogo(data: Buffer, ext: string, variant: "light" | "dark" = "light") {
+    const prefix = variant === "dark" ? "logo-dark" : "logo-light";
+    const filename = `${prefix}-${Date.now()}${ext}`;
+    const dbKey = variant === "dark" ? "logoUrlDark" : "logoUrl";
     const uploadDir = path.resolve("uploads");
     await fs.mkdir(uploadDir, { recursive: true });
 
-    // Remove old logo files
+    // Remove old logo files for this variant
     const existing = (await fs.readdir(uploadDir).catch(() => []))
-      .filter((f) => f.startsWith("logo-"));
+      .filter((f) => f.startsWith(`${prefix}-`));
     await Promise.all(existing.map((f) => fs.unlink(path.join(uploadDir, f)).catch(() => {})));
 
     await fs.writeFile(path.join(uploadDir, filename), data);
 
     const logoUrl = `/uploads/${filename}`;
     await prisma.systemSetting.upsert({
-      where: { key: "logoUrl" },
-      create: { key: "logoUrl", value: logoUrl },
+      where: { key: dbKey },
+      create: { key: dbKey, value: logoUrl },
       update: { value: logoUrl },
     });
 
-    return { logoUrl };
+    return { [variant === "dark" ? "logoUrlDark" : "logoUrl"]: logoUrl };
   }
 
-  async removeLogo() {
+  async removeLogo(variant: "light" | "dark" = "light") {
+    const prefix = variant === "dark" ? "logo-dark" : "logo-light";
+    const dbKey = variant === "dark" ? "logoUrlDark" : "logoUrl";
     const uploadDir = path.resolve("uploads");
     const existing = (await fs.readdir(uploadDir).catch(() => []))
-      .filter((f) => f.startsWith("logo-"));
+      .filter((f) => f.startsWith(`${prefix}-`));
     await Promise.all(existing.map((f) => fs.unlink(path.join(uploadDir, f)).catch(() => {})));
 
     await prisma.systemSetting.upsert({
-      where: { key: "logoUrl" },
-      create: { key: "logoUrl", value: "" },
+      where: { key: dbKey },
+      create: { key: dbKey, value: "" },
       update: { value: "" },
     });
 
-    return { logoUrl: null };
+    return { [variant === "dark" ? "logoUrlDark" : "logoUrl"]: null };
   }
 
   async updateSettings(input: UpdateSettingsInput) {

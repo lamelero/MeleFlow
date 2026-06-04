@@ -5,10 +5,13 @@ import { useTranslation } from "react-i18next";
 import PomodoroTimer from "./pomodoro/PomodoroTimer";
 import UserMenu from "./UserMenu";
 import { useBrandingStore } from "../store/brandingStore";
+import { useThemeStore } from "../store/themeStore";
 
 export default function AppLayout({ title, children }: { title: string; children: ReactNode }) {
   const { t } = useTranslation();
-  const { logoUrl, fetchLogo } = useBrandingStore();
+  const { logoUrl, logoUrlDark, fetchLogo } = useBrandingStore();
+  const { theme } = useThemeStore();
+  const activeLogo = theme === "dark" && logoUrlDark ? logoUrlDark : logoUrl;
 
   useEffect(() => {
     fetchLogo();
@@ -20,8 +23,8 @@ export default function AppLayout({ title, children }: { title: string; children
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
           <div className="flex items-center gap-3">
             <Link to="/app" className="no-underline">
-              {logoUrl ? (
-                <img src={logoUrl} alt={t("common.logoAlt")} className="h-8 w-auto" />
+              {activeLogo ? (
+                <img src={activeLogo} alt={t("common.logoAlt")} className="h-8 w-auto" />
               ) : (
                 <span className="font-outfit text-xl font-bold text-primary">{t("auth.taskflow")}</span>
               )}

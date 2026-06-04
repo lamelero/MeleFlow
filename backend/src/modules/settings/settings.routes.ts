@@ -3,9 +3,14 @@ import type { FastifyInstance } from "fastify";
 
 export async function settingsRoutes(app: FastifyInstance) {
   app.get("/settings/logo", async (_req, reply) => {
-    const row = await prisma.systemSetting.findUnique({
-      where: { key: "logoUrl" },
+    const rows = await prisma.systemSetting.findMany({
+      where: { key: { in: ["logoUrl", "logoUrlDark"] } },
     });
-    return reply.send({ logoUrl: row?.value || null });
+    const map: Record<string, string> = {};
+    for (const r of rows) map[r.key] = r.value;
+    return reply.send({
+      logoUrl: map.logoUrl || null,
+      logoUrlDark: map.logoUrlDark || null,
+    });
   });
 }
