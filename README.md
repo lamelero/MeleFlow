@@ -44,23 +44,24 @@ The app is at **http://localhost:3001**.
 git clone <repo> meleflow && cd meleflow
 
 # 2. Generate unique secrets
+POSTGRES_PASSWORD=$(openssl rand -base64 32)
 JWT_SECRET=$(openssl rand -base64 32)
 JWT_REFRESH_SECRET=$(openssl rand -base64 32)
 ENCRYPTION_KEY=$(openssl rand -hex 16)
 
-# 3. Create .env file
+# 3. Create .env file (variables are expanded correctly)
 cat > .env << EOF
 DOCKER_USER=meleflow
 TAG=latest
 NGINX_PORT=3001
-DATABASE_URL=postgresql://taskflow:taskflow@postgres:5432/taskflow
+POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+DATABASE_URL=postgresql://taskflow:${POSTGRES_PASSWORD}@postgres:5432/taskflow
 REDIS_URL=redis://redis:6379
-POSTGRES_PASSWORD=taskflow
-JWT_SECRET=$JWT_SECRET
-JWT_REFRESH_SECRET=$JWT_REFRESH_SECRET
+JWT_SECRET=${JWT_SECRET}
+JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
 JWT_ACCESS_EXPIRES_IN=15m
 JWT_REFRESH_EXPIRES_IN=7d
-ENCRYPTION_KEY=$ENCRYPTION_KEY
+ENCRYPTION_KEY=${ENCRYPTION_KEY}
 FRONTEND_URL=http://YOUR_SERVER_IP:3001
 ALLOW_REGISTRATION=true
 MAX_UPLOAD_SIZE=50
