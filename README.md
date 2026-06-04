@@ -37,6 +37,68 @@ docker compose logs -f
 
 The app is at **http://localhost:3001**.
 
+## Production Deployment
+
+```bash
+# 1. Clone the repo on your server
+git clone <repo> meleflow && cd meleflow
+
+# 2. Generate unique secrets
+JWT_SECRET=$(openssl rand -base64 32)
+JWT_REFRESH_SECRET=$(openssl rand -base64 32)
+ENCRYPTION_KEY=$(openssl rand -hex 16)
+
+# 3. Create .env file
+cat > .env << EOF
+DOCKER_USER=meleflow
+TAG=latest
+NGINX_PORT=3001
+DATABASE_URL=postgresql://taskflow:taskflow@postgres:5432/taskflow
+REDIS_URL=redis://redis:6379
+POSTGRES_PASSWORD=taskflow
+JWT_SECRET=$JWT_SECRET
+JWT_REFRESH_SECRET=$JWT_REFRESH_SECRET
+JWT_ACCESS_EXPIRES_IN=15m
+JWT_REFRESH_EXPIRES_IN=7d
+ENCRYPTION_KEY=$ENCRYPTION_KEY
+FRONTEND_URL=http://YOUR_SERVER_IP:3001
+ALLOW_REGISTRATION=true
+MAX_UPLOAD_SIZE=50
+EOF
+
+# 4. Pull images (no build needed — images are on Docker Hub)
+docker compose -f docker-compose.prod.yml --env-file .env pull
+
+# 5. Launch everything
+docker compose -f docker-compose.prod.yml --env-file .env up -d
+
+# 6. Watch logs
+docker compose -f docker-compose.prod.yml logs -f
+```
+
+> **Note:** Replace `YOUR_SERVER_IP` with your server's IP or domain. All secrets are auto-generated — no manual editing needed.
+
+### Synology NAS specifics
+
+On Synology DSM, Docker is installed as **Container Manager**. The docker and docker-compose binaries are located at `/var/packages/ContainerManager/target/usr/bin/`. You may need to use the full path or `sudo` depending on your user permissions.
+
+```bash
+# On Synology with sudo
+sudo /var/packages/ContainerManager/target/usr/bin/docker compose \
+  -f /path/to/docker-compose.prod.yml --env-file /path/to/.env up -d
+```
+
+### Firewall
+
+If containers can't reach each other (e.g. `postgres:5432` unreachable), temporarily disable the Synology firewall or add a rule for the Docker bridge network:
+
+```bash
+# Disable firewall (temporary debug)
+synofirewall --disable
+```
+
+For a permanent setup, create an allow rule from the Docker bridge subnet (`172.x.0.0/16`) to the NAS IP on the required ports.
+
 | Service     | Internal URL                    |
 |-------------|---------------------------------|
 | Frontend    | http://localhost:3001            |

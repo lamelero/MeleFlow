@@ -15,6 +15,7 @@ backend/uploads/
 # Entorno
 .env
 .env.local
+.env.production
 
 # Docker / Prisma
 prisma/dev.db
