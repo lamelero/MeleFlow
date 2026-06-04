@@ -17,6 +17,10 @@ backend/uploads/
 .env.local
 .env.production
 
+# opencode (agent configuration)
+.agents/
+skills-lock.json
+
 # Docker / Prisma
 prisma/dev.db
 prisma/dev.db-journal
