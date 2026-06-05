@@ -23,11 +23,14 @@ export default function AppLayout({ title, children }: { title: string; children
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
           <div className="flex items-center gap-3">
             <Link to="/app" className="no-underline">
-              {activeLogo ? (
-                <img src={activeLogo} alt={t("common.logoAlt")} className="h-8 w-auto" />
-              ) : (
-                <span className="font-outfit text-xl font-bold text-primary">{t("auth.taskflow")}</span>
-              )}
+              <div className="flex items-center gap-2">
+                <img src="/meleflow-logo.svg" alt="" className="h-6 w-6" />
+                {activeLogo ? (
+                  <img src={activeLogo} alt={t("common.logoAlt")} className="h-8 w-auto" />
+                ) : (
+                  <span className="font-outfit text-xl font-bold text-primary">{t("auth.taskflow")}</span>
+                )}
+              </div>
             </Link>
             {title && (
               <>

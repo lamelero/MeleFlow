@@ -10,11 +10,13 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          className="h-8 w-8 rounded-full border-4 border-primary border-t-transparent"
+      <div className="flex min-h-screen items-center justify-center bg-[#FAFAFA] dark:bg-gray-950">
+        <motion.img
+          src="/meleflow-logo.svg"
+          alt="MeleFlow"
+          className="h-16 w-16"
+          animate={{ opacity: [0.4, 1, 0.4] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
         />
       </div>
     );

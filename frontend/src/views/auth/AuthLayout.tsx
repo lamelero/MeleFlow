@@ -66,33 +66,27 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
               transition={{ delay: 0.1, type: "spring", damping: 15 }}
               src={activeLogo}
               alt="Logo"
-              className="mx-auto mb-6 h-12 w-auto"
+              className="mx-auto mb-3 h-12 w-auto"
             />
           ) : (
-            <>
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.1, type: "spring", damping: 15 }}
-                className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl"
-                style={{ backgroundColor: "rgba(20,184,166,0.1)" }}
-              >
-                <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="4" y="8" width="20" height="16" rx="3" stroke="#14B8A6" strokeWidth="2" />
-                  <path d="M8 8V6a2 2 0 012-2h8a2 2 0 012 2v2" stroke="#14B8A6" strokeWidth="2" />
-                  <path d="M10 14l3 3 5-5" stroke="#14B8A6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </motion.div>
-              <motion.h1
-                initial={{ y: -6, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.15 }}
-                className="font-outfit text-3xl font-bold tracking-tight text-[#1a1a2e] dark:text-white"
-              >
-                {t("auth.taskflow")}
-              </motion.h1>
-            </>
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.1, type: "spring", damping: 15 }}
+              className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl"
+              style={{ backgroundColor: "rgba(20,184,166,0.1)" }}
+            >
+              <img src="/meleflow-logo.svg" alt="MeleFlow" className="h-10 w-10" />
+            </motion.div>
           )}
+          <motion.h1
+            initial={{ y: -6, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.15 }}
+            className={`font-outfit font-bold tracking-tight ${activeLogo ? "text-xl text-primary" : "text-3xl text-[#1a1a2e] dark:text-white"}`}
+          >
+            {t("auth.taskflow")}
+          </motion.h1>
           <motion.p
             initial={{ y: -4, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
