@@ -8,6 +8,7 @@ import { sendEmail, buildReminderEmail, buildHabitReminderEmail } from "./lib/em
 import { t } from "./lib/email-i18n";
 import { HabitService } from "./modules/habits/habits.service";
 import { runScheduledBackup } from "./modules/admin/backup.service";
+import { IcsCalendarService } from "./modules/ics-calendars/ics-calendars.service";
 
 const DEFAULT_URL = process.env.FRONTEND_URL || "http://localhost:3001";
 
@@ -256,6 +257,19 @@ cron.schedule("* * * * *", async () => {
     console.log("[Worker] Scheduled backup completed");
   } catch (err) {
     console.error("[Worker] Backup check error:", err);
+  }
+});
+
+// ── ICS Calendar sync every 15 minutes ─────────
+cron.schedule("*/15 * * * *", async () => {
+  try {
+    const icsService = new IcsCalendarService();
+    const result = await icsService.syncAll();
+    if (result.synced > 0) {
+      console.log(`[Worker] Synced ${result.synced} ICS calendar(s)`);
+    }
+  } catch (err) {
+    console.error("[Worker] ICS calendar sync error:", err);
   }
 });
 

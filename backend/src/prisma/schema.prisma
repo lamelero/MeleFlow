@@ -81,6 +81,8 @@ model User {
   collaborations   TaskCollaborator[]
   verificationCodes VerificationCode[]
   trustedDevices    TrustedDevice[]
+  icsCalendars      IcsCalendar[]
+  icsEvents         IcsEvent[]
 }
 
 // ── Task (with subtask self-reference) ───────────
@@ -353,4 +355,44 @@ model TrustedDevice {
 
   @@index([userId])
   @@index([expiresAt])
+}
+
+// ── ICS Calendar Feeds ──────────────────────
+
+model IcsCalendar {
+  id           String   @id @default(cuid())
+  userId       String
+  name         String
+  url          String
+  color        String   @default("#6366f1")
+  lastSyncedAt DateTime?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  events IcsEvent[]
+
+  @@index([userId])
+}
+
+model IcsEvent {
+  id            String   @id @default(cuid())
+  icsCalendarId String
+  userId        String
+  externalId    String
+  title         String
+  description   String?
+  startTime     DateTime
+  endTime       DateTime
+  isAllDay      Boolean  @default(false)
+  location      String?
+  lastSyncedAt  DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  icsCalendar IcsCalendar @relation(fields: [icsCalendarId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([icsCalendarId, externalId])
+  @@index([userId, startTime, endTime])
 }

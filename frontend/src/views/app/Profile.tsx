@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../store/authStore";
 import { client } from "../../api/client";
+import { useIcsCalendarStore } from "../../store/icsCalendarStore";
 import AppLayout from "../../components/AppLayout";
 
 function getInitials(name: string): string {
@@ -12,12 +13,27 @@ function getInitials(name: string): string {
   return name.slice(0, 2).toUpperCase();
 }
 
+const ICS_COLORS = [
+  "#6366f1", "#14b8a6", "#f59e0b", "#ef4444",
+  "#8b5cf6", "#ec4899", "#06b6d4", "#84cc16",
+];
+
 export default function Profile() {
   const { t, i18n } = useTranslation();
   const { user, updateLanguage, updateProfile, uploadAvatar } = useAuthStore();
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const [activeTab, setActiveTab] = useState<"general" | "security">("general");
+  const {
+    calendars: icsCalendars,
+    loading: icsLoading,
+    syncing,
+    fetchCalendars,
+    addCalendar,
+    removeCalendar,
+    syncCalendar,
+  } = useIcsCalendarStore();
+
+  const [activeTab, setActiveTab] = useState<"general" | "security" | "calendars">("general");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
@@ -36,9 +52,19 @@ export default function Profile() {
   const [showRecoveryCodes, setShowRecoveryCodes] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
 
+  // ICS calendar form state
+  const [icsName, setIcsName] = useState("");
+  const [icsUrl, setIcsUrl] = useState("");
+  const [icsColor, setIcsColor] = useState(ICS_COLORS[0]);
+  const [addingIcs, setAddingIcs] = useState(false);
+
   useEffect(() => {
     fetch2FAStatus();
   }, []);
+
+  useEffect(() => {
+    fetchCalendars();
+  }, [fetchCalendars]);
 
   useEffect(() => {
     if (user) {
@@ -90,7 +116,7 @@ export default function Profile() {
     }
     setUploading(true);
     try {
-      const url = await uploadAvatar(file);
+      await uploadAvatar(file);
       toast.success(t("profile.toasts.avatarUpdated"));
     } catch {
       toast.error(t("profile.toasts.avatarFailed"));
@@ -159,6 +185,42 @@ export default function Profile() {
     }
   }
 
+  async function handleAddIcs() {
+    if (!icsName.trim() || !icsUrl.trim()) return;
+    setAddingIcs(true);
+    try {
+      await addCalendar(icsName.trim(), icsUrl.trim(), icsColor);
+      setIcsName("");
+      setIcsUrl("");
+      setIcsColor(ICS_COLORS[0]);
+      toast.success("Calendar added");
+    } catch {
+      toast.error("Failed to add calendar");
+    } finally {
+      setAddingIcs(false);
+    }
+  }
+
+  function handleDeleteIcs(id: string) {
+    const cal = icsCalendars.find((c) => c.id === id);
+    if (!confirm(t("profile.icsDeleteConfirm"))) return;
+    removeCalendar(id);
+  }
+
+  function formatLastSync(dateStr: string | null): string {
+    if (!dateStr) return t("profile.icsNever");
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 1) return "just now";
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  }
+
   const timezones = Intl.supportedValuesOf?.("timeZone") ?? [
     "UTC", "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles",
     "Europe/London", "Europe/Madrid", "Europe/Berlin", "Europe/Paris", "Asia/Tokyo",
@@ -168,6 +230,7 @@ export default function Profile() {
   const tabs = [
     { id: "general" as const, label: t("profile.general") },
     { id: "security" as const, label: t("profile.security") },
+    { id: "calendars" as const, label: t("profile.calendars") },
   ];
 
   return (
@@ -493,6 +556,128 @@ export default function Profile() {
                 )}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {activeTab === "calendars" && (
+        <div className="space-y-6">
+          <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
+            <h3 className="mb-4 font-outfit text-base font-semibold text-gray-900 dark:text-gray-100">
+              {t("profile.icsTitle")}
+            </h3>
+            <p className="mb-5 font-urbanist text-sm text-gray-500 dark:text-gray-400">
+              {t("profile.icsDesc")}
+            </p>
+
+            {/* Add form */}
+            <div className="space-y-4 rounded-xl border border-gray-100 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-800/50">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block font-urbanist text-xs font-medium text-gray-600 dark:text-gray-400">
+                    {t("profile.icsName")}
+                  </label>
+                  <input
+                    type="text"
+                    value={icsName}
+                    onChange={(e) => setIcsName(e.target.value)}
+                    placeholder={t("profile.icsNamePlaceholder")}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block font-urbanist text-xs font-medium text-gray-600 dark:text-gray-400">
+                    {t("profile.icsUrl")}
+                  </label>
+                  <input
+                    type="url"
+                    value={icsUrl}
+                    onChange={(e) => setIcsUrl(e.target.value)}
+                    placeholder={t("profile.icsUrlPlaceholder")}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block font-urbanist text-xs font-medium text-gray-600 dark:text-gray-400">
+                  {t("profile.icsColor")}
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {ICS_COLORS.map((color) => (
+                    <button
+                      key={color}
+                      onClick={() => setIcsColor(color)}
+                      className={`h-7 w-7 rounded-full transition-all ${icsColor === color ? "ring-2 ring-offset-2 ring-gray-400 dark:ring-offset-gray-900" : ""}`}
+                      style={{ backgroundColor: color }}
+                    />
+                  ))}
+                </div>
+              </div>
+              <button
+                onClick={handleAddIcs}
+                disabled={addingIcs || !icsName.trim() || !icsUrl.trim()}
+                className="rounded-xl bg-primary px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
+              >
+                {addingIcs ? t("common.saving") : t("profile.icsAdd")}
+              </button>
+            </div>
+
+            {/* List of calendars */}
+            <div className="mt-6">
+              <h4 className="mb-3 font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                {t("profile.icsAdd")}
+              </h4>
+              {icsCalendars.length === 0 ? (
+                <p className="font-urbanist text-sm text-gray-400 dark:text-gray-500">
+                  {t("profile.icsNoCalendars")}
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {icsCalendars.map((cal) => (
+                    <div
+                      key={cal.id}
+                      className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-900"
+                    >
+                      <div
+                        className="h-3 w-3 shrink-0 rounded-full"
+                        style={{ backgroundColor: cal.color }}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-urbanist text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {cal.name}
+                        </p>
+                        <p className="truncate font-urbanist text-xs text-gray-400 dark:text-gray-500">
+                          {cal.url}
+                        </p>
+                        <p className="font-urbanist text-xs text-gray-400 dark:text-gray-500">
+                          {t("profile.icsLastSync", { time: formatLastSync(cal.lastSyncedAt) })}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => syncCalendar(cal.id)}
+                        disabled={syncing.has(cal.id)}
+                        className="rounded-lg px-3 py-1.5 font-urbanist text-xs font-medium text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
+                      >
+                        {syncing.has(cal.id) ? (
+                          <span className="flex items-center gap-1">
+                            <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                            {t("profile.icsSyncing")}
+                          </span>
+                        ) : (
+                          t("profile.icsSyncNow")
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteIcs(cal.id)}
+                        className="rounded-lg px-3 py-1.5 font-urbanist text-xs font-medium text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20"
+                      >
+                        {t("profile.icsDelete")}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

@@ -22,6 +22,7 @@ import { habitRoutes } from "./modules/habits/habits.routes";
 import { pomodoroRoutes } from "./modules/pomodoro/pomodoro.routes";
 import { adminRoutes } from "./modules/admin/admin.routes";
 import { settingsRoutes } from "./modules/settings/settings.routes";
+import { icsCalendarRoutes } from "./modules/ics-calendars/ics-calendars.routes";
 
 export async function buildApp(opts: Record<string, unknown> = {}) {
   const app = Fastify({
@@ -105,6 +106,7 @@ export async function buildApp(opts: Record<string, unknown> = {}) {
   await app.register(pomodoroRoutes, { prefix: "/api/pomodoro" });
   await app.register(adminRoutes, { prefix: "/api/admin" });
   await app.register(settingsRoutes, { prefix: "/api" });
+  await app.register(icsCalendarRoutes, { prefix: "/api/ics-calendars" });
 
   return app;
 }
