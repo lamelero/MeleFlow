@@ -1,5 +1,9 @@
 # MeleFlow 🏄
 
+<p align="center">
+  <img src="images/MeleFlowIcon.svg" alt="MeleFlow" width="80" height="80">
+</p>
+
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Stack](https://img.shields.io/badge/stack-React%2019%20%7C%20Fastify%205%20%7C%20PostgreSQL%2016%20%7C%20Redis%207-14B8A6)
 
