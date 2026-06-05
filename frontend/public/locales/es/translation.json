@@ -29,6 +29,7 @@
     "verifying": "Verificando...",
     "backToLogin": "Volver al inicio de sesión",
     "trustDevice": "Confiar en este equipo por 30 días",
+    "serverUrl": "Servidor",
     "errors": {
       "loginFailed": "Error al iniciar sesión",
       "registrationFailed": "Error al registrarse",
@@ -78,6 +79,12 @@
     "timezone": "Zona horaria",
     "autodetect": "Auto-detectar",
     "saveChanges": "Guardar cambios",
+    "fontSize": "Tamaño de fuente",
+    "fontSizeSmall": "Pequeño",
+    "fontSizeNormal": "Normal",
+    "fontSizeLarge": "Grande",
+    "fontSizeXlarge": "Enorme",
+    "boldFont": "Texto negrita",
     "toasts": {
       "profileUpdated": "Perfil actualizado",
       "saveFailed": "Error al guardar el perfil",
@@ -331,6 +338,13 @@
     "createTask": "Crear Tarea",
     "taskTitle": "Título de la tarea",
     "taskTitlePlaceholder": "¿Qué hay que hacer?",
+    "agenda": "Agenda",
+    "grid": "Mes",
+    "today": "Hoy",
+    "allDay": "Todo el día",
+    "noTasks": "Sin tareas",
+    "createSuccess": "Tarea creada",
+    "createFailed": "Error al crear la tarea",
     "dayHeaders": ["L", "M", "X", "J", "V", "S", "D"],
     "monthNames": ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
   },
@@ -395,5 +409,11 @@
     "edit": "Editar",
     "delete": "Eliminar",
     "back": "Volver"
+  },
+  "bottomNav": {
+    "tasks": "Tareas",
+    "habits": "Hábitos",
+    "calendar": "Calendario",
+    "timer": "Temporizador"
   }
 }

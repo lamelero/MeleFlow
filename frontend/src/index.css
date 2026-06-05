@@ -25,6 +25,8 @@
   --color-border-light: rgba(0,0,0,0.04);
   --color-grid-empty: #E5E7EB;
   --color-progress-bg: #E5E7EB;
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .dark {

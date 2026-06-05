@@ -52,6 +52,7 @@ export async function authRoutes(app: FastifyInstance) {
     setRefreshCookie(reply, result.refreshToken, result.refreshTokenExpiresAt, false);
     return reply.code(201).send({
       accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
       user: result.user,
     });
   });
@@ -75,6 +76,7 @@ export async function authRoutes(app: FastifyInstance) {
     setRefreshCookie(reply, result.refreshToken, result.refreshTokenExpiresAt, input.rememberMe);
     return reply.send({
       accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
       user: result.user,
     });
   });
@@ -99,6 +101,7 @@ export async function authRoutes(app: FastifyInstance) {
 
     return reply.send({
       accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
       user: result.user,
     });
   });
@@ -110,15 +113,16 @@ export async function authRoutes(app: FastifyInstance) {
   });
 
   app.post("/refresh", async (req, reply) => {
-    const token = req.cookies?.[REFRESH_COOKIE];
+    const { rememberMe, refreshToken } = refreshSchema.parse(req.body);
+    const token = refreshToken || req.cookies?.[REFRESH_COOKIE];
     if (!token) {
       return reply.code(401).send({ error: "No refresh token" });
     }
-    const { rememberMe } = refreshSchema.parse(req.body);
     const result = await service.refreshToken(token, rememberMe);
     setRefreshCookie(reply, result.refreshToken, result.refreshTokenExpiresAt, rememberMe);
     return reply.send({
       accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
       user: result.user,
     });
   });

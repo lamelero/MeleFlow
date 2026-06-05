@@ -29,6 +29,7 @@
     "verifying": "Verifying...",
     "backToLogin": "Back to login",
     "trustDevice": "Trust this device for 30 days",
+    "serverUrl": "Server",
     "errors": {
       "loginFailed": "Login failed",
       "registrationFailed": "Registration failed",
@@ -78,6 +79,12 @@
     "timezone": "Timezone",
     "autodetect": "Auto-detect",
     "saveChanges": "Save Changes",
+    "fontSize": "Font Size",
+    "fontSizeSmall": "Small",
+    "fontSizeNormal": "Normal",
+    "fontSizeLarge": "Large",
+    "fontSizeXlarge": "X-Large",
+    "boldFont": "Bold text",
     "toasts": {
       "profileUpdated": "Profile updated",
       "saveFailed": "Failed to save profile",
@@ -331,6 +338,13 @@
     "createTask": "Create Task",
     "taskTitle": "Task title",
     "taskTitlePlaceholder": "What needs to be done?",
+    "agenda": "Agenda",
+    "grid": "Month",
+    "today": "Today",
+    "allDay": "All day",
+    "noTasks": "No tasks",
+    "createSuccess": "Task created",
+    "createFailed": "Failed to create task",
     "dayHeaders": ["M", "T", "W", "T", "F", "S", "S"],
     "monthNames": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
   },
@@ -395,5 +409,11 @@
     "edit": "Edit",
     "delete": "Delete",
     "back": "Back"
+  },
+  "bottomNav": {
+    "tasks": "Tasks",
+    "habits": "Habits",
+    "calendar": "Calendar",
+    "timer": "Timer"
   }
 }

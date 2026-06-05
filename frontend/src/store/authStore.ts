@@ -1,5 +1,7 @@
 import { create } from "zustand";
-import { client, setAccessToken, getAccessToken } from "../api/client";
+import { isNative } from "../capacitor/register";
+import { getPersistedRefreshToken, setPersistedRefreshToken } from "../capacitor/register";
+import { client, setAccessToken, getAccessToken, setRefreshToken, getRefreshToken } from "../api/client";
 
 export interface User {
   id: string;
@@ -62,8 +64,17 @@ export const useAuthStore = create<AuthState>((set) => ({
           setAccessToken(null);
         }
       }
-      const { data } = await client.post("/auth/refresh", { rememberMe: true });
+      if (isNative()) {
+        const persisted = await getPersistedRefreshToken();
+        if (persisted) {
+          setRefreshToken(persisted);
+        }
+      }
+      const rt = getRefreshToken();
+      const { data } = await client.post("/auth/refresh", { rememberMe: true, refreshToken: rt || undefined });
       setAccessToken(data.accessToken);
+      setRefreshToken(data.refreshToken);
+      setPersistedRefreshToken(data.refreshToken);
       set({ user: data.user, isAuthenticated: true, isLoading: false });
     } catch {
       set({ user: null, isAuthenticated: false, isLoading: false });
@@ -87,6 +98,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
 
       setAccessToken(data.accessToken);
+      setRefreshToken(data.refreshToken);
+      setPersistedRefreshToken(data.refreshToken);
       set({ user: data.user, isAuthenticated: true, isLoading: false, error: null });
       return { accessToken: data.accessToken, user: data.user };
     } catch (err: unknown) {
@@ -103,6 +116,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const { data } = await client.post("/auth/verify-2fa", { twoFactorToken, code, trustDevice });
       setAccessToken(data.accessToken);
+      setRefreshToken(data.refreshToken);
+      setPersistedRefreshToken(data.refreshToken);
       set({ user: data.user, isAuthenticated: true, isLoading: false, error: null });
     } catch (err: unknown) {
       const message =
@@ -135,6 +150,8 @@ export const useAuthStore = create<AuthState>((set) => ({
         password,
       });
       setAccessToken(data.accessToken);
+      setRefreshToken(data.refreshToken);
+      setPersistedRefreshToken(data.refreshToken);
       set({ user: data.user, isAuthenticated: true, isLoading: false, error: null });
     } catch (err: unknown) {
       const message =
@@ -152,6 +169,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       // Silently ignore logout errors
     } finally {
       setAccessToken(null);
+      setRefreshToken(null);
+      setPersistedRefreshToken(null);
       set({ user: null, isAuthenticated: false, error: null });
     }
   },

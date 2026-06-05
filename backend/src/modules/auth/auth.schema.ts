@@ -20,6 +20,7 @@ export const verify2FASchema = z.object({
 
 export const refreshSchema = z.object({
   rememberMe: z.boolean().optional().default(false),
+  refreshToken: z.string().optional(),
 });
 
 export const updateLanguageSchema = z.object({

@@ -35,7 +35,7 @@ export async function buildApp(opts: Record<string, unknown> = {}) {
   await app.register(helmet, { contentSecurityPolicy: false });
 
   await app.register(cors, {
-    origin: env.FRONTEND_URL,
+    origin: true,
     credentials: true,
   });
 

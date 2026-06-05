@@ -4,11 +4,14 @@ import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
 import AppLayout from "../../components/AppLayout";
 import TaskCalendar from "../../components/tasks/TaskCalendar";
+import AgendaView from "../../components/tasks/AgendaView";
 import TaskDetailPanel from "../../components/tasks/TaskDetailPanel";
+import EventDetailModal from "../../components/tasks/EventDetailModal";
 import { useTaskStore, type Task } from "../../store/taskStore";
 import { useListStore } from "../../store/listStore";
-import { useIcsCalendarStore } from "../../store/icsCalendarStore";
+import { useIcsCalendarStore, type ExternalCalendarEvent } from "../../store/icsCalendarStore";
 import { client } from "../../api/client";
+import { isNative } from "../../capacitor/register";
 
 export default function CalendarView() {
   const { t } = useTranslation();
@@ -17,8 +20,9 @@ export default function CalendarView() {
   const { events: icsEvents, fetchEvents } = useIcsCalendarStore();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<ExternalCalendarEvent | null>(null);
+  const [viewMode, setViewMode] = useState<"agenda" | "grid">(isNative() ? "agenda" : "grid");
 
-  // Create task from calendar
   const [isCreating, setIsCreating] = useState(false);
   const [newTaskDate, setNewTaskDate] = useState<Date | null>(null);
   const [newTaskTitle, setNewTaskTitle] = useState("");
@@ -75,7 +79,6 @@ export default function CalendarView() {
       setIsCreating(false);
       setNewTaskTitle("");
       setNewTaskDate(null);
-      // Refresh the month
       loadMonth(currentDate);
     } catch {
       toast.error(t("calendar.createFailed") || "Failed to create task");
@@ -85,16 +88,53 @@ export default function CalendarView() {
   return (
     <AppLayout title={t("calendar.title")}>
       <div className="mx-auto w-full max-w-6xl p-4">
-        <TaskCalendar
-          tasks={tasks}
-          currentDate={currentDate}
-          onPrevMonth={handlePrevMonth}
-          onNextMonth={handleNextMonth}
-          onTaskClick={setSelectedTask}
-          listColors={listColors}
-          externalEvents={icsEvents}
-          onDayClick={handleDayClick}
-        />
+        <div className="mb-3 flex items-center justify-end gap-2">
+          <button
+            onClick={() => setViewMode("agenda")}
+            className={`rounded-lg px-3 py-1.5 font-urbanist text-xs font-medium transition-colors ${
+              viewMode === "agenda"
+                ? "bg-primary text-white"
+                : "bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+            }`}
+          >
+            {t("calendar.agenda")}
+          </button>
+          <button
+            onClick={() => setViewMode("grid")}
+            className={`rounded-lg px-3 py-1.5 font-urbanist text-xs font-medium transition-colors ${
+              viewMode === "grid"
+                ? "bg-primary text-white"
+                : "bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+            }`}
+          >
+            {t("calendar.grid")}
+          </button>
+        </div>
+
+        {viewMode === "grid" ? (
+          <TaskCalendar
+            tasks={tasks}
+            currentDate={currentDate}
+            onPrevMonth={handlePrevMonth}
+            onNextMonth={handleNextMonth}
+            onTaskClick={setSelectedTask}
+            onEventClick={setSelectedEvent}
+            listColors={listColors}
+            externalEvents={icsEvents}
+            onDayClick={handleDayClick}
+          />
+        ) : (
+          <AgendaView
+            tasks={tasks}
+            currentDate={currentDate}
+            onPrevMonth={handlePrevMonth}
+            onNextMonth={handleNextMonth}
+            onTaskClick={setSelectedTask}
+            onEventClick={setSelectedEvent}
+            listColors={listColors}
+            externalEvents={icsEvents}
+          />
+        )}
       </div>
 
       {selectedTask && (
@@ -104,7 +144,11 @@ export default function CalendarView() {
         />
       )}
 
-      {/* Create Task Modal */}
+      <EventDetailModal
+        event={selectedEvent}
+        onClose={() => setSelectedEvent(null)}
+      />
+
       <AnimatePresence>
         {isCreating && (
           <motion.div

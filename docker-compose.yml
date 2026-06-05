@@ -54,6 +54,8 @@ services:
   backend:
     <<: *shared-node
     container_name: meleflow-backend
+    ports:
+      - "3000:3000"
     command: >
       sh -c "
         npm install &&
@@ -107,6 +109,8 @@ services:
       - ./frontend/tsconfig.json:/usr/src/app/tsconfig.json
       - ./frontend/vite.config.ts:/usr/src/app/vite.config.ts
       - ./frontend/index.html:/usr/src/app/index.html
+      - ./frontend/capacitor.config.ts:/usr/src/app/capacitor.config.ts
+      - ./frontend/android:/usr/src/app/android
       - meleflow_frontend_node_modules:/usr/src/app/node_modules
     depends_on:
       - backend

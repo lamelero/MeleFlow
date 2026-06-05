@@ -6,6 +6,7 @@ import { useAuthStore } from "../../store/authStore";
 import { client } from "../../api/client";
 import { useIcsCalendarStore } from "../../store/icsCalendarStore";
 import AppLayout from "../../components/AppLayout";
+import { isNative, getFontSize, setFontSize, getBoldFont, setBoldFont } from "../../capacitor/register";
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -57,6 +58,39 @@ export default function Profile() {
   const [icsUrl, setIcsUrl] = useState("");
   const [icsColor, setIcsColor] = useState(ICS_COLORS[0]);
   const [addingIcs, setAddingIcs] = useState(false);
+  const [currentFontSize, setCurrentFontSize] = useState("normal");
+  const [boldFont, setBoldFontState] = useState(false);
+
+  useEffect(() => {
+    if (isNative()) Promise.all([
+      getFontSize().then(setCurrentFontSize),
+      getBoldFont().then(setBoldFontState),
+    ]);
+  }, []);
+
+  const FONT_SIZES = [
+    { value: "small", label: t("profile.fontSizeSmall") },
+    { value: "normal", label: t("profile.fontSizeNormal") },
+    { value: "large", label: t("profile.fontSizeLarge") },
+    { value: "xlarge", label: t("profile.fontSizeXlarge") },
+  ];
+
+  async function handleFontSizeChange(size: string) {
+    setCurrentFontSize(size);
+    await setFontSize(size);
+    document.documentElement.style.fontSize =
+      size === "small" ? "14px" :
+      size === "large" ? "18px" :
+      size === "xlarge" ? "20px" :
+      "16px";
+  }
+
+  async function handleBoldToggle() {
+    const next = !boldFont;
+    setBoldFontState(next);
+    await setBoldFont(next);
+    document.documentElement.style.fontWeight = next ? "600" : "";
+  }
 
   useEffect(() => {
     fetch2FAStatus();
@@ -419,6 +453,46 @@ export default function Profile() {
                 </div>
               </div>
             </div>
+
+            {isNative() && (
+              <div className="mt-4 border-t border-gray-100 pt-4 dark:border-gray-800">
+                <label className="mb-3 block font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {t("profile.fontSize")}
+                </label>
+                <div className="flex gap-2">
+                  {FONT_SIZES.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => handleFontSizeChange(opt.value)}
+                      className={`flex-1 rounded-lg px-3 py-2 font-urbanist text-xs font-medium transition-colors ${
+                        currentFontSize === opt.value
+                          ? "bg-primary text-white"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-3 flex items-center justify-between">
+                  <span className="font-urbanist text-sm text-gray-700 dark:text-gray-300">
+                    {t("profile.boldFont")}
+                  </span>
+                  <button
+                    onClick={handleBoldToggle}
+                    className={`relative h-6 w-11 rounded-full transition-colors ${
+                      boldFont ? "bg-primary" : "bg-gray-300 dark:bg-gray-600"
+                    }`}
+                  >
+                    <span
+                      className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                        boldFont ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

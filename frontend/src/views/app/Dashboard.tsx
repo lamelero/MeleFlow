@@ -12,6 +12,7 @@ import TaskDetailPanel from "../../components/tasks/TaskDetailPanel";
 import HabitCard from "../../components/habits/HabitCard";
 import HabitFormModal from "../../components/habits/HabitFormModal";
 import AppLayout from "../../components/AppLayout";
+import { isNative } from "../../capacitor/register";
 
 export default function Dashboard() {
   const { t } = useTranslation();
@@ -128,7 +129,7 @@ export default function Dashboard() {
         transition={{ duration: 0.2 }}
       >
         <div className="mx-auto flex w-full max-w-6xl gap-6 p-4">
-        <aside className="w-56 shrink-0 space-y-4">
+        <aside className="hidden w-56 shrink-0 space-y-4 md:block">
           <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="font-outfit text-sm font-semibold text-gray-900 dark:text-gray-100">
@@ -348,7 +349,8 @@ export default function Dashboard() {
             </section>
           )}
 
-          <section>
+          {!isNative() && <>
+            <section>
             <div className="mb-4 flex items-center justify-between">
               <h2 className="font-outfit text-lg font-semibold text-gray-900 dark:text-gray-100">
                 {t("dashboard.habits")}
@@ -442,6 +444,7 @@ export default function Dashboard() {
             onSave={handleSaveHabit}
             habit={editingHabit}
           />
+        </>}
         </main>
       </div>
 

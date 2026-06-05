@@ -9,6 +9,7 @@ interface TaskCalendarProps {
   onPrevMonth: () => void;
   onNextMonth: () => void;
   onTaskClick: (task: Task) => void;
+  onEventClick?: (event: ExternalCalendarEvent) => void;
   listColors: Map<string, string>;
   externalEvents?: ExternalCalendarEvent[];
   onDayClick?: (date: Date) => void;
@@ -31,6 +32,7 @@ export default function TaskCalendar({
   onPrevMonth,
   onNextMonth,
   onTaskClick,
+  onEventClick,
   listColors,
   externalEvents = [],
   onDayClick,
@@ -148,7 +150,8 @@ export default function TaskCalendar({
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-7">
+      <div className="overflow-x-auto">
+      <div className="grid min-w-[490px] grid-cols-7">
         {grid.map((row, ri) =>
           row.map((cell) => {
             const cellEvents = eventsByDate.get(cell.dateStr) ?? [];
@@ -191,10 +194,11 @@ export default function TaskCalendar({
                     if (item.kind === "event") {
                       const ev = item.data as ExternalCalendarEvent;
                       return (
-                        <div
+                        <button
                           key={ev.id}
                           data-item="event"
-                          className="flex items-center gap-1 truncate rounded px-1 py-0.5 font-urbanist text-[10px] font-medium leading-tight text-gray-700 dark:text-gray-300"
+                          onClick={(e) => { e.stopPropagation(); onEventClick?.(ev); }}
+                          className="flex w-full items-center gap-1 truncate rounded px-1 py-0.5 font-urbanist text-[10px] font-medium leading-tight text-gray-700 transition-colors hover:brightness-110 dark:text-gray-300"
                           style={{
                             borderLeft: `3px solid ${ev.color}`,
                             backgroundColor: `${ev.color}10`,
@@ -205,7 +209,7 @@ export default function TaskCalendar({
                             <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
                           <span className="truncate">{ev.title}</span>
-                        </div>
+                        </button>
                       );
                     }
                     const tk = item.data as Task;
@@ -232,6 +236,7 @@ export default function TaskCalendar({
             );
           })
         )}
+      </div>
       </div>
     </div>
   );

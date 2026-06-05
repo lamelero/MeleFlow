@@ -1,6 +1,9 @@
 import axios from "axios";
+import { isNative, getServerUrl, setPersistedRefreshToken } from "../capacitor/register";
 
 let accessToken: string | null = null;
+let refreshToken: string | null = null;
+let serverUrlBase = "/api";
 
 export function setAccessToken(token: string | null) {
   accessToken = token;
@@ -8,6 +11,23 @@ export function setAccessToken(token: string | null) {
 
 export function getAccessToken(): string | null {
   return accessToken;
+}
+
+export function setRefreshToken(token: string | null) {
+  refreshToken = token;
+}
+
+export function getRefreshToken(): string | null {
+  return refreshToken;
+}
+
+export async function initClientBaseUrl() {
+  if (isNative()) {
+    const url = await getServerUrl();
+    if (url) {
+      serverUrlBase = `${url}/api`;
+    }
+  }
 }
 
 const client = axios.create({
@@ -24,6 +44,8 @@ client.interceptors.request.use((config) => {
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`;
   }
+
+  config.baseURL = serverUrlBase;
 
   const lang =
     localStorage.getItem("i18nextLng") ||
@@ -77,9 +99,15 @@ client.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const { data } = await axios.post("/api/auth/refresh", {}, { withCredentials: true });
+        const body: Record<string, unknown> = { rememberMe: true };
+        if (refreshToken) {
+          body.refreshToken = refreshToken;
+        }
+        const { data } = await axios.post(`${serverUrlBase}/auth/refresh`, body, { withCredentials: true });
 
         setAccessToken(data.accessToken);
+        setRefreshToken(data.refreshToken);
+        setPersistedRefreshToken(data.refreshToken);
         processQueue(null, data.accessToken);
 
         originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
@@ -87,6 +115,8 @@ client.interceptors.response.use(
       } catch (err) {
         processQueue(err, null);
         setAccessToken(null);
+        setRefreshToken(null);
+        setPersistedRefreshToken(null);
         window.location.href = "/login";
         return Promise.reject(err);
       } finally {
