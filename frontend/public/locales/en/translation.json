@@ -28,6 +28,7 @@
     "verify": "Verify",
     "verifying": "Verifying...",
     "backToLogin": "Back to login",
+    "trustDevice": "Trust this device for 30 days",
     "errors": {
       "loginFailed": "Login failed",
       "registrationFailed": "Registration failed",

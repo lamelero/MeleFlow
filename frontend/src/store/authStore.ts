@@ -29,7 +29,7 @@ interface AuthState {
   isLoading: boolean;
   error: string | null;
   login: (email: string, password: string, rememberMe?: boolean) => Promise<LoginResult>;
-  verify2FA: (twoFactorToken: string, code: string) => Promise<void>;
+  verify2FA: (twoFactorToken: string, code: string, trustDevice?: boolean) => Promise<void>;
   sendOTP: (twoFactorToken: string) => Promise<void>;
   register: (email: string, username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -98,10 +98,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  verify2FA: async (twoFactorToken, code) => {
+  verify2FA: async (twoFactorToken, code, trustDevice = false) => {
     set({ error: null });
     try {
-      const { data } = await client.post("/auth/verify-2fa", { twoFactorToken, code });
+      const { data } = await client.post("/auth/verify-2fa", { twoFactorToken, code, trustDevice });
       setAccessToken(data.accessToken);
       set({ user: data.user, isAuthenticated: true, isLoading: false, error: null });
     } catch (err: unknown) {

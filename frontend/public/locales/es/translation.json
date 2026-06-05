@@ -28,6 +28,7 @@
     "verify": "Verificar",
     "verifying": "Verificando...",
     "backToLogin": "Volver al inicio de sesión",
+    "trustDevice": "Confiar en este equipo por 30 días",
     "errors": {
       "loginFailed": "Error al iniciar sesión",
       "registrationFailed": "Error al registrarse",

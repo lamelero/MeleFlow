@@ -15,6 +15,7 @@ export const loginSchema = z.object({
 export const verify2FASchema = z.object({
   twoFactorToken: z.string().min(1),
   code: z.string().min(1).max(20),
+  trustDevice: z.boolean().optional().default(false),
 });
 
 export const refreshSchema = z.object({

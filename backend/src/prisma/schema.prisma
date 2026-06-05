@@ -80,6 +80,7 @@ model User {
   securityLogs     SecurityLog[]
   collaborations   TaskCollaborator[]
   verificationCodes VerificationCode[]
+  trustedDevices    TrustedDevice[]
 }
 
 // ── Task (with subtask self-reference) ───────────
@@ -334,4 +335,22 @@ model TaskCollaborator {
 
   @@unique([taskId, userId])
   @@index([userId])
+}
+
+// ── Trusted Devices (2FA bypass) ────────────
+
+model TrustedDevice {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  label     String?
+  userAgent String?
+  ipAddress String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }

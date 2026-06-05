@@ -58,7 +58,7 @@ export class AuthService {
     return this.buildTokens(user.id, user.role, false);
   }
 
-  async login(input: LoginInput, ip?: string, userAgent?: string) {
+  async login(input: LoginInput, ip?: string, userAgent?: string, deviceToken?: string) {
     // Check rate limit first
     const rateCheck = await checkRateLimit(input.email, ip || "unknown");
     if (rateCheck.blocked) {
@@ -103,6 +103,14 @@ export class AuthService {
 
     // Clear failed attempts on successful password verification
     await clearFailedAttempts(input.email, ip || "unknown");
+
+    // Check for trusted device (2FA bypass)
+    if (deviceToken) {
+      const trusted = await this.checkTrustedDevice(user.id, deviceToken);
+      if (trusted) {
+        return this.buildTokens(user.id, user.role, input.rememberMe);
+      }
+    }
 
     // If 2FA is enabled, return a temporary token instead of full session
     if (user.isTwoFactorEnabled) {
@@ -181,6 +189,8 @@ export class AuthService {
       throw new AppError(400, "User not found or deactivated");
     }
 
+    let success = false;
+
     if (payload.type === "2fa") {
       if (!user.isTwoFactorEnabled || !user.twoFactorSecret) {
         throw new AppError(400, "2FA is not enabled for this account");
@@ -196,24 +206,26 @@ export class AuthService {
           ip,
           userAgent,
         });
-        return this.buildTokens(user.id, user.role, false);
+        success = true;
       }
 
       // Try recovery code
-      const recoveryResult = await verifyRecoveryCode(input.code, user.recoveryCodes);
-      if (recoveryResult.valid) {
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { recoveryCodes: recoveryResult.remainingCodesJson },
-        });
-        await logSecurityEvent({
-          userId: user.id,
-          action: "2FA_VERIFIED",
-          details: JSON.stringify({ method: "recovery_code" }),
-          ip,
-          userAgent,
-        });
-        return this.buildTokens(user.id, user.role, false);
+      if (!success) {
+        const recoveryResult = await verifyRecoveryCode(input.code, user.recoveryCodes);
+        if (recoveryResult.valid) {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { recoveryCodes: recoveryResult.remainingCodesJson },
+          });
+          await logSecurityEvent({
+            userId: user.id,
+            action: "2FA_VERIFIED",
+            details: JSON.stringify({ method: "recovery_code" }),
+            ip,
+            userAgent,
+          });
+          success = true;
+        }
       }
     }
 
@@ -247,25 +259,73 @@ export class AuthService {
             ip,
             userAgent,
           });
-          return this.buildTokens(user.id, user.role, false);
+          success = true;
+          break;
         }
       }
 
-      // Increment attempts for all active codes
-      await prisma.verificationCode.updateMany({
-        where: { userId: user.id, type: "LOGIN_OTP", usedAt: null, expiresAt: { gt: new Date() } },
-        data: { attempts: { increment: 1 } },
-      });
+      if (!success) {
+        // Increment attempts for all active codes
+        await prisma.verificationCode.updateMany({
+          where: { userId: user.id, type: "LOGIN_OTP", usedAt: null, expiresAt: { gt: new Date() } },
+          data: { attempts: { increment: 1 } },
+        });
+      }
     }
 
-    await logSecurityEvent({
-      userId: user.id,
-      action: "2FA_FAILED",
-      ip,
-      userAgent,
+    if (!success) {
+      await logSecurityEvent({
+        userId: user.id,
+        action: "2FA_FAILED",
+        ip,
+        userAgent,
+      });
+      throw new AppError(401, "Invalid code. Please try again.");
+    }
+
+    const tokens = await this.buildTokens(user.id, user.role, false);
+
+    // Trust this device?
+    if (input.trustDevice) {
+      const deviceToken = await this.createTrustedDevice(user.id, userAgent, ip);
+      return { ...tokens, deviceToken };
+    }
+
+    return tokens;
+  }
+
+  private async checkTrustedDevice(userId: string, rawToken: string): Promise<boolean> {
+    const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
+    const trusted = await prisma.trustedDevice.findUnique({
+      where: { tokenHash },
+    });
+    if (!trusted || trusted.userId !== userId || trusted.expiresAt < new Date()) {
+      return false;
+    }
+    return true;
+  }
+
+  private async createTrustedDevice(userId: string, userAgent?: string, ip?: string): Promise<string> {
+    const rawToken = crypto.randomBytes(48).toString("hex");
+    const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
+
+    // Derive a human-readable label from user agent
+    const label = userAgent
+      ? userAgent.split("/")[0]?.split(" ")[0] || userAgent.slice(0, 30)
+      : undefined;
+
+    await prisma.trustedDevice.create({
+      data: {
+        userId,
+        tokenHash,
+        label,
+        userAgent,
+        ipAddress: ip,
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      },
     });
 
-    throw new AppError(401, "Invalid code. Please try again.");
+    return rawToken;
   }
 
   async sendOTPCode(twoFactorToken: string) {

@@ -25,6 +25,7 @@ export default function TwoFactorVerify() {
 
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [submitting, setSubmitting] = useState(false);
+  const [trustDevice, setTrustDevice] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);
   const [otpSent, setOtpSent] = useState(method === "email");
   const [resendCooldown, setResendCooldown] = useState(method === "email" ? RESEND_COOLDOWN : 0);
@@ -86,7 +87,7 @@ export default function TwoFactorVerify() {
 
     setSubmitting(true);
     try {
-      await verify2FA(twoFactorToken, fullCode);
+      await verify2FA(twoFactorToken, fullCode, trustDevice);
       navigate("/app");
     } catch {
       setCode(["", "", "", "", "", ""]);
@@ -151,6 +152,18 @@ export default function TwoFactorVerify() {
             />
           ))}
         </div>
+
+        <label className="flex cursor-pointer items-center gap-2">
+          <input
+            type="checkbox"
+            checked={trustDevice}
+            onChange={(e) => setTrustDevice(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary dark:border-gray-600"
+          />
+          <span className="font-urbanist text-sm text-gray-600 dark:text-gray-400">
+            {t("auth.trustDevice")}
+          </span>
+        </label>
 
         <button
           type="submit"

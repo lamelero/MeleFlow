@@ -20,6 +20,7 @@ import { AuthService } from "./auth.service";
 const service = new AuthService();
 
 const REFRESH_COOKIE = "refreshToken";
+const DEVICE_COOKIE = "device_token";
 const COOKIE_PATH = "/api/auth";
 const SAME_SITE = "lax" as const;
 
@@ -59,7 +60,8 @@ export async function authRoutes(app: FastifyInstance) {
     const input = loginSchema.parse(req.body);
     const ip = req.ip;
     const userAgent = req.headers["user-agent"];
-    const result = await service.login(input, ip, userAgent);
+    const deviceToken = req.cookies?.[DEVICE_COOKIE];
+    const result = await service.login(input, ip, userAgent, deviceToken);
 
     if ("requiresTwoFactor" in result) {
       return reply.send({
@@ -83,6 +85,18 @@ export async function authRoutes(app: FastifyInstance) {
     const userAgent = req.headers["user-agent"];
     const result = await service.verify2FA(input, ip, userAgent);
     setRefreshCookie(reply, result.refreshToken, result.refreshTokenExpiresAt, false);
+
+    if ("deviceToken" in result && result.deviceToken) {
+      reply.setCookie(DEVICE_COOKIE, result.deviceToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: SAME_SITE,
+        path: COOKIE_PATH,
+        maxAge: 30 * 24 * 60 * 60,
+        expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      });
+    }
+
     return reply.send({
       accessToken: result.accessToken,
       user: result.user,
