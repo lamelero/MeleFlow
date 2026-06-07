@@ -29,6 +29,8 @@
     "verifying": "Verificando...",
     "backToLogin": "Volver al inicio de sesión",
     "trustDevice": "Confiar en este equipo por 30 días",
+    "registrationDisabled": "El registro está deshabilitado. Contacta con un administrador.",
+    "redirectingToLogin": "Redirigiendo al inicio de sesión...",
     "serverUrl": "Servidor",
     "errors": {
       "loginFailed": "Error al iniciar sesión",

@@ -1,4 +1,5 @@
 import { prisma } from "../../config/database";
+import { env } from "../../config/env";
 import type { FastifyInstance } from "fastify";
 
 export async function settingsRoutes(app: FastifyInstance) {
@@ -12,5 +13,16 @@ export async function settingsRoutes(app: FastifyInstance) {
       logoUrl: map.logoUrl || null,
       logoUrlDark: map.logoUrlDark || null,
     });
+  });
+
+  app.get("/settings/registration-status", async () => {
+    const setting = await prisma.systemSetting.findUnique({
+      where: { key: "allowRegistration" },
+    });
+    return {
+      allowRegistration: setting
+        ? setting.value === "true"
+        : env.ALLOW_REGISTRATION,
+    };
   });
 }

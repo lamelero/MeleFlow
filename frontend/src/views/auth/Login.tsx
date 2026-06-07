@@ -20,6 +20,7 @@ export default function Login() {
   const [serverUrl, setServerUrlState] = useState("");
   const [editingUrl, setEditingUrl] = useState(false);
   const [serverUrlInput, setServerUrlInput] = useState("");
+  const [registrationAllowed, setRegistrationAllowed] = useState(true);
 
   useEffect(() => {
     if (isNative()) {
@@ -30,6 +31,10 @@ export default function Login() {
         }
       });
     }
+    fetch("/api/settings/registration-status")
+      .then((r) => r.json())
+      .then((data) => setRegistrationAllowed(data.allowRegistration))
+      .catch(() => {});
   }, []);
 
   function formatServerUrl(url: string): string {
@@ -214,15 +219,17 @@ export default function Login() {
         </button>
       </form>
 
-      <p className="mt-6 text-center font-urbanist text-sm text-gray-500 dark:text-gray-400">
-        {t("auth.noAccount")}{" "}
-        <Link
-          to="/register"
-          className="font-medium text-primary hover:underline"
-        >
-          {t("auth.signUp")}
-        </Link>
-      </p>
+      {registrationAllowed && (
+        <p className="mt-6 text-center font-urbanist text-sm text-gray-500 dark:text-gray-400">
+          {t("auth.noAccount")}{" "}
+          <Link
+            to="/register"
+            className="font-medium text-primary hover:underline"
+          >
+            {t("auth.signUp")}
+          </Link>
+        </p>
+      )}
     </AuthLayout>
   );
 }

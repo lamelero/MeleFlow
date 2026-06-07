@@ -29,6 +29,8 @@
     "verifying": "Verifying...",
     "backToLogin": "Back to login",
     "trustDevice": "Trust this device for 30 days",
+    "registrationDisabled": "Registration is disabled. Contact an administrator.",
+    "redirectingToLogin": "Redirecting to login...",
     "serverUrl": "Server",
     "errors": {
       "loginFailed": "Login failed",

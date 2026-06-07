@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../store/authStore";
@@ -17,6 +17,19 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [confirmError, setConfirmError] = useState<string | null>(null);
+  const [registrationAllowed, setRegistrationAllowed] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    fetch("/api/settings/registration-status")
+      .then((r) => r.json())
+      .then((data) => {
+        setRegistrationAllowed(data.allowRegistration);
+        if (!data.allowRegistration) {
+          setTimeout(() => navigate("/login"), 3000);
+        }
+      })
+      .catch(() => setRegistrationAllowed(true));
+  }, [navigate]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -39,6 +52,30 @@ export default function Register() {
   }
 
   const displayError = confirmError || (error ? translateAuthError(error, t) : null);
+
+  if (registrationAllowed === false) {
+    return (
+      <AuthLayout>
+        <div className="flex items-center justify-between">
+          <h2 className="font-outfit text-xl font-semibold text-gray-900 dark:text-white">
+            {t("auth.createAccount")}
+          </h2>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <LanguageSwitcher />
+          </div>
+        </div>
+        <div className="mt-8 text-center">
+          <p className="font-urbanist text-gray-500 dark:text-gray-400">
+            {t("auth.registrationDisabled")}
+          </p>
+          <p className="mt-4 font-urbanist text-sm text-gray-400 dark:text-gray-500">
+            {t("auth.redirectingToLogin")}
+          </p>
+        </div>
+      </AuthLayout>
+    );
+  }
 
   return (
     <AuthLayout>
