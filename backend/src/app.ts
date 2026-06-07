@@ -50,9 +50,14 @@ export async function buildApp(opts: Record<string, unknown> = {}) {
     },
   });
 
-  const corsOrigin = env.CORS_ORIGIN || true;
+  const configuredOrigin = env.CORS_ORIGIN;
   await app.register(cors, {
-    origin: corsOrigin,
+    origin: (configuredOrigin
+      ? async (origin: string | undefined) => {
+          if (!origin || origin.startsWith("http://localhost")) return true;
+          return origin === configuredOrigin;
+        }
+      : true) as any,
     credentials: true,
   });
 
