@@ -20,7 +20,7 @@ export default function AppLayout({ title, children }: { title: string; children
   }, [fetchLogo]);
 
   return (
-    <div className="flex min-h-screen flex-col" style={isNative() ? { paddingBottom: "calc(64px + env(safe-area-inset-bottom, 0px))" } : undefined}>
+    <div className="flex h-screen flex-col" style={isNative() ? { paddingBottom: "calc(64px + env(safe-area-inset-bottom, 0px))" } : undefined}>
       <header
         className="sticky top-0 z-10 shrink-0 border-b border-gray-200 bg-white/80 backdrop-blur-sm dark:border-gray-800 dark:bg-gray-900/80"
         style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
