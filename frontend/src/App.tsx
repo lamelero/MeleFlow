@@ -51,7 +51,7 @@ export default function App() {
           return;
         }
       }
-      initialize();
+      await initialize();
       setReady(true);
     }
     init();

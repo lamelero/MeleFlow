@@ -4,11 +4,12 @@ import { useTranslation } from "react-i18next";
 import AppLayout from "../../components/AppLayout";
 import HabitCard from "../../components/habits/HabitCard";
 import HabitFormModal from "../../components/habits/HabitFormModal";
+import PullToRefresh from "../../components/PullToRefresh";
 import { useHabitStore, type Habit } from "../../store/habitStore";
 
 export default function HabitsView() {
   const { t } = useTranslation();
-  const { habits, fetchHabits, createHabit } = useHabitStore();
+  const { habits, isLoading, fetchHabits, createHabit } = useHabitStore();
   const [formOpen, setFormOpen] = useState(false);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
 
@@ -49,53 +50,55 @@ export default function HabitsView() {
         exit={{ opacity: 0, y: -12 }}
         transition={{ duration: 0.2 }}
       >
-        <div className="mx-auto w-full max-w-6xl space-y-6 p-4">
-          <div className="flex items-center justify-between">
-            <h1 className="font-outfit text-lg font-semibold text-gray-900 dark:text-gray-100">
-              {t("dashboard.habits")}
-            </h1>
-            <button
-              onClick={() => { setEditingHabit(null); setFormOpen(true); }}
-              className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-              {t("dashboard.newHabit")}
-            </button>
-          </div>
-
-          {activeHabits.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="rounded-2xl bg-white p-10 text-center shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800"
-            >
-              <p className="font-urbanist text-sm text-gray-400">
-                {t("dashboard.noHabits")}
-              </p>
-            </motion.div>
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {activeHabits.map((habit) => (
-                <HabitCard key={habit.id} habit={habit} onEdit={handleEditHabit} />
-              ))}
+        <PullToRefresh onRefresh={() => fetchHabits()} isLoading={isLoading}>
+          <div className="mx-auto w-full max-w-6xl space-y-6 p-4">
+            <div className="flex items-center justify-between">
+              <h1 className="font-outfit text-lg font-semibold text-gray-900 dark:text-gray-100">
+                {t("dashboard.habits")}
+              </h1>
+              <button
+                onClick={() => { setEditingHabit(null); setFormOpen(true); }}
+                className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                {t("dashboard.newHabit")}
+              </button>
             </div>
-          )}
 
-          {archivedHabits.length > 0 && (
-            <div>
-              <h2 className="mb-3 font-outfit text-base font-semibold text-gray-500 dark:text-gray-400">
-                {t("dashboard.archived")}
-              </h2>
-              <div className="grid gap-3 opacity-50 sm:grid-cols-2 lg:grid-cols-3">
-                {archivedHabits.map((habit) => (
+            {activeHabits.length === 0 ? (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-2xl bg-white p-10 text-center shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800"
+              >
+                <p className="font-urbanist text-sm text-gray-400">
+                  {t("dashboard.noHabits")}
+                </p>
+              </motion.div>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {activeHabits.map((habit) => (
                   <HabitCard key={habit.id} habit={habit} onEdit={handleEditHabit} />
                 ))}
               </div>
-            </div>
-          )}
-        </div>
+            )}
+
+            {archivedHabits.length > 0 && (
+              <div>
+                <h2 className="mb-3 font-outfit text-base font-semibold text-gray-500 dark:text-gray-400">
+                  {t("dashboard.archived")}
+                </h2>
+                <div className="grid gap-3 opacity-50 sm:grid-cols-2 lg:grid-cols-3">
+                  {archivedHabits.map((habit) => (
+                    <HabitCard key={habit.id} habit={habit} onEdit={handleEditHabit} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </PullToRefresh>
 
         <HabitFormModal
           isOpen={formOpen}
