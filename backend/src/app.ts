@@ -54,8 +54,13 @@ export async function buildApp(opts: Record<string, unknown> = {}) {
   await app.register(cors, {
     origin: (configuredOrigin
       ? async (origin: string | undefined) => {
-          if (!origin || origin.startsWith("http://localhost")) return true;
-          return origin === configuredOrigin;
+          if (!origin) return true;
+          if (origin === configuredOrigin) return true;
+          try {
+            const hostname = new URL(origin).hostname;
+            if (hostname === "localhost" || /^(127\.|10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.)/.test(hostname)) return true;
+          } catch {}
+          return false;
         }
       : true) as any,
     credentials: true,
