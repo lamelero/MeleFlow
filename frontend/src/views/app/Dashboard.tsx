@@ -123,12 +123,13 @@ export default function Dashboard() {
   return (
     <AppLayout title={t("dashboard.title")}>
       <motion.div
+        className="h-full"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -12 }}
         transition={{ duration: 0.2 }}
       >
-        <div className="mx-auto flex w-full max-w-6xl gap-6 p-4">
+        <div className="mx-auto flex h-full w-full max-w-6xl gap-6 p-4">
         <aside className="hidden w-56 shrink-0 space-y-4 md:block">
           <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
             <div className="mb-3 flex items-center justify-between">
@@ -308,7 +309,7 @@ export default function Dashboard() {
           )}
         </aside>
 
-        <main className="min-w-0 flex-1 space-y-8">
+        <main className="min-w-0 flex-1 space-y-8 overflow-y-auto">
           <section>
             <form onSubmit={handleCreateTask} className="mb-4">
               <div className="rounded-2xl bg-white shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
