@@ -114,7 +114,7 @@ export class AdminService {
       emailEnabled: map.emailEnabled === "true",
       emailSubject: map.emailSubject || "Reminder: {{title}} is due soon",
       logoUrl: map.logoUrl || "",
-      frontendUrl: map.frontendUrl || env.FRONTEND_URL,
+      frontendUrl: map.frontendUrl || env.FRONTEND_URL || env.CORS_ORIGIN || "http://localhost:3001",
     };
   }
 

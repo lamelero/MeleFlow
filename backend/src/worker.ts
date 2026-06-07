@@ -10,7 +10,7 @@ import { HabitService } from "./modules/habits/habits.service";
 import { runScheduledBackup } from "./modules/admin/backup.service";
 import { IcsCalendarService } from "./modules/ics-calendars/ics-calendars.service";
 
-const DEFAULT_URL = process.env.FRONTEND_URL || "http://localhost:3001";
+const DEFAULT_URL = process.env.FRONTEND_URL || process.env.CORS_ORIGIN || "http://localhost:3001";
 
 async function getAppUrl(): Promise<string> {
   try {
