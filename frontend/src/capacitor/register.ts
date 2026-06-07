@@ -3,6 +3,16 @@ import { App } from "@capacitor/app";
 import { Preferences } from "@capacitor/preferences";
 import { LocalNotifications } from "@capacitor/local-notifications";
 
+const backHandlers: (() => boolean)[] = [];
+
+export function registerBackHandler(handler: () => boolean): () => void {
+  backHandlers.unshift(handler);
+  return () => {
+    const idx = backHandlers.indexOf(handler);
+    if (idx >= 0) backHandlers.splice(idx, 1);
+  };
+}
+
 export function isNative(): boolean {
   return Capacitor.isNativePlatform();
 }
@@ -81,6 +91,9 @@ export function setupAppListeners() {
   if (!isNative()) return;
   setupStatusBar();
   App.addListener("backButton", ({ canGoBack }) => {
+    for (const handler of backHandlers) {
+      if (handler()) return;
+    }
     if (canGoBack) {
       window.history.back();
     } else {

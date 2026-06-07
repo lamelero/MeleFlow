@@ -18,6 +18,7 @@ import { useAuthStore } from "../../store/authStore";
 import { useTagStore, type Tag, randomTagColor } from "../../store/tagStore";
 import { client } from "../../api/client";
 import TagPill from "../tags/TagPill";
+import { registerBackHandler } from "../../capacitor/register";
 import "react-datepicker/dist/react-datepicker.css";
 
 interface TaskDetailPanelProps {
@@ -87,6 +88,11 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
     }
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
+  }, [onClose]);
+
+  useEffect(() => {
+    const unregister = registerBackHandler(() => { onClose(); return true; });
+    return unregister;
   }, [onClose]);
 
   useEffect(() => {
@@ -381,7 +387,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
             variants={panelVariants}
             className="flex h-full w-full max-w-lg flex-col bg-white shadow-2xl dark:bg-gray-900"
           >
-        <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4 dark:border-gray-800">
+        <div className="flex items-center justify-between border-b border-gray-100 px-6 pb-4 dark:border-gray-800" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 16px)" }}>
           <div className="flex items-center gap-3">
             <span
               className={`inline-block h-3 w-3 rounded-full ${
