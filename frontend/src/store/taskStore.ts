@@ -54,7 +54,7 @@ interface TaskState {
   sharedTasks: Task[];
   isLoading: boolean;
   error: string | null;
-  fetchTasks: (filters?: TaskFilters) => Promise<void>;
+  fetchTasks: (filters?: TaskFilters, retry?: number) => Promise<void>;
   fetchSharedTasks: () => Promise<void>;
   createTask: (input: {
     title: string;
@@ -92,8 +92,8 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   isLoading: false,
   error: null,
 
-  fetchTasks: async (filters) => {
-    set({ isLoading: true, error: null });
+  fetchTasks: async (filters, retry = 0) => {
+    if (retry === 0) set({ isLoading: true, error: null });
     try {
       const params = new URLSearchParams();
       if (filters?.listId) params.set("listId", filters.listId);
@@ -104,10 +104,16 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       if (filters?.dueDateTo) params.set("dueDateTo", filters.dueDateTo);
       const qs = params.toString();
       const { data } = await client.get(`/tasks${qs ? `?${qs}` : ""}`);
-      set({ tasks: data, isLoading: false });
+      set({ tasks: data, isLoading: false, error: null });
     } catch (err) {
+      if (retry < 3) {
+        const delay = Math.pow(2, retry) * 1000;
+        console.warn(`[taskStore] fetchTasks failed, retry ${retry + 1}/3 in ${delay}ms:`, err);
+        await new Promise((r) => setTimeout(r, delay));
+        return get().fetchTasks(filters, retry + 1);
+      }
       const message = err instanceof Error ? err.message : "Failed to load tasks";
-      console.error("[taskStore] fetchTasks error:", err);
+      console.error("[taskStore] fetchTasks error after 3 retries:", err);
       set({ error: message, isLoading: false });
     }
   },
