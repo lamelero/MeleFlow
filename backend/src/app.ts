@@ -6,6 +6,7 @@ import cors from "@fastify/cors";
   return Number(this);
 };
 import helmet from "@fastify/helmet";
+import rateLimit from "@fastify/rate-limit";
 import fjwt from "@fastify/jwt";
 import cookie from "@fastify/cookie";
 import multipart from "@fastify/multipart";
@@ -32,11 +33,33 @@ export async function buildApp(opts: Record<string, unknown> = {}) {
   });
 
   // ── Plugins ──────────────────────────────────
-  await app.register(helmet, { contentSecurityPolicy: false });
+  await app.register(helmet, {
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'"],
+        fontSrc: ["'self'", "data:"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+        objectSrc: ["'none'"],
+        frameAncestors: ["'none'"],
+      },
+    },
+  });
 
+  const corsOrigin = env.CORS_ORIGIN || true;
   await app.register(cors, {
-    origin: true,
+    origin: corsOrigin,
     credentials: true,
+  });
+
+  await app.register(rateLimit, {
+    global: true,
+    max: 100,
+    timeWindow: "1 minute",
   });
 
   await app.register(fjwt, { secret: env.JWT_SECRET });

@@ -25,5 +25,6 @@ export const env = z
     MAX_UPLOAD_SIZE: z.coerce.number().default(50),
     MAX_LOGIN_ATTEMPTS: z.coerce.number().default(5),
     LOGIN_LOCKOUT_MINUTES: z.coerce.number().default(15),
+    CORS_ORIGIN: z.string().optional(),
   })
   .parse(process.env);

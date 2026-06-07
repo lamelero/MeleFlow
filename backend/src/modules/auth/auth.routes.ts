@@ -46,7 +46,14 @@ function clearRefreshCookie(reply: FastifyReply) {
 }
 
 export async function authRoutes(app: FastifyInstance) {
-  app.post("/register", async (req, reply) => {
+  app.post("/register", {
+    config: {
+      rateLimit: {
+        max: 10,
+        timeWindow: "1 minute",
+      },
+    },
+  }, async (req, reply) => {
     const input = registerSchema.parse(req.body);
     const result = await service.register(input);
     setRefreshCookie(reply, result.refreshToken, result.refreshTokenExpiresAt, false);
@@ -57,7 +64,14 @@ export async function authRoutes(app: FastifyInstance) {
     });
   });
 
-  app.post("/login", async (req, reply) => {
+  app.post("/login", {
+    config: {
+      rateLimit: {
+        max: 10,
+        timeWindow: "1 minute",
+      },
+    },
+  }, async (req, reply) => {
     const input = loginSchema.parse(req.body);
     const ip = req.ip;
     const userAgent = req.headers["user-agent"];
@@ -81,7 +95,14 @@ export async function authRoutes(app: FastifyInstance) {
     });
   });
 
-  app.post("/verify-2fa", async (req, reply) => {
+  app.post("/verify-2fa", {
+    config: {
+      rateLimit: {
+        max: 10,
+        timeWindow: "1 minute",
+      },
+    },
+  }, async (req, reply) => {
     const input = verify2FASchema.parse(req.body);
     const ip = req.ip;
     const userAgent = req.headers["user-agent"];
@@ -106,13 +127,27 @@ export async function authRoutes(app: FastifyInstance) {
     });
   });
 
-  app.post("/2fa/send-otp", async (req, reply) => {
+  app.post("/2fa/send-otp", {
+    config: {
+      rateLimit: {
+        max: 5,
+        timeWindow: "1 minute",
+      },
+    },
+  }, async (req, reply) => {
     const { twoFactorToken } = sendOTPSchema.parse(req.body);
     await service.sendOTPCode(twoFactorToken);
     return reply.send({ sent: true });
   });
 
-  app.post("/refresh", async (req, reply) => {
+  app.post("/refresh", {
+    config: {
+      rateLimit: {
+        max: 10,
+        timeWindow: "1 minute",
+      },
+    },
+  }, async (req, reply) => {
     const { rememberMe, refreshToken } = refreshSchema.parse(req.body);
     const token = refreshToken || req.cookies?.[REFRESH_COOKIE];
     if (!token) {
