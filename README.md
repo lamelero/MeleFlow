@@ -67,6 +67,7 @@ JWT_ACCESS_EXPIRES_IN=15m
 JWT_REFRESH_EXPIRES_IN=7d
 ENCRYPTION_KEY=${ENCRYPTION_KEY}
 FRONTEND_URL=http://YOUR_SERVER_IP:3001
+CORS_ORIGIN=https://YOUR_DOMAIN_OR_IP
 ALLOW_REGISTRATION=true
 MAX_UPLOAD_SIZE=50
 EOF
@@ -153,6 +154,7 @@ See `.env.example` for defaults:
 | `MAX_UPLOAD_SIZE`     | `50` (MB)                                      |
 | `MAX_LOGIN_ATTEMPTS`  | `5`                                            |
 | `LOGIN_LOCKOUT_MINUTES` | `15`                                         |
+| `CORS_ORIGIN`          | (vacío = permite cualquier origen)            |
 
 ## Features
 
