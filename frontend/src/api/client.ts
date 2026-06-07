@@ -113,11 +113,14 @@ client.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
         return client(originalRequest);
       } catch (err) {
+        console.error("[client] token refresh failed:", err);
         processQueue(err, null);
         setAccessToken(null);
         setRefreshToken(null);
         setPersistedRefreshToken(null);
-        window.location.href = "/login";
+        if (!isNative() || !error.config?.url?.startsWith("/tasks")) {
+          window.location.href = "/login";
+        }
         return Promise.reject(err);
       } finally {
         isRefreshing = false;

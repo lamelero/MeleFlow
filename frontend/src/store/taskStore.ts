@@ -105,8 +105,10 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       const qs = params.toString();
       const { data } = await client.get(`/tasks${qs ? `?${qs}` : ""}`);
       set({ tasks: data, isLoading: false });
-    } catch {
-      set({ error: "Failed to load tasks", isLoading: false });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to load tasks";
+      console.error("[taskStore] fetchTasks error:", err);
+      set({ error: message, isLoading: false });
     }
   },
 
