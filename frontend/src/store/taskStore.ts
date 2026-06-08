@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import toast from "react-hot-toast";
 import { client } from "../api/client";
+import { scheduleTaskReminders } from "../capacitor/localNotifications";
 
 export interface Attachment {
   id: string;
@@ -105,6 +106,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       const qs = params.toString();
       const { data } = await client.get(`/tasks${qs ? `?${qs}` : ""}`);
       set({ tasks: data, isLoading: false, error: null });
+      scheduleTaskReminders(data);
     } catch (err) {
       if (retry < 3) {
         const delay = Math.pow(2, retry) * 1000;
@@ -151,6 +153,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         tasks: state.tasks.map((t) => (t.id === id ? data : t)),
       }));
       toast.success("Task updated");
+      scheduleTaskReminders(get().tasks);
     } catch {
       set({ tasks: prev });
       toast.error("Failed to update task");
@@ -174,6 +177,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         tasks: state.tasks.map((t) => (t.id === id ? data : t)),
       }));
       toast.success(completed ? "Task completed" : "Task reopened");
+      scheduleTaskReminders(get().tasks);
     } catch {
       set({ tasks: prev });
       toast.error("Failed to update task");
@@ -188,6 +192,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     try {
       await client.delete(`/tasks/${id}`);
       toast.success("Task deleted");
+      scheduleTaskReminders(get().tasks);
     } catch {
       set({ tasks: prev });
       toast.error("Failed to delete task");

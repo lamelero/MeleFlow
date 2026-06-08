@@ -16,7 +16,7 @@ import AdminPanel from "./views/app/AdminPanel";
 import TagManager from "./views/app/TagManager";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ServerConfig from "./components/ServerConfig";
-import { isNative, getServerUrl, setupAppListeners, getFontSize, getBoldFont } from "./capacitor/register";
+import { isNative, getServerUrl, setupAppListeners, getFontSize, getBoldFont, requestNotificationPermission } from "./capacitor/register";
 import { initClientBaseUrl } from "./api/client";
 import "./i18n";
 
@@ -52,6 +52,9 @@ export default function App() {
         }
       }
       await initialize();
+      if (isNative()) {
+        requestNotificationPermission();
+      }
       setReady(true);
     }
     init();
