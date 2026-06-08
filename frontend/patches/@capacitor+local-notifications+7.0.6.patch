@@ -1,0 +1,52 @@
+diff --git a/node_modules/@capacitor/local-notifications/android/src/main/java/com/capacitorjs/plugins/localnotifications/DateMatch.java b/node_modules/@capacitor/local-notifications/android/src/main/java/com/capacitorjs/plugins/localnotifications/DateMatch.java
+index bf23d00..eac1054 100644
+--- a/node_modules/@capacitor/local-notifications/android/src/main/java/com/capacitorjs/plugins/localnotifications/DateMatch.java
++++ b/node_modules/@capacitor/local-notifications/android/src/main/java/com/capacitorjs/plugins/localnotifications/DateMatch.java
+@@ -136,31 +136,40 @@ public class DateMatch {
+         Calendar next = buildCalendar(date);
+         if (year != null) {
+             next.set(Calendar.YEAR, year);
+-            if (unit == -1) unit = Calendar.YEAR;
+         }
+         if (month != null) {
+             next.set(Calendar.MONTH, month);
+-            if (unit == -1) unit = Calendar.MONTH;
+         }
+         if (day != null) {
+             next.set(Calendar.DAY_OF_MONTH, day);
+-            if (unit == -1) unit = Calendar.DAY_OF_MONTH;
+         }
+         if (weekday != null) {
+             next.set(Calendar.DAY_OF_WEEK, weekday);
+-            if (unit == -1) unit = Calendar.DAY_OF_WEEK;
+         }
+         if (hour != null) {
+             next.set(Calendar.HOUR_OF_DAY, hour);
+-            if (unit == -1) unit = Calendar.HOUR_OF_DAY;
+         }
+         if (minute != null) {
+             next.set(Calendar.MINUTE, minute);
+-            if (unit == -1) unit = Calendar.MINUTE;
+         }
+         if (second != null) {
+             next.set(Calendar.SECOND, second);
+-            if (unit == -1) unit = Calendar.SECOND;
++        }
++        // Determine unit from the highest (least granular) set field
++        if (year != null) {
++            unit = Calendar.YEAR;
++        } else if (month != null) {
++            unit = Calendar.MONTH;
++        } else if (day != null) {
++            unit = Calendar.DAY_OF_MONTH;
++        } else if (weekday != null) {
++            unit = Calendar.DAY_OF_WEEK;
++        } else if (hour != null) {
++            unit = Calendar.HOUR_OF_DAY;
++        } else if (minute != null) {
++            unit = Calendar.MINUTE;
++        } else if (second != null) {
++            unit = Calendar.SECOND;
+         }
+         return next;
+     }

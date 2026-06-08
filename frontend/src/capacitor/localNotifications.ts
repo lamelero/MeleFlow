@@ -68,7 +68,12 @@ export async function scheduleTaskReminders(
 
   if (notifs.length === 0) return;
 
-  await LocalNotifications.schedule({ notifications: notifs });
+  try {
+    await LocalNotifications.schedule({ notifications: notifs });
+    console.log(`[localNotifications] scheduled ${notifs.length} notifications`);
+  } catch (err) {
+    console.error("[localNotifications] schedule error:", err);
+  }
 }
 
 export async function clearAllNotifications() {
