@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { usePomodoroStore, type PomodoroSettings } from "../../store/pomodoroStore";
+import AppLayout from "../../components/AppLayout";
 
 const SIZE = 240;
 const STROKE = 8;
@@ -88,15 +89,18 @@ export default function TimerView() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[var(--color-bg)]">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-      </div>
+      <AppLayout title={t("menu.timer")}>
+        <div className="flex min-h-full items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-white px-4 dark:from-gray-900 dark:to-gray-950">
-      <div className="w-full max-w-sm text-center">
+    <AppLayout title={t("bottomNav.timer")}>
+      <div className="flex min-h-full flex-col items-center justify-center px-4">
+        <div className="w-full max-w-sm text-center">
         <div className="mb-6 flex items-center justify-center gap-2">
           <span className="text-2xl">{phase.icon}</span>
           <span className="font-outfit text-lg font-semibold text-gray-700 dark:text-gray-300" style={{ color: session ? phase.color : undefined }}>
@@ -240,7 +244,8 @@ export default function TimerView() {
           )}
         </div>
       </div>
-    </div>
+      </div>
+    </AppLayout>
   );
 }
 

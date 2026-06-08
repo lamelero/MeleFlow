@@ -47,7 +47,7 @@ export default function AppLayout({ title, children }: { title: string; children
             )}
           </div>
           <div className="flex items-center gap-3">
-            <PomodoroTimer />
+            {!isNative() && <PomodoroTimer />}
             <UserMenu />
           </div>
         </div>
