@@ -1,22 +1,17 @@
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { LIST_ICONS, type ListIconDef } from "./listIcons";
 
-export const EMOJIS = [
-  "📝", "🛒", "💼", "🏠", "💪", "📚", "🎵", "✈️",
-  "🎮", "💻", "🏋️", "🎨", "🛠️", "📅", "⭐", "🔥",
-  "💡", "🎯", "🏆", "📦", "🎁", "🏖️", "🚗", "🍳",
-  "💰", "🎓", "🌱", "🐾", "❤️", "🎬",
-];
-
-interface EmojiPickerProps {
+interface IconPickerProps {
   selected: string | null;
-  onSelect: (emoji: string | null) => void;
+  onSelect: (name: string | null) => void;
 }
 
-export default function EmojiPicker({ selected, onSelect }: EmojiPickerProps) {
+export default function IconPicker({ selected, onSelect }: IconPickerProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const selectedDef = LIST_ICONS.find((i) => i.name === selected);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -33,9 +28,15 @@ export default function EmojiPicker({ selected, onSelect }: EmojiPickerProps) {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-base transition-colors hover:border-primary dark:border-gray-600"
+        className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:border-primary dark:border-gray-600 dark:text-gray-400"
       >
-        {selected || "😀"}
+        {selectedDef ? (
+          <selectedDef.icon className="h-4 w-4" />
+        ) : (
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        )}
       </button>
       {open && (
         <div className="absolute left-0 top-full z-30 mt-1 w-[272px] rounded-xl border bg-white p-2 shadow-lg dark:border-gray-700 dark:bg-gray-800">
@@ -52,16 +53,16 @@ export default function EmojiPicker({ selected, onSelect }: EmojiPickerProps) {
             )}
           </div>
           <div className="grid grid-cols-6 gap-1">
-            {EMOJIS.map((emoji) => (
+            {LIST_ICONS.map((def) => (
               <button
-                key={emoji}
+                key={def.name}
                 type="button"
-                onClick={() => { onSelect(emoji); setOpen(false); }}
-                className={`flex h-9 w-9 items-center justify-center rounded-lg text-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${
-                  selected === emoji ? "bg-primary/10 ring-2 ring-primary" : ""
+                onClick={() => { onSelect(def.name); setOpen(false); }}
+                className={`flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 ${
+                  selected === def.name ? "bg-primary/10 text-primary ring-2 ring-primary" : ""
                 }`}
               >
-                {emoji}
+                <def.icon className="h-4 w-4" />
               </button>
             ))}
           </div>
