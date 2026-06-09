@@ -25,7 +25,7 @@ export default function IconPicker({ selected, onSelect, color }: IconPickerProp
   }, [open]);
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative shrink-0">
       <button
         type="button"
         onClick={() => setOpen(!open)}

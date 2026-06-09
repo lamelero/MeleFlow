@@ -35,6 +35,7 @@ export default function Dashboard() {
   const [newListIcon, setNewListIcon] = useState<string | null>(null);
   const [newListColor, setNewListColor] = useState("#14B8A6");
   const [emojiPickerListId, setEmojiPickerListId] = useState<string | null>(null);
+  const [colorPickerListId, setColorPickerListId] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [habitFormOpen, setHabitFormOpen] = useState(false);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
@@ -160,14 +161,14 @@ export default function Dashboard() {
 
             {showNewList && (
               <form onSubmit={handleCreateList} className="mb-3 space-y-2">
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 min-w-0">
                   <IconPicker selected={newListIcon} onSelect={setNewListIcon} color={newListColor} />
                   <input
                     type="text"
                     value={newListName}
                     onChange={(e) => setNewListName(e.target.value)}
                     placeholder={t("dashboard.listName")}
-                    className="flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+                    className="min-w-0 flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                     autoFocus
                   />
                 </div>
@@ -289,6 +290,15 @@ export default function Dashboard() {
                       </button>
                       <button
                         onClick={() => {
+                          setColorPickerListId(list.id);
+                          setMenuOpenListId(null);
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-2 font-urbanist text-xs text-gray-700 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
+                      >
+                        {t("dashboard.changeColor")}
+                      </button>
+                      <button
+                        onClick={() => {
                           setDeleteConfirmListId(list.id);
                           setMenuOpenListId(null);
                         }}
@@ -328,6 +338,27 @@ export default function Dashboard() {
                           >
                             <span style={{ color: list.color }}><def.icon className="h-4 w-4" /></span>
                           </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {colorPickerListId === list.id && (
+                    <div className="absolute left-0 top-full z-30 mt-1 rounded-xl border bg-white p-2 shadow-lg dark:border-gray-700 dark:bg-gray-800">
+                      <div className="mb-1 px-1">
+                        <span className="font-urbanist text-[10px] text-gray-400">{t("dashboard.changeColor")}</span>
+                      </div>
+                      <div className="flex gap-1.5 px-0.5">
+                        {LIST_COLORS.map((c) => (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => { updateList(list.id, { color: c }); setColorPickerListId(null); }}
+                            className={`h-7 w-7 rounded-full transition-all ${
+                              list.color === c ? "ring-2 ring-gray-400 ring-offset-2 dark:ring-offset-gray-900" : "ring-1 ring-transparent hover:ring-gray-300"
+                            }`}
+                            style={{ backgroundColor: c }}
+                          />
                         ))}
                       </div>
                     </div>
