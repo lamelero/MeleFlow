@@ -43,10 +43,8 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
   const [newChecklistText, setNewChecklistText] = useState("");
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingText, setEditingText] = useState("");
-  const [reminderEnabled, setReminderEnabled] = useState(false);
-  const [reminderType, setReminderType] = useState<"daily" | "weekly">("daily");
-  const [reminderDays, setReminderDays] = useState<number[]>([]);
-  const [reminderTime, setReminderTime] = useState("09:00");
+  const [reminders, setReminders] = useState<{ id: string; time: string; frequency: "always" | "weekly" | "before_due"; days?: number[]; beforeDays?: number }[]>([]);
+  const [editingReminder, setEditingReminder] = useState<{ id: string; time: string; frequency: "always" | "weekly" | "before_due"; days?: number[]; beforeDays?: number } | null>(null);
   const [shareSearchQuery, setShareSearchQuery] = useState("");
   const [shareSearchResults, setShareSearchResults] = useState<{ id: string; username: string; displayName: string | null; avatarUrl: string | null }[]>([]);
   const [showShareDropdown, setShowShareDropdown] = useState(false);
@@ -69,11 +67,24 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
       setDueDate(t.dueDate ? new Date(t.dueDate) : null);
       setTaskType(t.type || "TEXT");
       setChecklistItems(t.checklistItems ?? []);
-      const config = t.reminderConfig ? JSON.parse(t.reminderConfig) : null;
-      setReminderEnabled(t.reminderEnabled ?? false);
-      setReminderType(config?.type ?? "daily");
-      setReminderDays(config?.days ?? []);
-      setReminderTime(config?.reminderTime ?? "09:00");
+      if (t.reminderEnabled && t.reminderConfig) {
+        try {
+          const parsed = JSON.parse(t.reminderConfig);
+          if (Array.isArray(parsed)) {
+            setReminders(parsed);
+          } else if (parsed?.type && parsed?.reminderTime) {
+            const legacy: { id: string; time: string; frequency: "always" | "weekly" | "before_due"; days?: number[] }[] = [];
+            if (parsed.type === "daily") {
+              legacy.push({ id: "1", time: parsed.reminderTime, frequency: "always" });
+            } else if (parsed.type === "weekly" && parsed.days?.length > 0) {
+              legacy.push({ id: "1", time: parsed.reminderTime, frequency: "weekly", days: parsed.days });
+            }
+            setReminders(legacy);
+          }
+        } catch { /* silent */ }
+      } else {
+        setReminders([]);
+      }
       setPreview(false);
     }
   }, [t?.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -163,21 +174,27 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
     }
   }
 
-  async function handleReminderSave() {
-    if (!reminderEnabled) {
-      await updateTask(t.id, { reminderEnabled: false, reminderConfig: null });
-      toast.success(trans("common.toasts.reminderDisabled"));
-      return;
-    }
-    const config = { type: reminderType, days: reminderType === "weekly" ? reminderDays : [], reminderTime };
-    await updateTask(t.id, { reminderEnabled: true, reminderConfig: JSON.stringify(config) });
+  async function handleAddReminder(r: { time: string; frequency: "always" | "weekly" | "before_due"; days?: number[]; beforeDays?: number }) {
+    const newReminders = [...reminders, { ...r, id: String(Date.now()) }];
+    setReminders(newReminders);
+    setEditingReminder(null);
+    await updateTask(t.id, { reminderEnabled: newReminders.length > 0, reminderConfig: JSON.stringify(newReminders) });
     toast.success(trans("common.toasts.reminderSaved"));
   }
 
-  async function handleDayToggle(day: number) {
-    setReminderDays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort(),
-    );
+  async function handleDeleteReminder(id: string) {
+    const newReminders = reminders.filter((r) => r.id !== id);
+    setReminders(newReminders);
+    await updateTask(t.id, { reminderEnabled: newReminders.length > 0, reminderConfig: newReminders.length > 0 ? JSON.stringify(newReminders) : null });
+    toast.success(trans("common.toasts.reminderDeleted"));
+  }
+
+  async function handleUpdateReminder(id: string, r: { time: string; frequency: "always" | "weekly" | "before_due"; days?: number[]; beforeDays?: number }) {
+    const newReminders = reminders.map((rem) => rem.id === id ? { ...rem, ...r } : rem);
+    setReminders(newReminders);
+    setEditingReminder(null);
+    await updateTask(t.id, { reminderEnabled: true, reminderConfig: JSON.stringify(newReminders) });
+    toast.success(trans("common.toasts.reminderSaved"));
   }
 
   async function handleDateChange(date: Date | null) {
@@ -654,72 +671,64 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
           <div className="mb-4">
             <div className="mb-2 flex items-center justify-between">
               <label className="font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                {trans("common.recurringReminder")}
+                {trans("common.reminders")}
               </label>
               <button
-                onClick={() => setReminderEnabled(!reminderEnabled)}
-                className={`relative h-6 w-11 rounded-full transition-colors ${reminderEnabled ? "bg-primary" : "bg-gray-300 dark:bg-gray-600"}`}
+                onClick={() => setEditingReminder({ id: "", time: "09:00", frequency: "always" })}
+                className="rounded-lg px-3 py-1.5 font-urbanist text-xs font-medium text-primary transition-colors hover:bg-primary/10"
               >
-                <span
-                  className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${reminderEnabled ? "translate-x-5" : "translate-x-0"}`}
-                />
+                + {trans("common.addReminder")}
               </button>
             </div>
-            {reminderEnabled && (
+            {reminders.length > 0 && (
+              <div className="mb-3 space-y-1.5">
+                {reminders.map((r) => {
+                  const dayNames = trans("calendar.dayHeaders", { returnObjects: true }) as unknown as string[];
+                  return (
+                    <div key={r.id} className="group flex items-center gap-2 rounded-xl border border-gray-100 bg-gray-50 px-3 py-2 dark:border-gray-800 dark:bg-gray-800/50">
+                      <span className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-200">{r.time}</span>
+                      <span className="font-urbanist text-xs text-gray-400">
+                        {r.frequency === "always" && trans("common.always")}
+                        {r.frequency === "weekly" && r.days?.map((d) => dayNames[d]).join(", ")}
+                        {r.frequency === "before_due" && trans("common.beforeDue", { days: r.beforeDays })}
+                      </span>
+                      <div className="ml-auto flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => setEditingReminder(r)}
+                          className="rounded-lg p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-gray-700"
+                        >
+                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => handleDeleteReminder(r.id)}
+                          className="rounded-lg p-1 text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20"
+                        >
+                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {editingReminder && (
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
-                <div className="mb-3 flex gap-2">
-                  <button
-                    onClick={() => setReminderType("daily")}
-                    className={`flex-1 rounded-lg px-3 py-2 font-urbanist text-sm font-medium transition-all ${
-                      reminderType === "daily"
-                        ? "bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-gray-100"
-                        : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
-                    }`}
-                  >
-                    {trans("common.daily")}
-                  </button>
-                  <button
-                    onClick={() => setReminderType("weekly")}
-                    className={`flex-1 rounded-lg px-3 py-2 font-urbanist text-sm font-medium transition-all ${
-                      reminderType === "weekly"
-                        ? "bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-gray-100"
-                        : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
-                    }`}
-                  >
-                    {trans("common.weekly")}
-                  </button>
-                </div>
-                {reminderType === "weekly" && (
-                  <div className="mb-3 flex gap-1.5">
-                    {(() => { const d = trans("calendar.dayHeaders", { returnObjects: true }) as string[]; return d; })().map((name, i) => (
-                      <button
-                        key={i}
-                        onClick={() => handleDayToggle(i)}
-                        className={`h-9 w-9 rounded-lg text-xs font-urbanist font-medium transition-all ${
-                          reminderDays.includes(i)
-                            ? "bg-primary text-white shadow-sm"
-                            : "bg-white text-gray-500 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-400"
-                        }`}
-                      >
-                        {name}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <div className="flex items-center gap-3">
-                  <input
-                    type="time"
-                    value={reminderTime}
-                    onChange={(e) => setReminderTime(e.target.value)}
-                    className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-                  />
-                  <button
-                    onClick={handleReminderSave}
-                    className="rounded-xl bg-primary px-4 py-2.5 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600"
-                  >
-                    {trans("common.save")}
-                  </button>
-                </div>
+                <ReminderForm
+                  initial={editingReminder}
+                  onSave={(data) => {
+                    if (editingReminder.id) {
+                      handleUpdateReminder(editingReminder.id, data);
+                    } else {
+                      handleAddReminder(data);
+                    }
+                  }}
+                  onCancel={() => setEditingReminder(null)}
+                  trans={trans}
+                />
               </div>
             )}
           </div>
@@ -870,5 +879,102 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
     </motion.div>
       )}
     </AnimatePresence>
+  );
+}
+
+function ReminderForm({ initial, onSave, onCancel, trans }: {
+  initial: { id: string; time: string; frequency: "always" | "weekly" | "before_due"; days?: number[]; beforeDays?: number };
+  onSave: (data: { time: string; frequency: "always" | "weekly" | "before_due"; days?: number[]; beforeDays?: number }) => void;
+  onCancel: () => void;
+  trans: (key: string, options?: any) => string;
+}) {
+  const [time, setTime] = useState(initial.time);
+  const [frequency, setFrequency] = useState<"always" | "weekly" | "before_due">(initial.frequency);
+  const [days, setDays] = useState<number[]>(initial.days ?? []);
+  const [beforeDays, setBeforeDays] = useState(initial.beforeDays ?? 1);
+
+  function handleDayToggle(day: number) {
+    setDays((prev) => prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort());
+  }
+
+  const dayHeaders = (() => {
+    try { return trans("calendar.dayHeaders", { returnObjects: true }) as unknown as string[]; } catch { return ["M","T","W","T","F","S","S"]; }
+  })();
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-3">
+        <input
+          type="time"
+          value={time}
+          onChange={(e) => setTime(e.target.value)}
+          className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+        />
+      </div>
+      <div className="flex gap-2">
+        {(["always", "weekly", "before_due"] as const).map((f) => (
+          <button
+            key={f}
+            onClick={() => setFrequency(f)}
+            className={`flex-1 rounded-lg px-3 py-2 font-urbanist text-sm font-medium transition-all ${
+              frequency === f
+                ? "bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-gray-100"
+                : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
+            }`}
+          >
+            {f === "always" && trans("common.always")}
+            {f === "weekly" && trans("common.weekly")}
+            {f === "before_due" && trans("common.beforeDueShort")}
+          </button>
+        ))}
+      </div>
+      {frequency === "weekly" && (
+        <div className="flex gap-1.5">
+          {dayHeaders.map((name, i) => (
+            <button
+              key={i}
+              onClick={() => handleDayToggle(i)}
+              className={`h-9 w-9 rounded-lg text-xs font-urbanist font-medium transition-all ${
+                days.includes(i)
+                  ? "bg-primary text-white shadow-sm"
+                  : "bg-white text-gray-500 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-400"
+              }`}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+      )}
+      {frequency === "before_due" && (
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            min={0}
+            max={90}
+            value={beforeDays}
+            onChange={(e) => setBeforeDays(Math.max(0, parseInt(e.target.value) || 0))}
+            className="w-20 rounded-xl border border-gray-200 bg-white px-3 py-2 font-urbanist text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+          />
+          <span className="font-urbanist text-xs text-gray-400">{trans("common.daysBeforeDue")}</span>
+        </div>
+      )}
+      <div className="flex gap-2">
+        <button
+          onClick={onCancel}
+          className="flex-1 rounded-lg bg-gray-200 py-2 font-urbanist text-sm font-medium text-gray-600 transition-colors hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+        >
+          {trans("common.cancel")}
+        </button>
+        <button
+          onClick={() => {
+            if (frequency === "weekly" && days.length === 0) return;
+            onSave({ time, frequency, days: frequency === "weekly" ? days : undefined, beforeDays: frequency === "before_due" ? beforeDays : undefined });
+          }}
+          className="flex-1 rounded-lg bg-primary py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600"
+        >
+          {trans("common.save")}
+        </button>
+      </div>
+    </div>
   );
 }
