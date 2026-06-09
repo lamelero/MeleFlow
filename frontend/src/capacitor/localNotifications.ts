@@ -15,6 +15,10 @@ interface ReminderItem {
   beforeDays?: number;
 }
 
+function uiIndexToJsDay(uiIdx: number): number {
+  return uiIdx === 6 ? 0 : uiIdx + 1;
+}
+
 export async function scheduleTaskReminders(
   tasks: { id: string; title: string; dueDate?: string | null; reminderEnabled?: boolean; reminderConfig?: string | null }[]
 ) {
@@ -52,6 +56,11 @@ export async function scheduleTaskReminders(
       continue;
     }
 
+    const dueDate = task.dueDate ? new Date(task.dueDate) : null;
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const now = new Date();
+
     for (const rem of reminders) {
       const [hourStr, minuteStr] = rem.time.split(":");
       const hour = parseInt(hourStr, 10);
@@ -59,29 +68,82 @@ export async function scheduleTaskReminders(
       if (isNaN(hour) || isNaN(minute)) continue;
 
       if (rem.frequency === "always") {
-        notifs.push({
-          title: task.title,
-          body: "",
-          id: notifId++,
-          schedule: { on: { hour, minute } },
-          smallIcon: "ic_stat_icon",
-          iconColor: "#14B8A6",
-        });
-      } else if (rem.frequency === "weekly" && rem.days && rem.days.length > 0) {
-        for (const dayIdx of rem.days) {
+        if (dueDate) {
+          const dueStart = new Date(dueDate);
+          dueStart.setHours(0, 0, 0, 0);
+          if (dueStart < todayStart) continue;
+
+          let cursor = new Date(todayStart);
+          cursor.setHours(hour, minute, 0, 0);
+          if (cursor <= now) cursor.setDate(cursor.getDate() + 1);
+          cursor.setHours(hour, minute, 0, 0);
+
+          while (cursor <= dueStart) {
+            const at = new Date(cursor);
+            notifs.push({
+              title: task.title,
+              body: "",
+              id: notifId++,
+              schedule: { at },
+              smallIcon: "ic_stat_icon",
+              iconColor: "#14B8A6",
+            });
+            cursor.setDate(cursor.getDate() + 1);
+          }
+        } else {
           notifs.push({
             title: task.title,
             body: "",
             id: notifId++,
-            schedule: { on: { hour, minute, weekday: fromDayIndex(dayIdx) } },
+            schedule: { on: { hour, minute } },
             smallIcon: "ic_stat_icon",
             iconColor: "#14B8A6",
           });
         }
+      } else if (rem.frequency === "weekly" && rem.days && rem.days.length > 0) {
+        if (dueDate) {
+          const dueStart = new Date(dueDate);
+          dueStart.setHours(0, 0, 0, 0);
+          if (dueStart < todayStart) continue;
+
+          let cursor = new Date(todayStart);
+          cursor.setHours(hour, minute, 0, 0);
+          if (cursor <= now) cursor.setDate(cursor.getDate() + 1);
+
+          while (cursor <= dueStart) {
+            const jsDay = cursor.getDay();
+            const uiIdx = jsDay === 0 ? 6 : jsDay - 1;
+            if (rem.days.includes(uiIdx)) {
+              const at = new Date(cursor);
+              at.setHours(hour, minute, 0, 0);
+              notifs.push({
+                title: task.title,
+                body: "",
+                id: notifId++,
+                schedule: { at },
+                smallIcon: "ic_stat_icon",
+                iconColor: "#14B8A6",
+              });
+            }
+            cursor.setDate(cursor.getDate() + 1);
+          }
+        } else {
+          for (const dayIdx of rem.days) {
+            notifs.push({
+              title: task.title,
+              body: "",
+              id: notifId++,
+              schedule: { on: { hour, minute, weekday: fromDayIndex(dayIdx) } },
+              smallIcon: "ic_stat_icon",
+              iconColor: "#14B8A6",
+            });
+          }
+        }
       } else if (rem.frequency === "before_due" && task.dueDate) {
         const due = new Date(task.dueDate);
         const at = new Date(due.getTime() - (rem.beforeDays ?? 0) * 24 * 60 * 60 * 1000);
-        if (at > new Date()) {
+        at.setHours(hour, minute, 0, 0);
+        if (at > now) {
           notifs.push({
             title: task.title,
             body: "",

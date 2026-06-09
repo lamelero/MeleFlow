@@ -684,15 +684,25 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
               <div className="mb-3 space-y-1.5">
                 {reminders.map((r) => {
                   const dayNames = trans("calendar.dayHeaders", { returnObjects: true }) as unknown as string[];
+                  const dueStr = t.dueDate ? new Date(t.dueDate).toLocaleDateString() : null;
                   return (
-                    <div key={r.id} className="group flex items-center gap-2 rounded-xl border border-gray-100 bg-gray-50 px-3 py-2 dark:border-gray-800 dark:bg-gray-800/50">
-                      <span className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-200">{r.time}</span>
-                      <span className="font-urbanist text-xs text-gray-400">
-                        {r.frequency === "always" && trans("common.always")}
-                        {r.frequency === "weekly" && r.days?.map((d) => dayNames[d]).join(", ")}
-                        {r.frequency === "before_due" && trans("common.beforeDue", { days: r.beforeDays })}
-                      </span>
-                      <div className="ml-auto flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div key={r.id} className="group flex items-start gap-2 rounded-xl border border-gray-100 bg-gray-50 px-3 py-2 dark:border-gray-800 dark:bg-gray-800/50">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-200">{r.time}</span>
+                          <span className="font-urbanist text-xs text-gray-400">
+                            {r.frequency === "always" && trans("common.always")}
+                            {r.frequency === "weekly" && r.days?.map((d) => dayNames[d]).join(", ")}
+                            {r.frequency === "before_due" && trans("common.beforeDue", { days: r.beforeDays })}
+                          </span>
+                        </div>
+                        <p className="mt-0.5 font-urbanist text-xs text-gray-400/70">
+                          {r.frequency === "always" && (dueStr ? trans("common.alwaysHelpUntil", { date: dueStr }) : trans("common.alwaysHelp"))}
+                          {r.frequency === "weekly" && (dueStr ? trans("common.weeklyHelpUntil", { date: dueStr }) : trans("common.weeklyHelp"))}
+                          {r.frequency === "before_due" && trans("common.beforeDueHelp")}
+                        </p>
+                      </div>
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                         <button
                           onClick={() => setEditingReminder(r)}
                           className="rounded-lg p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-gray-700"
@@ -928,6 +938,11 @@ function ReminderForm({ initial, onSave, onCancel, trans }: {
           </button>
         ))}
       </div>
+      <p className="font-urbanist text-xs text-gray-400/70">
+        {frequency === "always" && trans("common.alwaysHelpForm")}
+        {frequency === "weekly" && trans("common.weeklyHelpForm")}
+        {frequency === "before_due" && trans("common.beforeDueHelpForm")}
+      </p>
       {frequency === "weekly" && (
         <div className="flex gap-1.5">
           {dayHeaders.map((name, i) => (
