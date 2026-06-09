@@ -161,7 +161,7 @@ export default function Dashboard() {
             {showNewList && (
               <form onSubmit={handleCreateList} className="mb-3 space-y-2">
                 <div className="flex items-center gap-1">
-                  <IconPicker selected={newListIcon} onSelect={setNewListIcon} />
+                  <IconPicker selected={newListIcon} onSelect={setNewListIcon} color={newListColor} />
                   <input
                     type="text"
                     value={newListName}
@@ -216,7 +216,7 @@ export default function Dashboard() {
                   <div className="flex items-center">
                     {editingListId === list.id ? (
                       <div className="flex flex-1 items-center gap-1 rounded-lg px-3 py-2">
-                        <span className="mr-1 shrink-0">{list.icon ? <ListIcon name={list.icon} className="h-4 w-4 text-gray-500" /> : null}</span>
+                        <span className="mr-1 shrink-0">{list.icon ? <span style={{ color: list.color }}><ListIcon name={list.icon} className="h-4 w-4" /></span> : null}</span>
                         <input
                           ref={renameInputRef}
                           type="text"
@@ -244,7 +244,7 @@ export default function Dashboard() {
                               : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
                           }`}
                         >
-                          <span className="mr-1 shrink-0">{list.icon ? <ListIcon name={list.icon} className="h-4 w-4 text-gray-500 dark:text-gray-400" /> : <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: list.color }} />}</span>
+                          <span className="mr-1 shrink-0">{list.icon ? <span style={{ color: list.color }}><ListIcon name={list.icon} className="h-4 w-4" /></span> : <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: list.color }} />}</span>
                           <span className="truncate">{list.name}</span>
                           <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">
                             {list._count.tasks}
@@ -322,11 +322,11 @@ export default function Dashboard() {
                               updateList(list.id, { icon: def.name === list.icon ? null : def.name });
                               setEmojiPickerListId(null);
                             }}
-                            className={`flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 ${
-                              list.icon === def.name ? "bg-primary/10 text-primary ring-2 ring-primary" : ""
+                            className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                              list.icon === def.name ? "bg-primary/10 ring-2 ring-primary" : ""
                             }`}
                           >
-                            <def.icon className="h-4 w-4" />
+                            <span style={{ color: list.color }}><def.icon className="h-4 w-4" /></span>
                           </button>
                         ))}
                       </div>

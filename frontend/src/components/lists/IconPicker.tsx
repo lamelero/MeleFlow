@@ -5,9 +5,10 @@ import { LIST_ICONS, type ListIconDef } from "./listIcons";
 interface IconPickerProps {
   selected: string | null;
   onSelect: (name: string | null) => void;
+  color?: string;
 }
 
-export default function IconPicker({ selected, onSelect }: IconPickerProps) {
+export default function IconPicker({ selected, onSelect, color }: IconPickerProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -31,7 +32,9 @@ export default function IconPicker({ selected, onSelect }: IconPickerProps) {
         className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:border-primary dark:border-gray-600 dark:text-gray-400"
       >
         {selectedDef ? (
-          <selectedDef.icon className="h-4 w-4" />
+          <span style={color ? { color } : undefined}>
+            <selectedDef.icon className="h-4 w-4" />
+          </span>
         ) : (
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
