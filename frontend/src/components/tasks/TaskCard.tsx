@@ -6,10 +6,10 @@ import { useTaskStore } from "../../store/taskStore";
 import TagPill from "../tags/TagPill";
 
 const priorityColors: Record<number, string> = {
-  1: "bg-[#EF4444]",
-  2: "bg-[#F59E0B]",
-  3: "bg-[#3B82F6]",
-  4: "bg-[#9CA3AF]",
+  1: "#EF4444",
+  2: "#F59E0B",
+  3: "#3B82F6",
+  4: "#9CA3AF",
 };
 
 interface TaskCardProps {
@@ -55,7 +55,8 @@ export default function TaskCard({ task, onClick }: TaskCardProps) {
       whileHover={{ y: -2, boxShadow: "0 8px 25px -8px rgba(0,0,0,0.1)" }}
       className={`group flex items-start gap-3 rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-colors hover:cursor-pointer dark:border-gray-800 dark:bg-gray-900 ${
         task.isCompleted ? "opacity-60" : ""
-      }`}
+      } ${task.priority < 4 ? "border-l-4" : ""}`}
+      style={task.priority < 4 ? { borderLeftColor: priorityColors[task.priority] } : undefined}
     >
       <div className="flex h-6 items-center pt-0.5">
         <motion.button
@@ -95,11 +96,6 @@ export default function TaskCard({ task, onClick }: TaskCardProps) {
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <motion.span
-            animate={{ scale: task.priority <= 2 ? [1, 1.2, 1] : 1 }}
-            transition={{ repeat: task.priority <= 2 ? Infinity : 0, repeatDelay: 2, duration: 0.6 }}
-            className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full ${priorityColors[task.priority] || priorityColors[4]}`}
-          />
           <h3
             className={`font-urbanist text-sm font-medium ${
               task.isCompleted

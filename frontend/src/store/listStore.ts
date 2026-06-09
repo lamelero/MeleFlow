@@ -5,6 +5,7 @@ interface List {
   id: string;
   name: string;
   color: string;
+  icon: string | null;
   _count: { tasks: number };
 }
 
@@ -13,8 +14,8 @@ interface ListState {
   isLoading: boolean;
   error: string | null;
   fetchLists: () => Promise<void>;
-  createList: (input: { name: string; color: string }) => Promise<List>;
-  updateList: (id: string, input: { name?: string; color?: string }) => Promise<void>;
+  createList: (input: { name: string; color: string; icon?: string | null }) => Promise<List>;
+  updateList: (id: string, input: { name?: string; color?: string; icon?: string | null }) => Promise<void>;
   deleteList: (id: string) => Promise<void>;
 }
 

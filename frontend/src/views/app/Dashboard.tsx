@@ -12,7 +12,13 @@ import TaskDetailPanel from "../../components/tasks/TaskDetailPanel";
 import HabitCard from "../../components/habits/HabitCard";
 import HabitFormModal from "../../components/habits/HabitFormModal";
 import AppLayout from "../../components/AppLayout";
+import EmojiPicker, { EMOJIS } from "../../components/lists/EmojiPicker";
 import { isNative } from "../../capacitor/register";
+
+const LIST_COLORS = [
+  "#14B8A6", "#EF4444", "#F59E0B", "#3B82F6",
+  "#8B5CF6", "#EC4899", "#10B981", "#6366F1",
+];
 
 export default function Dashboard() {
   const { t } = useTranslation();
@@ -25,6 +31,9 @@ export default function Dashboard() {
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [showNewList, setShowNewList] = useState(false);
   const [newListName, setNewListName] = useState("");
+  const [newListIcon, setNewListIcon] = useState<string | null>(null);
+  const [newListColor, setNewListColor] = useState("#14B8A6");
+  const [emojiPickerListId, setEmojiPickerListId] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [habitFormOpen, setHabitFormOpen] = useState(false);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
@@ -89,8 +98,10 @@ export default function Dashboard() {
   async function handleCreateList(e: React.FormEvent) {
     e.preventDefault();
     if (!newListName.trim()) return;
-    await createList({ name: newListName.trim(), color: "#14B8A6" });
+    await createList({ name: newListName.trim(), color: newListColor, icon: newListIcon });
     setNewListName("");
+    setNewListIcon(null);
+    setNewListColor("#14B8A6");
     setShowNewList(false);
   }
 
@@ -137,7 +148,7 @@ export default function Dashboard() {
                 {t("dashboard.lists")}
               </h2>
               <button
-                onClick={() => setShowNewList(!showNewList)}
+                onClick={() => { setShowNewList(!showNewList); setNewListIcon(null); setNewListColor("#14B8A6"); }}
                 className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-primary dark:hover:bg-gray-800"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -147,15 +158,31 @@ export default function Dashboard() {
             </div>
 
             {showNewList && (
-              <form onSubmit={handleCreateList} className="mb-3">
-                <input
-                  type="text"
-                  value={newListName}
-                  onChange={(e) => setNewListName(e.target.value)}
-                  placeholder={t("dashboard.listName")}
-                  className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
-                  autoFocus
-                />
+              <form onSubmit={handleCreateList} className="mb-3 space-y-2">
+                <div className="flex items-center gap-1">
+                  <EmojiPicker selected={newListIcon} onSelect={setNewListIcon} />
+                  <input
+                    type="text"
+                    value={newListName}
+                    onChange={(e) => setNewListName(e.target.value)}
+                    placeholder={t("dashboard.listName")}
+                    className="flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+                    autoFocus
+                  />
+                </div>
+                <div className="flex gap-1.5 px-0.5">
+                  {LIST_COLORS.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setNewListColor(c)}
+                      className={`h-5 w-5 rounded-full transition-all ${
+                        newListColor === c ? "ring-2 ring-gray-400 ring-offset-1 dark:ring-offset-gray-900" : "ring-1 ring-transparent hover:ring-gray-300"
+                      }`}
+                      style={{ backgroundColor: c }}
+                    />
+                  ))}
+                </div>
               </form>
             )}
 
@@ -188,8 +215,7 @@ export default function Dashboard() {
                   <div className="flex items-center">
                     {editingListId === list.id ? (
                       <div className="flex flex-1 items-center gap-1 rounded-lg px-3 py-2">
-                        <span className="mr-2 inline-block h-2 w-2 shrink-0 rounded-full"
-                          style={{ backgroundColor: list.color }} />
+                        <span className="mr-1 shrink-0 text-base">{list.icon || null}</span>
                         <input
                           ref={renameInputRef}
                           type="text"
@@ -217,10 +243,7 @@ export default function Dashboard() {
                               : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
                           }`}
                         >
-                          <span
-                            className="mr-2 inline-block h-2 w-2 shrink-0 rounded-full"
-                            style={{ backgroundColor: list.color }}
-                          />
+                          <span className="mr-1 shrink-0 text-base">{list.icon || <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: list.color }} />}</span>
                           <span className="truncate">{list.name}</span>
                           <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">
                             {list._count.tasks}
@@ -242,7 +265,7 @@ export default function Dashboard() {
 
                   {menuOpenListId === list.id && (
                     <div ref={menuRef}
-                      className="absolute right-0 top-full z-20 mt-1 w-32 overflow-hidden rounded-lg border bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                      className="absolute right-0 top-full z-20 mt-1 w-36 overflow-hidden rounded-lg border bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
                     >
                       <button
                         onClick={() => {
@@ -256,6 +279,15 @@ export default function Dashboard() {
                       </button>
                       <button
                         onClick={() => {
+                          setEmojiPickerListId(list.id);
+                          setMenuOpenListId(null);
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-2 font-urbanist text-xs text-gray-700 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
+                      >
+                        {t("dashboard.changeEmoji")}
+                      </button>
+                      <button
+                        onClick={() => {
                           setDeleteConfirmListId(list.id);
                           setMenuOpenListId(null);
                         }}
@@ -263,6 +295,40 @@ export default function Dashboard() {
                       >
                         {t("dashboard.delete")}
                       </button>
+                    </div>
+                  )}
+
+                  {emojiPickerListId === list.id && (
+                    <div className="absolute left-0 top-full z-30 mt-1 w-[272px] rounded-xl border bg-white p-2 shadow-lg dark:border-gray-700 dark:bg-gray-800">
+                      <div className="mb-1 flex items-center justify-between px-1">
+                        <span className="font-urbanist text-[10px] text-gray-400">{t("dashboard.icon")}</span>
+                        {list.icon && (
+                          <button
+                            type="button"
+                            onClick={() => { updateList(list.id, { icon: null }); setEmojiPickerListId(null); }}
+                            className="text-[10px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                          >
+                            {t("dashboard.removeIcon")}
+                          </button>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-6 gap-1">
+                        {EMOJIS.map((emoji) => (
+                          <button
+                            key={emoji}
+                            type="button"
+                            onClick={() => {
+                              updateList(list.id, { icon: emoji === list.icon ? null : emoji });
+                              setEmojiPickerListId(null);
+                            }}
+                            className={`flex h-9 w-9 items-center justify-center rounded-lg text-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                              list.icon === emoji ? "bg-primary/10 ring-2 ring-primary" : ""
+                            }`}
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>

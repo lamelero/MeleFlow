@@ -50,6 +50,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
   const [showShareDropdown, setShowShareDropdown] = useState(false);
   const [shareSearching, setShareSearching] = useState(false);
   const [collaborators, setCollaborators] = useState<{ id: string; username: string; displayName: string | null; avatarUrl: string | null }[]>([]);
+  const [priority, setPriority] = useState(4);
   const tagInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const checklistInputRef = useRef<HTMLInputElement>(null);
@@ -65,6 +66,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
     if (t) {
       setDescription(t.description || "");
       setDueDate(t.dueDate ? new Date(t.dueDate) : null);
+      setPriority(t.priority ?? 4);
       setTaskType(t.type || "TEXT");
       setChecklistItems(t.checklistItems ?? []);
       if (t.reminderEnabled && t.reminderConfig) {
@@ -201,6 +203,11 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
     setDueDate(date);
     await updateTask(t.id, { dueDate: date ? date.toISOString() : null });
     toast.success(date ? trans("common.toasts.dueDateSet") : trans("common.toasts.dueDateRemoved"));
+  }
+
+  async function handlePriorityChange(p: number) {
+    setPriority(p);
+    await updateTask(t.id, { priority: p });
   }
 
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -426,6 +433,32 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-4">
+          <div className="mb-4">
+            <label className="mb-2 block font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+              {trans("common.priority")}
+            </label>
+            <div className="flex gap-1.5">
+              {[
+                { value: 1, color: "#EF4444", label: trans("common.urgent") },
+                { value: 2, color: "#F59E0B", label: trans("common.high") },
+                { value: 3, color: "#3B82F6", label: trans("common.medium") },
+                { value: 4, color: "#9CA3AF", label: trans("common.low") },
+              ].map((p) => (
+                <button
+                  key={p.value}
+                  onClick={() => handlePriorityChange(p.value)}
+                  className={`flex-1 rounded-lg px-2.5 py-1.5 text-center font-urbanist text-xs font-medium transition-all ${
+                    priority === p.value
+                      ? "text-white shadow-sm"
+                      : "bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+                  }`}
+                  style={priority === p.value ? { backgroundColor: p.color } : undefined}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
           {t.tags && t.tags.length > 0 && (
             <div className="mb-4">
               <label className="mb-2 block font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
