@@ -145,6 +145,40 @@ export default function Dashboard() {
         <div className="mx-auto flex h-full w-full max-w-6xl gap-6 p-4">
         <aside className="hidden w-56 shrink-0 space-y-4 md:block">
           <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
+            <h2 className="mb-3 font-outfit text-sm font-semibold text-gray-900 dark:text-gray-100">
+              {t("dashboard.navigation")}
+            </h2>
+            <nav className="space-y-0.5">
+              <button
+                onClick={() => {
+                  setActiveListId(undefined);
+                  setActiveTagId(undefined);
+                }}
+                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-sm transition-colors ${
+                  !activeListId && !activeTagId
+                    ? "bg-primary/10 font-medium text-primary"
+                    : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
+                }`}
+              >
+                <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-3-3v6m-7 9h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                {t("dashboard.allTasks")}
+              </button>
+              <Link
+                to="/app/calendar"
+                className="flex items-center gap-2 rounded-lg px-3 py-2 font-urbanist text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
+              >
+                <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <rect x="3" y="4" width="18" height="18" rx="2" />
+                  <path d="M16 2v4M8 2v4M3 10h18" />
+                </svg>
+                {t("dashboard.calendar")}
+              </Link>
+            </nav>
+          </div>
+
+          <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="font-outfit text-sm font-semibold text-gray-900 dark:text-gray-100">
                 {t("dashboard.lists")}
@@ -189,29 +223,6 @@ export default function Dashboard() {
             )}
 
             <nav className="space-y-0.5">
-              <button
-                onClick={() => {
-                  setActiveListId(undefined);
-                  setActiveTagId(undefined);
-                }}
-                className={`w-full rounded-lg px-3 py-2 text-left font-urbanist text-sm transition-colors ${
-                  !activeListId && !activeTagId
-                    ? "bg-primary/10 font-medium text-primary"
-                    : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
-                }`}
-              >
-                {t("dashboard.allTasks")}
-              </button>
-              <Link
-                to="/app/calendar"
-                className="flex items-center gap-2 rounded-lg px-3 py-2 font-urbanist text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
-              >
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <rect x="3" y="4" width="18" height="18" rx="2" />
-                  <path d="M16 2v4M8 2v4M3 10h18" />
-                </svg>
-                {t("dashboard.calendar")}
-              </Link>
               {lists.map((list) => (
                 <div key={list.id} className="relative">
                   <div className="flex items-center">
