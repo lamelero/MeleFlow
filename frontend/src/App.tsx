@@ -8,7 +8,6 @@ import Login from "./views/auth/Login";
 import Register from "./views/auth/Register";
 import TwoFactorVerify from "./views/auth/TwoFactorVerify";
 import Dashboard from "./views/app/Dashboard";
-import CalendarView from "./views/app/CalendarView";
 import HabitsView from "./views/app/HabitsView";
 import TimerView from "./views/app/TimerView";
 import Profile from "./views/app/Profile";
@@ -115,11 +114,7 @@ export default function App() {
           />
           <Route
             path="/app/calendar"
-            element={
-              <ProtectedRoute>
-                <CalendarView />
-              </ProtectedRoute>
-            }
+            element={<Navigate to="/app?view=calendar" replace />}
           />
           <Route
             path="/app/profile"

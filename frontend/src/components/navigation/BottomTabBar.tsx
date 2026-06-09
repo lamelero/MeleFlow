@@ -23,7 +23,7 @@ const tabs = [
     </svg>,
   },
   {
-    path: "/app/calendar",
+    path: "/app?view=calendar",
     labelKey: "bottomNav.calendar",
     icon: <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
       <rect x="3" y="4" width="18" height="18" rx="2" />
@@ -54,7 +54,8 @@ export default function BottomTabBar() {
   const { t } = useTranslation();
 
   const isActive = (path: string) => {
-    if (path === "/app") return location.pathname === "/app";
+    if (path === "/app") return location.pathname === "/app" && location.search !== "?view=calendar";
+    if (path === "/app?view=calendar") return location.search === "?view=calendar";
     return location.pathname.startsWith(path);
   };
 

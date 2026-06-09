@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import CalendarContent from "../../components/calendar/CalendarContent";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useListStore } from "../../store/listStore";
@@ -27,6 +28,9 @@ export default function Dashboard() {
   const { createTask, fetchSharedTasks, sharedTasks } = useTaskStore();
   const { habits, fetchHabits, createHabit } = useHabitStore();
   const { tags, fetchTags } = useTagStore();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const view: "tasks" | "calendar" = searchParams.get("view") === "calendar" ? "calendar" : "tasks";
   const [activeListId, setActiveListId] = useState<string | undefined>();
   const [activeTagId, setActiveTagId] = useState<string | undefined>();
   const [newTaskTitle, setNewTaskTitle] = useState("");
@@ -134,7 +138,7 @@ export default function Dashboard() {
   }
 
   return (
-    <AppLayout title={t("dashboard.title")}>
+    <AppLayout title={view === "calendar" ? t("calendar.title") : t("dashboard.title")}>
       <motion.div
         className="h-full"
         initial={{ opacity: 0, y: 12 }}
@@ -151,11 +155,10 @@ export default function Dashboard() {
             <nav className="space-y-0.5">
               <button
                 onClick={() => {
-                  setActiveListId(undefined);
-                  setActiveTagId(undefined);
+                  navigate("/app");
                 }}
                 className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-sm transition-colors ${
-                  !activeListId && !activeTagId
+                  view === "tasks" && !activeListId && !activeTagId
                     ? "bg-primary/10 font-medium text-primary"
                     : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
                 }`}
@@ -165,16 +168,20 @@ export default function Dashboard() {
                 </svg>
                 {t("dashboard.allTasks")}
               </button>
-              <Link
-                to="/app/calendar"
-                className="flex items-center gap-2 rounded-lg px-3 py-2 font-urbanist text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
+              <button
+                onClick={() => navigate("/app?view=calendar")}
+                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-sm transition-colors ${
+                  view === "calendar"
+                    ? "bg-primary/10 font-medium text-primary"
+                    : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
+                }`}
               >
                 <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <rect x="3" y="4" width="18" height="18" rx="2" />
                   <path d="M16 2v4M8 2v4M3 10h18" />
                 </svg>
                 {t("dashboard.calendar")}
-              </Link>
+              </button>
             </nav>
           </div>
 
@@ -418,119 +425,105 @@ export default function Dashboard() {
           )}
         </aside>
 
-        <main className="min-w-0 flex-1 space-y-8 overflow-y-auto">
-          <section>
-            <form onSubmit={handleCreateTask} className="mb-4">
-              <div className="rounded-2xl bg-white shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={newTaskTitle}
-                  onChange={(e) => setNewTaskTitle(e.target.value)}
-                  placeholder={t("dashboard.newTask")}
-                  className="w-full rounded-2xl bg-white px-5 py-3.5 font-urbanist text-sm outline-none placeholder:text-gray-400 dark:bg-gray-900 dark:text-gray-100 dark:placeholder-gray-500"
+        <main className="min-w-0 flex-1 overflow-y-auto">
+          {view === "calendar" ? (
+            <CalendarContent standalone={false} />
+          ) : (
+            <div className="space-y-8">
+              <section>
+                <form onSubmit={handleCreateTask} className="mb-4">
+                  <div className="rounded-2xl bg-white shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={newTaskTitle}
+                      onChange={(e) => setNewTaskTitle(e.target.value)}
+                      placeholder={t("dashboard.newTask")}
+                      className="w-full rounded-2xl bg-white px-5 py-3.5 font-urbanist text-sm outline-none placeholder:text-gray-400 dark:bg-gray-900 dark:text-gray-100 dark:placeholder-gray-500"
+                    />
+                  </div>
+                </form>
+
+                <TaskList
+                  filter={{ listId: activeListId, tagId: activeTagId }}
+                  onTaskClick={setSelectedTask}
+                  emptyMessage={
+                    activeListId
+                      ? t("dashboard.noTasksInList")
+                      : activeTagId
+                        ? t("dashboard.noTasksWithTag")
+                        : t("dashboard.noTasks")
+                  }
                 />
-              </div>
-            </form>
+              </section>
 
-            <TaskList
-              filter={{ listId: activeListId, tagId: activeTagId }}
-              onTaskClick={setSelectedTask}
-              emptyMessage={
-                activeListId
-                  ? t("dashboard.noTasksInList")
-                  : activeTagId
-                    ? t("dashboard.noTasksWithTag")
-                    : t("dashboard.noTasks")
-              }
-            />
-          </section>
-
-          {sharedTasks.length > 0 && (
-            <section>
-              <h2 className="mb-4 font-outfit text-lg font-semibold text-gray-900 dark:text-gray-100">
-                {t("dashboard.sharedWithMe")}
-              </h2>
-              <div className="space-y-2">
-                {sharedTasks.map((task) => (
-                  <TaskCard key={task.id} task={task} onClick={setSelectedTask} />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {!isNative() && <>
-            <section>
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-outfit text-lg font-semibold text-gray-900 dark:text-gray-100">
-                {t("dashboard.habits")}
-              </h2>
-              <button
-                onClick={() => {
-                  setEditingHabit(null);
-                  setHabitFormOpen(true);
-                }}
-                className="rounded-xl px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors"
-                style={{ backgroundColor: "#14B8A6" }}
-              >
-                <span className="flex items-center gap-1.5">
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                  </svg>
-                  {t("dashboard.newHabit")}
-                </span>
-              </button>
-            </div>
-
-            {habits.length === 0 ? (
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="rounded-2xl bg-white p-10 text-center shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800"
-              >
-                <svg
-                  className="mx-auto mb-4 h-16 w-16 dark:opacity-70"
-                  viewBox="0 0 64 64"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <rect x="10" y="14" width="44" height="36" rx="6" stroke="#14B8A6" strokeWidth="2" strokeDasharray="4 3" fill="rgba(20,184,166,0.05)" />
-                  <circle cx="22" cy="30" r="4" fill="#14B8A6" opacity="0.2" />
-                  <circle cx="34" cy="30" r="4" fill="#14B8A6" opacity="0.2" />
-                  <circle cx="46" cy="30" r="4" fill="#14B8A6" opacity="0.2" />
-                  <circle cx="22" cy="42" r="4" fill="#14B8A6" opacity="0.2" />
-                  <circle cx="34" cy="42" r="4" fill="#14B8A6" opacity="0.15" />
-                  <circle cx="46" cy="42" r="4" fill="#14B8A6" opacity="0.1" />
-                  <path d="M16 8l-2 4m16-4l2 4M36 6l-1 6M44 10l-3 2" stroke="#14B8A6" strokeWidth="1.5" strokeLinecap="round" opacity="0.3" />
-                </svg>
-                <p className="font-urbanist text-sm text-gray-400">
-                  {t("dashboard.noHabits")}
-                </p>
-              </motion.div>
-            ) : (
-              <div className="space-y-6">
-                {/* Active habits */}
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {habits
-                    .filter((h) => !h.isArchived)
-                    .map((habit) => (
-                      <HabitCard
-                        key={habit.id}
-                        habit={habit}
-                        onEdit={handleEditHabit}
-                      />
+              {sharedTasks.length > 0 && (
+                <section>
+                  <h2 className="mb-4 font-outfit text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    {t("dashboard.sharedWithMe")}
+                  </h2>
+                  <div className="space-y-2">
+                    {sharedTasks.map((task) => (
+                      <TaskCard key={task.id} task={task} onClick={setSelectedTask} />
                     ))}
+                  </div>
+                </section>
+              )}
+
+              {!isNative() && <>
+                <section>
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="font-outfit text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    {t("dashboard.habits")}
+                  </h2>
+                  <button
+                    onClick={() => {
+                      setEditingHabit(null);
+                      setHabitFormOpen(true);
+                    }}
+                    className="rounded-xl px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors"
+                    style={{ backgroundColor: "#14B8A6" }}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                      </svg>
+                      {t("dashboard.newHabit")}
+                    </span>
+                  </button>
                 </div>
 
-                {/* Archived habits */}
-                {habits.filter((h) => h.isArchived).length > 0 && (
-                  <div>
-                    <h3 className="mb-3 font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400">
-                      {t("dashboard.archived")}
-                    </h3>
-                    <div className="grid gap-3 opacity-50 sm:grid-cols-2">
+                {habits.length === 0 ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="rounded-2xl bg-white p-10 text-center shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800"
+                  >
+                    <svg
+                      className="mx-auto mb-4 h-16 w-16 dark:opacity-70"
+                      viewBox="0 0 64 64"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <rect x="10" y="14" width="44" height="36" rx="6" stroke="#14B8A6" strokeWidth="2" strokeDasharray="4 3" fill="rgba(20,184,166,0.05)" />
+                      <circle cx="22" cy="30" r="4" fill="#14B8A6" opacity="0.2" />
+                      <circle cx="34" cy="30" r="4" fill="#14B8A6" opacity="0.2" />
+                      <circle cx="46" cy="30" r="4" fill="#14B8A6" opacity="0.2" />
+                      <circle cx="22" cy="42" r="4" fill="#14B8A6" opacity="0.2" />
+                      <circle cx="34" cy="42" r="4" fill="#14B8A6" opacity="0.15" />
+                      <circle cx="46" cy="42" r="4" fill="#14B8A6" opacity="0.1" />
+                      <path d="M16 8l-2 4m16-4l2 4M36 6l-1 6M44 10l-3 2" stroke="#14B8A6" strokeWidth="1.5" strokeLinecap="round" opacity="0.3" />
+                    </svg>
+                    <p className="font-urbanist text-sm text-gray-400">
+                      {t("dashboard.noHabits")}
+                    </p>
+                  </motion.div>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Active habits */}
+                    <div className="grid gap-3 sm:grid-cols-2">
                       {habits
-                        .filter((h) => h.isArchived)
+                        .filter((h) => !h.isArchived)
                         .map((habit) => (
                           <HabitCard
                             key={habit.id}
@@ -539,22 +532,42 @@ export default function Dashboard() {
                           />
                         ))}
                     </div>
+
+                    {/* Archived habits */}
+                    {habits.filter((h) => h.isArchived).length > 0 && (
+                      <div>
+                        <h3 className="mb-3 font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400">
+                          {t("dashboard.archived")}
+                        </h3>
+                        <div className="grid gap-3 opacity-50 sm:grid-cols-2">
+                          {habits
+                            .filter((h) => h.isArchived)
+                            .map((habit) => (
+                              <HabitCard
+                                key={habit.id}
+                                habit={habit}
+                                onEdit={handleEditHabit}
+                              />
+                            ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
-              </div>
-            )}
-          </section>
+              </section>
 
-          <HabitFormModal
-            isOpen={habitFormOpen}
-            onClose={() => {
-              setHabitFormOpen(false);
-              setEditingHabit(null);
-            }}
-            onSave={handleSaveHabit}
-            habit={editingHabit}
-          />
-        </>}
+              <HabitFormModal
+                isOpen={habitFormOpen}
+                onClose={() => {
+                  setHabitFormOpen(false);
+                  setEditingHabit(null);
+                }}
+                onSave={handleSaveHabit}
+                habit={editingHabit}
+              />
+            </>}
+            </div>
+          )}
         </main>
       </div>
 
