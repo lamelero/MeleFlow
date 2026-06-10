@@ -210,7 +210,7 @@ export default function HabitFormModal({
                     {dynamicCats.length > 0 && (
                       <div className="border-t border-gray-100 pt-2 dark:border-gray-700">
                         <p className="mb-1.5 font-urbanist text-[10px] font-medium text-gray-400 dark:text-gray-500">
-                          {t("habits.customCategories") || "Custom categories"}
+                          {t("habits.customCategories")}
                         </p>
                         <div className="flex flex-wrap gap-2">
                           {dynamicCats.map((dcat) => {

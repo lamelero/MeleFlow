@@ -444,7 +444,12 @@
     "total": "Total",
     "days": "días",
     "monthlyStreak": "Racha del mes",
-    "change": "Cambiar"
+    "change": "Cambiar",
+    "categories": "Categorías",
+    "newCategory": "Nueva categoría",
+    "categoryName": "Nombre de categoría",
+    "createCategory": "Crear",
+    "customCategories": "Categorías personalizadas"
   },
   "pomodoro": {
     "focus": "Enfoque",
