@@ -206,7 +206,12 @@ export function buildReminderEmail(
               </span>
             </div>
           </div>
-        </div>` : ""}
+        </div>` : `<div class="card">
+          <div class="card-accent" style="background:${icon.color}"></div>
+          <div class="card-body">
+            <div class="card-title">${title}</div>
+          </div>
+        </div>`}
         <div class="btn-wrapper">
           <a href="${appUrl}" class="btn" target="_blank" style="color:#ffffff !important;text-decoration:none !important;">${t(lang, "cta")}</a>
         </div>
