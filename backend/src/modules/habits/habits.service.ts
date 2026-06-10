@@ -116,6 +116,7 @@ export class HabitService {
 
     const habit = await prisma.habit.create({
       data: data as Parameters<typeof prisma.habit.create>[0]["data"],
+      include: { habitCategory: true },
     });
     return { ...habit, logs: [] };
   }
@@ -138,6 +139,7 @@ export class HabitService {
     const habit = await prisma.habit.update({
       where: { id },
       data: data as Parameters<typeof prisma.habit.update>[0]["data"],
+      include: { habitCategory: true },
     });
     return habit;
   }
