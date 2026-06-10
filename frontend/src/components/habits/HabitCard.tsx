@@ -155,20 +155,20 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
       </div>
 
       {/* 7-day squares */}
-      <div className="mb-3 flex items-center justify-between gap-0.5">
+      <div className="mb-3 flex justify-center gap-1.5">
         {weekDays.map((day) => (
           <button
             key={day.dateStr}
             type="button"
             disabled={day.dateStr > today || pending}
             onClick={() => handleCellClick(day.dateStr)}
-            className="flex flex-1 flex-col items-center gap-0.5"
+            className="flex flex-col items-center gap-px"
           >
-            <span className="font-urbanist text-[9px] font-medium text-gray-400 dark:text-gray-500">
+            <span className="font-urbanist text-[10px] font-medium text-gray-400 dark:text-gray-500">
               {day.dayLabel}
             </span>
             <div
-              className={`flex h-7 w-7 items-center justify-center rounded-lg text-[10px] font-semibold transition-all
+              className={`flex h-8 w-8 items-center justify-center rounded-lg text-[11px] font-semibold transition-all
                 ${day.completed
                   ? "bg-primary text-white"
                   : day.isToday
