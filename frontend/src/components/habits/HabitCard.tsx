@@ -128,7 +128,7 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
   }
 
   return (
-    <div className="rounded-xl border border-gray-100/80 bg-white p-3 shadow-sm transition-all dark:border-gray-700/50 dark:bg-gray-900/95">
+    <div className="mx-auto w-full max-w-sm rounded-xl border border-gray-100/80 bg-white p-3 shadow-sm transition-all dark:border-gray-700/50 dark:bg-gray-900/95">
       {/* Header row */}
       <div className="mb-3 flex items-start justify-between">
         <div className="flex items-center gap-2.5">
