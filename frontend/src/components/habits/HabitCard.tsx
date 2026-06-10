@@ -144,7 +144,17 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
             </h3>
             {habit.frequency && (
               <p className="font-urbanist text-[11px] font-medium" style={{ color: catInfo.color }}>
-                {habit.frequency}
+                {((): string => {
+                  try {
+                    const f = JSON.parse(habit.frequency);
+                    if (f.type === "daily") return t("habits.daily") || "Daily";
+                    if (f.type === "weekly") return t("habits.weekly") || "Weekly";
+                    if (f.type === "monthly") return t("habits.monthly") || "Monthly";
+                    return habit.frequency;
+                  } catch {
+                    return habit.frequency;
+                  }
+                })()}
               </p>
             )}
           </div>
