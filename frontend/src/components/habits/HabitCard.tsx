@@ -21,19 +21,19 @@ interface DayCircle {
 
 function getWeekDays(habitStart: string | null): DayCircle[] {
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  today.setUTCHours(0, 0, 0, 0);
   const todayStr = today.toISOString().split("T")[0];
   const days: DayCircle[] = [];
   const labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
   for (let i = 6; i >= 0; i--) {
     const d = new Date(today);
-    d.setDate(d.getDate() - i);
+    d.setUTCDate(d.getUTCDate() - i);
     const dateStr = d.toISOString().split("T")[0];
     days.push({
       dateStr,
-      dayNum: d.getDate(),
-      dayLabel: labels[d.getDay() === 0 ? 6 : d.getDay() - 1],
+      dayNum: d.getUTCDate(),
+      dayLabel: labels[d.getUTCDay() === 0 ? 6 : d.getUTCDay() - 1],
       isToday: dateStr === todayStr,
       completed: false,
     });

@@ -13,21 +13,20 @@ export default function HabitStatsTab({ habit }: HabitStatsTabProps) {
 
   const stats = useMemo(() => {
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayStr = today.toISOString().split("T")[0];
+    const todayUTC = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+    const todayStr = new Date(todayUTC).toISOString().split("T")[0];
 
-    // This week (Mon-Sun)
-    const startOfWeek = new Date(today);
-    const dayOfWeek = today.getDay();
+    // This week (Mon-Sun) in UTC
+    const dayOfWeek = new Date(todayUTC).getUTCDay();
     const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-    startOfWeek.setDate(today.getDate() - mondayOffset);
-    const weekStart = startOfWeek.toISOString().split("T")[0];
+    const weekStartMs = todayUTC - mondayOffset * 86400000;
+    const weekStart = new Date(weekStartMs).toISOString().split("T")[0];
 
     // This month
-    const monthStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-01`;
+    const monthStart = `${new Date(todayUTC).getUTCFullYear()}-${String(new Date(todayUTC).getUTCMonth() + 1).padStart(2, "0")}-01`;
 
     // This year
-    const yearStart = `${today.getFullYear()}-01-01`;
+    const yearStart = `${new Date(todayUTC).getUTCFullYear()}-01-01`;
 
     let thisWeek = 0;
     let thisMonth = 0;

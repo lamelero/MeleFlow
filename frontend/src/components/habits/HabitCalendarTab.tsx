@@ -27,7 +27,7 @@ export default function HabitCalendarTab({ habit, onChange }: HabitCalendarTabPr
   const { checkIn, undoCheckIn } = useHabitStore();
   const catInfo = HABIT_CATEGORIES[habit.category] || HABIT_CATEGORIES.OTROS;
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  today.setUTCHours(0, 0, 0, 0);
   const todayStr = today.toISOString().split("T")[0];
 
   const [viewDate, setViewDate] = useState(() => new Date());
