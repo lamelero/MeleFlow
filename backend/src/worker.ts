@@ -98,8 +98,21 @@ cron.schedule("* * * * *", async () => {
 
     for (const task of recurringTasks) {
       try {
-        const config = JSON.parse(task.reminderConfig!);
-        if (!config.reminderTime) continue;
+        const parsed = JSON.parse(task.reminderConfig!);
+
+        // Extract reminders from array (new format) or legacy object
+        interface RemEntry { time: string; frequency: string; days?: number[]; beforeDays?: number }
+        const reminders: RemEntry[] = [];
+        if (Array.isArray(parsed)) {
+          for (const r of parsed) {
+            if (r.time) reminders.push({ time: r.time, frequency: r.frequency || "always", days: r.days, beforeDays: r.beforeDays });
+          }
+        } else if (parsed?.type && parsed?.reminderTime) {
+          if (parsed.type === "daily") reminders.push({ time: parsed.reminderTime, frequency: "always" });
+          else if (parsed.type === "weekly" && Array.isArray(parsed.days) && parsed.days.length > 0) reminders.push({ time: parsed.reminderTime, frequency: "weekly", days: parsed.days });
+        }
+
+        if (reminders.length === 0) continue;
 
         const tz = task.user.timezone || "UTC";
         const now = new Date();
@@ -110,53 +123,63 @@ cron.schedule("* * * * *", async () => {
         const dayMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
         const userDay = dayMap[dayName] ?? now.getDay();
 
-        const configTime = config.reminderTime;
-        if (userTimeStr !== configTime) {
-          console.log(`[Worker] Recurring task "${task.title}" — time mismatch (user:${userTimeStr} config:${configTime})`);
-          continue;
-        }
+        const todayStr = now.toISOString().split("T")[0];
 
-        if (config.type === "weekly") {
-          const days: number[] = config.days || [];
-          if (!days.includes(userDay)) {
-            console.log(`[Worker] Recurring task "${task.title}" — day mismatch (today:${userDay} days:${JSON.stringify(days)})`);
+        for (const rem of reminders) {
+          if (userTimeStr !== rem.time) {
+            console.log(`[Worker] "${task.title}" — time mismatch (user:${userTimeStr} config:${rem.time})`);
             continue;
           }
+
+          if (rem.frequency === "weekly" && rem.days) {
+            if (!rem.days.includes(userDay)) {
+              console.log(`[Worker] "${task.title}" — day mismatch (today:${userDay} days:${JSON.stringify(rem.days)})`);
+              continue;
+            }
+          }
+
+          if (rem.frequency === "before_due" && task.dueDate) {
+            const target = new Date(task.dueDate.getTime() - (rem.beforeDays ?? 0) * 86400000);
+            const targetStr = target.toISOString().split("T")[0];
+            if (todayStr !== targetStr) {
+              console.log(`[Worker] "${task.title}" — before_due: target ${targetStr} != today ${todayStr}`);
+              continue;
+            }
+          }
+
+          const dedupKey = `reminder:task:recurring:${task.id}:${todayStr}:${rem.time}:${rem.frequency}`;
+          const alreadySent = await redis.get(dedupKey);
+          if (alreadySent) {
+            console.log(`[Worker] Recurring task already notified for ${rem.time}, skipping "${task.title}"`);
+            continue;
+          }
+
+          const emailTo = task.user.notificationEmail || task.user.email;
+          if (!emailTo) {
+            console.log(`[Worker] No email for user "${task.user.username}", skipping recurring task "${task.title}"`);
+            continue;
+          }
+          const lang = task.user.language || "en";
+
+          const subject = t(lang, "taskRecurringSubject").replace("{{title}}", task.title);
+          const html = buildReminderEmail(
+            task.user.username,
+            task.title,
+            t(lang, "taskRecurringBody"),
+            "",
+            appUrl,
+            lang,
+          );
+
+          const sent = await sendEmail(emailTo, subject, html);
+          if (sent) {
+            console.log(`[Worker] Recurring reminder sent to ${emailTo} for task "${task.title}"`);
+          } else {
+            console.log(`[Worker] Recurring reminder skipped (disabled/misconfigured) for task "${task.title}"`);
+          }
+
+          await redis.set(dedupKey, "1", "EX", 86400);
         }
-
-        const today = now.toISOString().split("T")[0];
-        const reminderKey = `reminder:task:recurring:${task.id}:${today}:${configTime}`;
-        const alreadySent = await redis.get(reminderKey);
-        if (alreadySent) {
-          console.log(`[Worker] Recurring task already notified at ${configTime}, skipping "${task.title}"`);
-          continue;
-        }
-
-        const emailTo = task.user.notificationEmail || task.user.email;
-        if (!emailTo) {
-          console.log(`[Worker] No email for user "${task.user.username}", skipping recurring task "${task.title}"`);
-          continue;
-        }
-        const lang = task.user.language || "en";
-
-        const subject = t(lang, "taskRecurringSubject").replace("{{title}}", task.title);
-        const html = buildReminderEmail(
-          task.user.username,
-          task.title,
-          t(lang, "taskRecurringBody"),
-          "",
-          appUrl,
-          lang,
-        );
-
-        const sent = await sendEmail(emailTo, subject, html);
-        if (sent) {
-          console.log(`[Worker] Recurring reminder sent to ${emailTo} for task "${task.title}"`);
-        } else {
-          console.log(`[Worker] Recurring reminder skipped (disabled/misconfigured) for task "${task.title}"`);
-        }
-
-        await redis.set(reminderKey, "1", "EX", 86400);
       } catch (err) {
         console.error(`[Worker] Error processing recurring reminder for task "${task.title}":`, err);
       }
