@@ -68,7 +68,7 @@ export async function buildApp(opts: Record<string, unknown> = {}) {
 
   await app.register(rateLimit, {
     global: true,
-    max: 100,
+    max: 300,
     timeWindow: "1 minute",
   });
 
