@@ -19,30 +19,30 @@ interface DayCircle {
   completed: boolean;
 }
 
-function getWeekDays(habitStart: string | null): DayCircle[] {
+function getWeekDays(habitStart: string | null, locale: string): DayCircle[] {
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
   const todayStr = today.toISOString().split("T")[0];
   const days: DayCircle[] = [];
-  const labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const fmt = new Intl.DateTimeFormat(locale, { weekday: "short" });
 
   for (let i = 6; i >= 0; i--) {
     const d = new Date(today);
     d.setUTCDate(d.getUTCDate() - i);
-    const dateStr = d.toISOString().split("T")[0];
     days.push({
-      dateStr,
+      dateStr: d.toISOString().split("T")[0],
       dayNum: d.getUTCDate(),
-      dayLabel: labels[d.getUTCDay() === 0 ? 6 : d.getUTCDay() - 1],
-      isToday: dateStr === todayStr,
+      dayLabel: fmt.format(d),
+      isToday: false,
       completed: false,
     });
   }
+  days[6].isToday = true;
   return days;
 }
 
 export default function HabitCard({ habit, onEdit }: HabitCardProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { checkIn, undoCheckIn, deleteHabit, resetProgress } = useHabitStore();
   const catInfo = HABIT_CATEGORIES[habit.category] || HABIT_CATEGORIES.OTROS;
@@ -57,7 +57,7 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
   const checkedToday = logSet.has(today) || habit.completedToday;
 
   const weekDays = (() => {
-    const wd = getWeekDays(habit.startDate);
+    const wd = getWeekDays(habit.startDate, i18n.language);
     wd.forEach((d) => {
       if (logSet.has(d.dateStr)) d.completed = true;
     });
@@ -154,21 +154,21 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
         </span>
       </div>
 
-      {/* 7-day circles */}
-      <div className="mb-3 flex items-center justify-between gap-1">
+      {/* 7-day squares */}
+      <div className="mb-3 flex items-center justify-between gap-0.5">
         {weekDays.map((day) => (
           <button
             key={day.dateStr}
             type="button"
-            disabled={day.dateStr > today}
+            disabled={day.dateStr > today || pending}
             onClick={() => handleCellClick(day.dateStr)}
             className="flex flex-1 flex-col items-center gap-0.5"
           >
-            <span className="font-urbanist text-[10px] font-medium text-gray-400 dark:text-gray-500">
+            <span className="font-urbanist text-[9px] font-medium text-gray-400 dark:text-gray-500">
               {day.dayLabel}
             </span>
             <div
-              className={`flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-semibold transition-all
+              className={`flex h-7 w-7 items-center justify-center rounded-lg text-[10px] font-semibold transition-all
                 ${day.completed
                   ? "bg-primary text-white"
                   : day.isToday
