@@ -4,7 +4,7 @@ import type { CreateHabitInput, UpdateHabitInput } from "./habits.schema";
 
 function normalizeDate(d: Date): Date {
   const dt = new Date(d);
-  dt.setHours(0, 0, 0, 0);
+  dt.setUTCHours(0, 0, 0, 0);
   return dt;
 }
 
@@ -144,7 +144,7 @@ export class HabitService {
     });
     if (!habit) throw new AppError(404, "Habit not found");
 
-    const date = dateStr ? normalizeDate(new Date(dateStr + "T00:00:00")) : normalizeDate(new Date());
+    const date = dateStr ? normalizeDate(new Date(dateStr + "T00:00:00Z")) : normalizeDate(new Date());
     if (isNaN(date.getTime())) throw new AppError(400, "Invalid date");
 
     const existing = await prisma.habitLog.findUnique({
@@ -181,7 +181,7 @@ export class HabitService {
     });
     if (!habit) throw new AppError(404, "Habit not found");
 
-    const date = dateStr ? normalizeDate(new Date(dateStr + "T00:00:00")) : normalizeDate(new Date());
+    const date = dateStr ? normalizeDate(new Date(dateStr + "T00:00:00Z")) : normalizeDate(new Date());
     if (isNaN(date.getTime())) throw new AppError(400, "Invalid date");
 
     await prisma.habitLog.deleteMany({
