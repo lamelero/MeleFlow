@@ -18,6 +18,7 @@ import AppLayout from "../../components/AppLayout";
 import IconPicker from "../../components/lists/IconPicker";
 import { ListIcon, LIST_ICONS } from "../../components/lists/listIcons";
 import { isNative } from "../../capacitor/register";
+import { LayoutList, CheckSquare, Heart, Calendar } from "lucide-react";
 
 const LIST_COLORS = [
   "#14B8A6", "#EF4444", "#F59E0B", "#3B82F6",
@@ -167,10 +168,7 @@ export default function Dashboard() {
                     : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
                 }`}
               >
-                <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-3-3v6m-7 9h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  <circle cx="19" cy="5" r="2.5" fill="currentColor" />
-                </svg>
+                <LayoutList className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
                 {t("dashboard.todo")}
               </button>
               <button
@@ -181,9 +179,7 @@ export default function Dashboard() {
                     : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
                 }`}
               >
-                <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-3-3v6m-7 9h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+                <CheckSquare className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
                 {t("dashboard.tasks")}
               </button>
               <button
@@ -194,9 +190,7 @@ export default function Dashboard() {
                     : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
                 }`}
               >
-                <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                </svg>
+                <Heart className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
                 {t("dashboard.habits")}
               </button>
               <button
@@ -207,10 +201,7 @@ export default function Dashboard() {
                     : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
                 }`}
               >
-                <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <rect x="3" y="4" width="18" height="18" rx="2" />
-                  <path d="M16 2v4M8 2v4M3 10h18" />
-                </svg>
+                <Calendar className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
                 {t("dashboard.calendar")}
               </button>
             </nav>
