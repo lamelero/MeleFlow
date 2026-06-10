@@ -50,20 +50,18 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
   const today = new Date().toISOString().split("T")[0];
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const [checkKey, setCheckKey] = useState(0);
 
   const logSet = useMemo(() => new Set(habit.logs), [habit.logs]);
 
-  const checkedToday = useMemo(() => logSet.has(today) || habit.completedToday, [logSet, today, habit.completedToday, checkKey]);
+  const checkedToday = logSet.has(today) || habit.completedToday;
 
-  const weekDays = useMemo(() => {
+  const weekDays = (() => {
     const wd = getWeekDays(habit.startDate);
     wd.forEach((d) => {
       if (logSet.has(d.dateStr)) d.completed = true;
     });
     return wd;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [logSet, habit.startDate, habit.streakCount, checkKey]);
+  })();
 
   const score = useMemo(() => {
     if (!habit.startDate || habit.totalDays === 0) return 0;
@@ -104,7 +102,6 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
     } else {
       await checkIn(habit.id, dateStr);
     }
-    setCheckKey((k) => k + 1);
   }
 
   function handleDelete() {
