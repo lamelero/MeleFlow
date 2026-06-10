@@ -159,7 +159,9 @@
     "deleteList": "Delete list?",
     "deleteListWarning": "Tasks will be moved to \"All Tasks\" without a list.",
     "cancel": "Cancel",
-    "delete": "Delete"
+    "delete": "Delete",
+    "todo": "Todo",
+    "tasks": "Tasks"
   },
   "theme": {
     "light": "Light mode",

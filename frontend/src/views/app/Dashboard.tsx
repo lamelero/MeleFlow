@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import CalendarContent from "../../components/calendar/CalendarContent";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
@@ -29,8 +29,9 @@ export default function Dashboard() {
   const { habits, fetchHabits, createHabit } = useHabitStore();
   const { tags, fetchTags } = useTagStore();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
-  const view: "tasks" | "calendar" = searchParams.get("view") === "calendar" ? "calendar" : "tasks";
+  const view: "all" | "tasks" | "calendar" = searchParams.get("view") === "calendar" ? "calendar" : searchParams.get("view") === "tasks" ? "tasks" : "all";
   const [activeListId, setActiveListId] = useState<string | undefined>();
   const [activeTagId, setActiveTagId] = useState<string | undefined>();
   const [newTaskTitle, setNewTaskTitle] = useState("");
@@ -138,7 +139,7 @@ export default function Dashboard() {
   }
 
   return (
-    <AppLayout title={view === "calendar" ? t("calendar.title") : t("dashboard.title")}>
+    <AppLayout title={view === "calendar" ? t("calendar.title") : view === "tasks" ? t("dashboard.tasks") : t("dashboard.title")}>
       <motion.div
         className="h-full"
         initial={{ opacity: 0, y: 12 }}
@@ -154,11 +155,23 @@ export default function Dashboard() {
             </h2>
             <nav className="space-y-0.5">
               <button
-                onClick={() => {
-                  navigate("/app");
-                }}
+                onClick={() => navigate("/app")}
                 className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-sm transition-colors ${
-                  view === "tasks" && !activeListId && !activeTagId
+                  view === "all"
+                    ? "bg-primary/10 font-medium text-primary"
+                    : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
+                }`}
+              >
+                <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-3-3v6m-7 9h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  <circle cx="19" cy="5" r="2.5" fill="currentColor" />
+                </svg>
+                {t("dashboard.todo")}
+              </button>
+              <button
+                onClick={() => navigate("/app?view=tasks")}
+                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-sm transition-colors ${
+                  view === "tasks"
                     ? "bg-primary/10 font-medium text-primary"
                     : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
                 }`}
@@ -166,7 +179,20 @@ export default function Dashboard() {
                 <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-3-3v6m-7 9h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                {t("dashboard.allTasks")}
+                {t("dashboard.tasks")}
+              </button>
+              <button
+                onClick={() => navigate("/app/habits")}
+                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-sm transition-colors ${
+                  location.pathname.startsWith("/app/habits")
+                    ? "bg-primary/10 font-medium text-primary"
+                    : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
+                }`}
+              >
+                <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+                {t("dashboard.habits")}
               </button>
               <button
                 onClick={() => navigate("/app?view=calendar")}
@@ -470,7 +496,7 @@ export default function Dashboard() {
                 </section>
               )}
 
-              {!isNative() && <>
+              {view === "all" && !isNative() && <>
                 <section>
                 <div className="mb-4 flex items-center justify-between">
                   <h2 className="font-outfit text-lg font-semibold text-gray-900 dark:text-gray-100">

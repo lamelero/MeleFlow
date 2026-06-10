@@ -159,7 +159,9 @@
     "deleteList": "¿Eliminar lista?",
     "deleteListWarning": "Las tareas se moverán a \"Todas las tareas\" sin lista.",
     "cancel": "Cancelar",
-    "delete": "Eliminar"
+    "delete": "Eliminar",
+    "todo": "Todo",
+    "tasks": "Tareas"
   },
   "theme": {
     "light": "Modo claro",
