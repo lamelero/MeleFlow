@@ -472,7 +472,7 @@ export default function Dashboard() {
                   <p className="font-urbanist text-sm text-gray-400">{t("dashboard.noHabits")}</p>
                 </div>
               ) : (
-                <div className="flex flex-col gap-3">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {habits.filter((h) => !h.isArchived).map((habit) => (
                     <HabitCard key={habit.id} habit={habit} onEdit={handleEditHabit} />
                   ))}
@@ -484,7 +484,7 @@ export default function Dashboard() {
                   <h2 className="mb-3 font-outfit text-base font-semibold text-gray-500 dark:text-gray-400">
                     {t("dashboard.archived")}
                   </h2>
-                  <div className="flex flex-col gap-3 opacity-50">
+                  <div className="grid gap-3 opacity-50 sm:grid-cols-2 lg:grid-cols-3">
                     {habits.filter((h) => h.isArchived).map((habit) => (
                       <HabitCard key={habit.id} habit={habit} onEdit={handleEditHabit} />
                     ))}
@@ -592,7 +592,7 @@ export default function Dashboard() {
                 ) : (
                   <div className="space-y-6">
                     {/* Active habits */}
-                    <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                       {habits
                         .filter((h) => !h.isArchived)
                         .map((habit) => (
