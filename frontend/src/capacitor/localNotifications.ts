@@ -61,6 +61,8 @@ export async function scheduleTaskReminders(
           reminders.push({ time: parsed.reminderTime, frequency: "always" });
         } else if (parsed.type === "weekly" && parsed.days?.length > 0) {
           reminders.push({ time: parsed.reminderTime, frequency: "weekly", days: parsed.days });
+        } else if (parsed.type === "monthly") {
+          reminders.push({ time: parsed.reminderTime, frequency: "weekly", days: [new Date().getDay() === 0 ? 6 : new Date().getDay() - 1] });
         }
       } else {
         continue;
@@ -70,9 +72,10 @@ export async function scheduleTaskReminders(
     }
 
     const dueDate = task.dueDate ? new Date(task.dueDate) : null;
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
     const now = new Date();
+    const todayUTC = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayStart = new Date(todayUTC);
+    const nowMs = now.getTime();
 
     for (const rem of reminders) {
       const [hourStr, minuteStr] = rem.time.split(":");
@@ -82,16 +85,16 @@ export async function scheduleTaskReminders(
 
       if (rem.frequency === "always") {
         if (dueDate) {
-          const dueStart = new Date(dueDate);
-          dueStart.setHours(0, 0, 0, 0);
-          if (dueStart < todayStart) continue;
+          const dueUTC = Date.UTC(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+          if (dueUTC < todayUTC) continue;
 
-          let cursor = new Date(todayStart);
-          cursor.setHours(hour, minute, 0, 0);
-          if (cursor <= now) cursor.setDate(cursor.getDate() + 1);
-          cursor.setHours(hour, minute, 0, 0);
+          let cursor = new Date(todayUTC);
+          cursor.setUTCHours(hour, minute, 0, 0);
+          if (cursor.getTime() <= nowMs) cursor.setUTCDate(cursor.getUTCDate() + 1);
+          cursor.setUTCHours(hour, minute, 0, 0);
 
-          while (cursor <= dueStart) {
+          const dueEnd = new Date(dueUTC);
+          while (cursor.getTime() <= dueEnd.getTime()) {
             const at = new Date(cursor);
             notifs.push({
               title: task.title,
@@ -101,7 +104,8 @@ export async function scheduleTaskReminders(
               smallIcon: "ic_stat_icon",
               iconColor: "#14B8A6",
             });
-            cursor.setDate(cursor.getDate() + 1);
+            cursor.setUTCDate(cursor.getUTCDate() + 1);
+            cursor.setUTCHours(hour, minute, 0, 0);
           }
         } else {
           notifs.push({
@@ -115,20 +119,19 @@ export async function scheduleTaskReminders(
         }
       } else if (rem.frequency === "weekly" && rem.days && rem.days.length > 0) {
         if (dueDate) {
-          const dueStart = new Date(dueDate);
-          dueStart.setHours(0, 0, 0, 0);
-          if (dueStart < todayStart) continue;
+          const dueUTC = Date.UTC(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+          if (dueUTC < todayUTC) continue;
 
-          let cursor = new Date(todayStart);
-          cursor.setHours(hour, minute, 0, 0);
-          if (cursor <= now) cursor.setDate(cursor.getDate() + 1);
+          let cursor = new Date(todayUTC);
+          cursor.setUTCHours(hour, minute, 0, 0);
+          if (cursor.getTime() <= nowMs) cursor.setUTCDate(cursor.getUTCDate() + 1);
 
-          while (cursor <= dueStart) {
-            const jsDay = cursor.getDay();
-            const uiIdx = jsDay === 0 ? 6 : jsDay - 1;
+          const dueEnd = new Date(dueUTC);
+          while (cursor.getTime() <= dueEnd.getTime()) {
+            const uiIdx = cursor.getUTCDay() === 0 ? 6 : cursor.getUTCDay() - 1;
             if (rem.days.includes(uiIdx)) {
               const at = new Date(cursor);
-              at.setHours(hour, minute, 0, 0);
+              at.setUTCHours(hour, minute, 0, 0);
               notifs.push({
                 title: task.title,
                 body: "",
@@ -138,7 +141,8 @@ export async function scheduleTaskReminders(
                 iconColor: "#14B8A6",
               });
             }
-            cursor.setDate(cursor.getDate() + 1);
+            cursor.setUTCDate(cursor.getUTCDate() + 1);
+            cursor.setUTCHours(hour, minute, 0, 0);
           }
         } else {
           for (const dayIdx of rem.days) {
@@ -155,8 +159,8 @@ export async function scheduleTaskReminders(
       } else if (rem.frequency === "before_due" && task.dueDate) {
         const due = new Date(task.dueDate);
         const at = new Date(due.getTime() - (rem.beforeDays ?? 0) * 24 * 60 * 60 * 1000);
-        at.setHours(hour, minute, 0, 0);
-        if (at > now) {
+        at.setUTCHours(hour, minute, 0, 0);
+        if (at.getTime() > nowMs) {
           notifs.push({
             title: task.title,
             body: "",

@@ -15,7 +15,7 @@ import AdminPanel from "./views/app/AdminPanel";
 import TagManager from "./views/app/TagManager";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ServerConfig from "./components/ServerConfig";
-import { isNative, getServerUrl, setupAppListeners, getFontSize, getBoldFont, requestNotificationPermission } from "./capacitor/register";
+import { isNative, getServerUrl, setupAppListeners, getFontSize, getBoldFont, requestNotificationPermission, createNotificationChannel, requestExactAlarmPermission } from "./capacitor/register";
 import { initClientBaseUrl } from "./api/client";
 import "./i18n";
 
@@ -53,7 +53,12 @@ export default function App() {
       await initialize();
       if (isNative()) {
         const granted = await requestNotificationPermission();
-        console.log("Notification permission:", granted ? "granted" : "denied");
+        if (granted) {
+          await createNotificationChannel();
+          await requestExactAlarmPermission();
+        } else {
+          console.warn("[notifications] permission denied by user");
+        }
       }
       setReady(true);
     }

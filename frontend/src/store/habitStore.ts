@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import toast from "react-hot-toast";
 import { client } from "../api/client";
+import { scheduleTaskReminders } from "../capacitor/localNotifications";
+import { isNative } from "../capacitor/register";
 
 export interface Habit {
   id: string;
@@ -66,6 +68,19 @@ export const useHabitStore = create<HabitState>((set, get) => ({
       const params = archived ? "?archived=true" : "";
       const { data } = await client.get(`/habits${params}`);
       set({ habits: data, isLoading: false });
+      if (isNative()) {
+        scheduleTaskReminders(
+          data
+            .filter((h: Habit) => h.frequency)
+            .map((h: Habit) => ({
+              id: h.id,
+              title: h.name,
+              dueDate: null,
+              reminderEnabled: true,
+              reminderConfig: h.frequency,
+            }))
+        );
+      }
     } catch {
       set({ isLoading: false });
     }

@@ -19,8 +19,45 @@ export function isNative(): boolean {
 
 export async function requestNotificationPermission(): Promise<boolean> {
   if (!isNative()) return false;
-  const { display } = await LocalNotifications.requestPermissions();
-  return display === "granted";
+  try {
+    const { display } = await LocalNotifications.requestPermissions();
+    const granted = display === "granted";
+    console.log("[notifications] permission:", granted ? "granted" : "denied");
+    return granted;
+  } catch (err) {
+    console.error("[notifications] permission error:", err);
+    return false;
+  }
+}
+
+export async function createNotificationChannel() {
+  if (!isNative()) return;
+  try {
+    await LocalNotifications.createChannel({
+      id: "meleflow-default",
+      name: "MeleFlow",
+      description: "Task and habit reminders",
+      importance: 5,
+      visibility: 1,
+      sound: "default",
+      vibration: true,
+    });
+    console.log("[notifications] channel created");
+  } catch (err) {
+    console.error("[notifications] channel error:", err);
+  }
+}
+
+export async function requestExactAlarmPermission() {
+  if (!isNative()) return;
+  try {
+    const perm = await LocalNotifications.checkPermissions();
+    if (perm.display === "granted") {
+      console.log("[notifications] exact alarm permission: granted");
+    }
+  } catch {
+    // SCHEDULE_EXACT_ALARM is declared in manifest
+  }
 }
 
 export async function getServerUrl(): Promise<string | null> {
