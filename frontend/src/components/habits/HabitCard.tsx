@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import type { Habit } from "../../store/habitStore";
 import { useHabitStore } from "../../store/habitStore";
 import { HABIT_CATEGORIES } from "../../lib/habit-categories";
+import { LIST_ICONS } from "../lists/listIcons";
 
 interface HabitCardProps {
   habit: Habit;
@@ -45,7 +46,21 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { checkIn, undoCheckIn, deleteHabit, resetProgress } = useHabitStore();
-  const catInfo = HABIT_CATEGORIES[habit.category] || HABIT_CATEGORIES.OTROS;
+
+  const catInfo = useMemo(() => {
+    if (habit.habitCategory) {
+      const dyn = habit.habitCategory;
+      const IconComp = LIST_ICONS.find((i) => i.name === dyn.icon);
+      return {
+        color: dyn.color,
+        bgColor: dyn.color + "20",
+        label: dyn.name,
+        labelEs: dyn.name,
+        icon: () => IconComp ? <IconComp.icon className="h-4 w-4" /> : null,
+      };
+    }
+    return HABIT_CATEGORIES[habit.category] || HABIT_CATEGORIES.OTROS;
+  }, [habit.category, habit.habitCategory]);
   const Icon = catInfo.icon;
   const today = new Date().toISOString().split("T")[0];
   const [menuOpen, setMenuOpen] = useState(false);

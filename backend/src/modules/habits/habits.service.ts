@@ -48,6 +48,7 @@ export class HabitService {
           orderBy: { date: "desc" },
           select: { date: true, isCompleted: true },
         },
+        habitCategory: true,
         _count: { select: { logs: true } },
       },
       orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
@@ -87,6 +88,7 @@ export class HabitService {
           orderBy: { date: "desc" },
           select: { date: true, isCompleted: true },
         },
+        habitCategory: true,
         _count: { select: { logs: true } },
       },
     });
@@ -109,6 +111,7 @@ export class HabitService {
       frequency: input.frequency ?? null,
       startDate: input.startDate ? new Date(input.startDate) : new Date(),
       endDate: input.endDate ? new Date(input.endDate) : null,
+      categoryId: input.categoryId ?? null,
     };
 
     const habit = await prisma.habit.create({
@@ -130,6 +133,7 @@ export class HabitService {
     if (input.isArchived !== undefined) data.isArchived = input.isArchived;
     if (input.startDate !== undefined) data.startDate = new Date(input.startDate);
     if (input.endDate !== undefined) data.endDate = input.endDate ? new Date(input.endDate) : null;
+    if (input.categoryId !== undefined) data.categoryId = input.categoryId;
 
     const habit = await prisma.habit.update({
       where: { id },

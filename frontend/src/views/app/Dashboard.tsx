@@ -6,12 +6,14 @@ import { useTranslation } from "react-i18next";
 import { useListStore } from "../../store/listStore";
 import { useTaskStore, type Task } from "../../store/taskStore";
 import { useHabitStore, type Habit } from "../../store/habitStore";
+import { useHabitCategoryStore } from "../../store/habitCategoryStore";
 import { useTagStore } from "../../store/tagStore";
 import TaskList from "../../components/tasks/TaskList";
 import TaskCard from "../../components/tasks/TaskCard";
 import TaskDetailPanel from "../../components/tasks/TaskDetailPanel";
 import HabitCard from "../../components/habits/HabitCard";
 import HabitFormModal from "../../components/habits/HabitFormModal";
+import CategoryManager from "../../components/habits/CategoryManager";
 import AppLayout from "../../components/AppLayout";
 import IconPicker from "../../components/lists/IconPicker";
 import { ListIcon, LIST_ICONS } from "../../components/lists/listIcons";
@@ -27,6 +29,7 @@ export default function Dashboard() {
   const { lists, fetchLists, createList, updateList, deleteList } = useListStore();
   const { createTask, fetchSharedTasks, sharedTasks } = useTaskStore();
   const { habits, fetchHabits, createHabit } = useHabitStore();
+  const { fetchCategories } = useHabitCategoryStore();
   const { tags, fetchTags } = useTagStore();
   const navigate = useNavigate();
   const location = useLocation();
@@ -55,9 +58,10 @@ export default function Dashboard() {
   useEffect(() => {
     fetchLists();
     fetchHabits();
+    fetchCategories();
     fetchTags();
     fetchSharedTasks();
-  }, [fetchLists, fetchHabits, fetchTags, fetchSharedTasks]);
+  }, [fetchLists, fetchHabits, fetchCategories, fetchTags, fetchSharedTasks]);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -120,6 +124,7 @@ export default function Dashboard() {
     frequency: string | null;
     startDate?: string;
     endDate?: string | null;
+    categoryId?: string | null;
   }) {
     if (editingHabit) {
       await useHabitStore.getState().updateHabit(editingHabit.id, data);
@@ -495,6 +500,13 @@ export default function Dashboard() {
                   </div>
                 </div>
               )}
+
+              <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+                <h2 className="mb-3 font-outfit text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  {t("habits.categories") || "Categories"}
+                </h2>
+                <CategoryManager />
+              </div>
             </div>
           ) : (
             <div className="space-y-8">

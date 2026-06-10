@@ -16,6 +16,8 @@ export interface Habit {
   totalDays: number;
   completedToday: boolean;
   logs: string[];
+  categoryId?: string | null;
+  habitCategory?: { id: string; name: string; icon: string; color: string } | null;
 }
 
 interface CreateHabitInput {
@@ -26,6 +28,7 @@ interface CreateHabitInput {
   frequency?: string | null;
   startDate?: string;
   endDate?: string | null;
+  categoryId?: string | null;
 }
 
 interface UpdateHabitInput {
@@ -37,6 +40,7 @@ interface UpdateHabitInput {
   startDate?: string;
   endDate?: string | null;
   isArchived?: boolean;
+  categoryId?: string | null;
 }
 
 interface HabitState {

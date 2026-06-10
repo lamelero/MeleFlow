@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { HABIT_CATEGORIES, HABIT_CATEGORY_KEYS } from "../../lib/habit-categories";
 import type { Habit } from "../../store/habitStore";
+import { useHabitCategoryStore } from "../../store/habitCategoryStore";
+import { LIST_ICONS } from "../lists/listIcons";
 
 interface HabitFormModalProps {
   isOpen: boolean;
@@ -15,6 +17,7 @@ interface HabitFormModalProps {
     frequency: string | null;
     startDate?: string;
     endDate?: string | null;
+    categoryId?: string | null;
   }) => Promise<void>;
   habit?: Habit | null;
 }
@@ -44,6 +47,7 @@ export default function HabitFormModal({
   habit,
 }: HabitFormModalProps) {
   const { t } = useTranslation();
+  const { categories: dynamicCats } = useHabitCategoryStore();
   const dayHeaders = t("calendar.dayHeaders", { returnObjects: true }) as string[];
   const WEEK_DAYS = [
     { value: 1, label: dayHeaders[0] },
@@ -57,6 +61,7 @@ export default function HabitFormModal({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("OTROS");
+  const [categoryId, setCategoryId] = useState<string | null>(null);
   const [priority, setPriority] = useState(1);
   const [freqType, setFreqType] = useState<"daily" | "weekly" | "monthly">("daily");
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
@@ -70,6 +75,7 @@ export default function HabitFormModal({
       setName(habit.name);
       setDescription(habit.description || "");
       setCategory(habit.category);
+      setCategoryId(habit.categoryId ?? null);
       setPriority(habit.priority);
       const freq = parseFrequency(habit.frequency);
       setFreqType(freq.type);
@@ -81,6 +87,7 @@ export default function HabitFormModal({
       setName("");
       setDescription("");
       setCategory("OTROS");
+      setCategoryId(null);
       setPriority(1);
       setFreqType("daily");
       setSelectedDays([]);
@@ -115,6 +122,7 @@ export default function HabitFormModal({
       frequency,
       startDate: new Date(startDate).toISOString(),
       endDate: endDate ? new Date(endDate).toISOString() : null,
+      categoryId,
     });
 
     setSaving(false);
@@ -175,28 +183,59 @@ export default function HabitFormModal({
                   <label className="mb-1.5 block font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
                     {t("habits.category")}
                   </label>
-                  <div className="grid grid-cols-5 gap-2">
-                    {HABIT_CATEGORY_KEYS.map((key) => {
-                      const info = HABIT_CATEGORIES[key];
-                      const isActive = category === key;
-                      return (
-                        <button
-                          key={key}
-                          type="button"
-                          onClick={() => setCategory(key)}
-                          className="flex flex-col items-center gap-1 rounded-xl p-2 transition-all"
-                          style={{
-                            backgroundColor: isActive ? info.bgColor : "transparent",
-                            border: isActive ? `2px solid ${info.color}` : "2px solid transparent",
-                          }}
-                        >
-                          <info.icon />
-                          <span className="font-urbanist text-[10px] text-gray-500 leading-tight text-center dark:text-gray-400">
-                            {info.labelEs}
-                          </span>
-                        </button>
-                      );
-                    })}
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-5 gap-2">
+                      {HABIT_CATEGORY_KEYS.map((key) => {
+                        const info = HABIT_CATEGORIES[key];
+                        const isActive = category === key && !categoryId;
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => { setCategory(key); setCategoryId(null); }}
+                            className="flex flex-col items-center gap-1 rounded-xl p-2 transition-all"
+                            style={{
+                              backgroundColor: isActive ? info.bgColor : "transparent",
+                              border: isActive ? `2px solid ${info.color}` : "2px solid transparent",
+                            }}
+                          >
+                            <info.icon />
+                            <span className="font-urbanist text-[10px] text-gray-500 leading-tight text-center dark:text-gray-400">
+                              {info.labelEs}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {dynamicCats.length > 0 && (
+                      <div className="border-t border-gray-100 pt-2 dark:border-gray-700">
+                        <p className="mb-1.5 font-urbanist text-[10px] font-medium text-gray-400 dark:text-gray-500">
+                          {t("habits.customCategories") || "Custom categories"}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {dynamicCats.map((dcat) => {
+                            const IconComp = LIST_ICONS.find((i) => i.name === dcat.icon);
+                            const isActive = categoryId === dcat.id;
+                            return (
+                              <button
+                                key={dcat.id}
+                                type="button"
+                                onClick={() => { setCategory("OTROS"); setCategoryId(dcat.id); }}
+                                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-urbanist text-xs transition-all"
+                                style={{
+                                  backgroundColor: isActive ? dcat.color + "20" : "#f3f4f6",
+                                  border: isActive ? `2px solid ${dcat.color}` : "2px solid transparent",
+                                  color: isActive ? dcat.color : "#6b7280",
+                                }}
+                              >
+                                {IconComp && <IconComp.icon className="h-3.5 w-3.5" />}
+                                {dcat.name}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 

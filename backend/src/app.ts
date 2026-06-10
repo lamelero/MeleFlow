@@ -20,6 +20,7 @@ import { taskRoutes } from "./modules/tasks/tasks.routes";
 import { listRoutes } from "./modules/lists/lists.routes";
 import { tagRoutes } from "./modules/tags/tags.routes";
 import { habitRoutes } from "./modules/habits/habits.routes";
+import { habitCategoryRoutes } from "./modules/habits/habit-categories.routes";
 import { pomodoroRoutes } from "./modules/pomodoro/pomodoro.routes";
 import { adminRoutes } from "./modules/admin/admin.routes";
 import { settingsRoutes } from "./modules/settings/settings.routes";
@@ -136,6 +137,7 @@ export async function buildApp(opts: Record<string, unknown> = {}) {
   await app.register(listRoutes, { prefix: "/api/lists" });
   await app.register(tagRoutes, { prefix: "/api/tags" });
   await app.register(habitRoutes, { prefix: "/api/habits" });
+  await app.register(habitCategoryRoutes, { prefix: "/api" });
   await app.register(pomodoroRoutes, { prefix: "/api/pomodoro" });
   await app.register(adminRoutes, { prefix: "/api/admin" });
   await app.register(settingsRoutes, { prefix: "/api" });

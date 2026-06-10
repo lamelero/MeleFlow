@@ -51,6 +51,7 @@ export const createHabitSchema = z.object({
   frequency: frequencySchema,
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().nullable().optional(),
+  categoryId: z.string().nullable().optional(),
 });
 
 export const updateHabitSchema = z.object({
@@ -80,6 +81,7 @@ export const updateHabitSchema = z.object({
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().nullable().optional(),
   isArchived: z.boolean().optional(),
+  categoryId: z.string().nullable().optional(),
 });
 
 export const progressQuerySchema = z.object({
