@@ -93,10 +93,7 @@ export class HabitService {
     if (!habit) throw new AppError(404, "Habit not found");
     return {
       ...habit,
-      logs: habit.logs.map((l) => ({
-        date: l.date.toISOString().split("T")[0],
-        isCompleted: l.isCompleted,
-      })),
+      logs: habit.logs.map((l) => l.date.toISOString().split("T")[0]),
       totalDays: habit._count.logs,
       completedToday: habit.logs.some((l) => l.date.getTime() === todayStart.getTime()),
     };
