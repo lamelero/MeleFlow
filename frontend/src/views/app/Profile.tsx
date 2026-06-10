@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../store/authStore";
 import { client } from "../../api/client";
+import { resolveImageUrl } from "../../lib/url";
 import { useIcsCalendarStore } from "../../store/icsCalendarStore";
 import AppLayout from "../../components/AppLayout";
 import { isNative, getFontSize, setFontSize, getBoldFont, setBoldFont } from "../../capacitor/register";
@@ -286,7 +287,7 @@ export default function Profile() {
               >
                 {user?.avatarUrl ? (
                   <img
-                    src={user.avatarUrl}
+                    src={resolveImageUrl(user.avatarUrl)}
                     alt="avatar"
                     className="h-full w-full object-cover"
                   />

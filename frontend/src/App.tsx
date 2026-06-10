@@ -52,7 +52,8 @@ export default function App() {
       }
       await initialize();
       if (isNative()) {
-        requestNotificationPermission();
+        const granted = await requestNotificationPermission();
+        console.log("Notification permission:", granted ? "granted" : "denied");
       }
       setReady(true);
     }

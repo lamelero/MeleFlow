@@ -131,4 +131,9 @@ client.interceptors.response.use(
   },
 );
 
+export function getServerOrigin(): string {
+  const match = serverUrlBase.match(/^(https?:\/\/[^/]+)/);
+  return match ? match[1] : "";
+}
+
 export { client };

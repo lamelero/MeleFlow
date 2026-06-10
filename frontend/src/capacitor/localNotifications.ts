@@ -2,6 +2,15 @@ import { LocalNotifications, Weekday } from "@capacitor/local-notifications";
 import type { LocalNotificationSchema } from "@capacitor/local-notifications";
 import { isNative } from "./register";
 
+async function hasPermission(): Promise<boolean> {
+  try {
+    const perm = await LocalNotifications.checkPermissions();
+    return perm.display === "granted";
+  } catch {
+    return false;
+  }
+}
+
 function fromDayIndex(idx: number): Weekday {
   const wd = (idx + 2) % 7;
   return (wd === 0 ? 7 : wd) as Weekday;
@@ -23,6 +32,10 @@ export async function scheduleTaskReminders(
   tasks: { id: string; title: string; dueDate?: string | null; reminderEnabled?: boolean; reminderConfig?: string | null }[]
 ) {
   if (!isNative()) return;
+  if (!(await hasPermission())) {
+    console.warn("[localNotifications] no permission, skipping schedule");
+    return;
+  }
 
   const pending = await LocalNotifications.getPending();
   if (pending.notifications.length > 0) {

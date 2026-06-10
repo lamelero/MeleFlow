@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "../store/authStore";
 import { useThemeStore } from "../store/themeStore";
 import { useTranslation } from "react-i18next";
+import { resolveImageUrl } from "../lib/url";
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -56,7 +57,7 @@ export default function UserMenu() {
         className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-primary/10 text-sm font-bold text-primary transition-all hover:brightness-95 hover:ring-2 hover:ring-primary/30"
       >
         {user?.avatarUrl ? (
-          <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
+          <img src={resolveImageUrl(user.avatarUrl)} alt="" className="h-full w-full object-cover" />
         ) : (
           getInitials(user?.displayName || user?.username || "")
         )}
@@ -83,7 +84,7 @@ export default function UserMenu() {
               <div className="flex items-center gap-3 px-4 py-4">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary/10 text-sm font-bold text-primary">
                   {user?.avatarUrl ? (
-                    <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
+                    <img src={resolveImageUrl(user.avatarUrl)} alt="" className="h-full w-full object-cover" />
                   ) : (
                     getInitials(user?.displayName || user?.username || "")
                   )}
