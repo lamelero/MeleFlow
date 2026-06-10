@@ -9,6 +9,7 @@ import Register from "./views/auth/Register";
 import TwoFactorVerify from "./views/auth/TwoFactorVerify";
 import Dashboard from "./views/app/Dashboard";
 import HabitsView from "./views/app/HabitsView";
+import HabitDetail from "./views/app/HabitDetail";
 import TimerView from "./views/app/TimerView";
 import Profile from "./views/app/Profile";
 import AdminPanel from "./views/app/AdminPanel";
@@ -146,6 +147,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <HabitsView />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/habits/:id"
+            element={
+              <ProtectedRoute>
+                <HabitDetail />
               </ProtectedRoute>
             }
           />

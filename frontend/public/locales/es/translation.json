@@ -372,8 +372,29 @@
     "noTasks": "Sin tareas",
     "createSuccess": "Tarea creada",
     "createFailed": "Error al crear la tarea",
-    "dayHeaders": ["L", "M", "X", "J", "V", "S", "D"],
-    "monthNames": ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+    "dayHeaders": [
+      "L",
+      "M",
+      "X",
+      "J",
+      "V",
+      "S",
+      "D"
+    ],
+    "monthNames": [
+      "Enero",
+      "Febrero",
+      "Marzo",
+      "Abril",
+      "Mayo",
+      "Junio",
+      "Julio",
+      "Agosto",
+      "Septiembre",
+      "Octubre",
+      "Noviembre",
+      "Diciembre"
+    ]
   },
   "habits": {
     "newHabit": "Nuevo hábito",
@@ -405,7 +426,23 @@
     "delete": "Eliminar",
     "deleteConfirm": "¿Eliminar \"{{name}}\"? Esto no se puede deshacer.",
     "resetConfirm": "¿Reiniciar progreso de \"{{name}}\"?",
-    "noTasks": "Aún no hay tareas — crea una arriba"
+    "noTasks": "Aún no hay tareas — crea una arriba",
+    "calendar": "Calendario",
+    "stats": "Estadísticas",
+    "score": "Puntaje",
+    "tabCalendar": "Calendario",
+    "tabStats": "Estadísticas",
+    "tabEdit": "Editar",
+    "currentStreak": "Racha actual",
+    "bestStreak": "Mejor racha",
+    "timesCompleted": "Veces logrado",
+    "thisWeek": "Esta semana",
+    "thisMonth": "Este mes",
+    "thisYear": "Este año",
+    "total": "Total",
+    "days": "días",
+    "monthlyStreak": "Racha del mes",
+    "change": "Cambiar"
   },
   "pomodoro": {
     "focus": "Enfoque",

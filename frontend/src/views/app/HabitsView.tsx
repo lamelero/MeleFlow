@@ -78,7 +78,7 @@ export default function HabitsView() {
                 </p>
               </motion.div>
             ) : (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="flex flex-col gap-3">
                 {activeHabits.map((habit) => (
                   <HabitCard key={habit.id} habit={habit} onEdit={handleEditHabit} />
                 ))}
@@ -90,7 +90,7 @@ export default function HabitsView() {
                 <h2 className="mb-3 font-outfit text-base font-semibold text-gray-500 dark:text-gray-400">
                   {t("dashboard.archived")}
                 </h2>
-                <div className="grid gap-3 opacity-50 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="flex flex-col gap-3 opacity-50">
                   {archivedHabits.map((habit) => (
                     <HabitCard key={habit.id} habit={habit} onEdit={handleEditHabit} />
                   ))}

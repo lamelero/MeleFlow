@@ -372,8 +372,29 @@
     "noTasks": "No tasks",
     "createSuccess": "Task created",
     "createFailed": "Failed to create task",
-    "dayHeaders": ["M", "T", "W", "T", "F", "S", "S"],
-    "monthNames": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+    "dayHeaders": [
+      "M",
+      "T",
+      "W",
+      "T",
+      "F",
+      "S",
+      "S"
+    ],
+    "monthNames": [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December"
+    ]
   },
   "habits": {
     "newHabit": "New Habit",
@@ -405,7 +426,23 @@
     "delete": "Delete",
     "deleteConfirm": "Delete \"{{name}}\"? This cannot be undone.",
     "resetConfirm": "Reset progress for \"{{name}}\"?",
-    "noTasks": "No tasks yet — create one above"
+    "noTasks": "No tasks yet — create one above",
+    "calendar": "Calendar",
+    "stats": "Statistics",
+    "score": "Score",
+    "tabCalendar": "Calendar",
+    "tabStats": "Statistics",
+    "tabEdit": "Edit",
+    "currentStreak": "Current streak",
+    "bestStreak": "Best streak",
+    "timesCompleted": "Times completed",
+    "thisWeek": "This week",
+    "thisMonth": "This month",
+    "thisYear": "This year",
+    "total": "Total",
+    "days": "days",
+    "monthlyStreak": "Monthly streak",
+    "change": "Change"
   },
   "pomodoro": {
     "focus": "Focus",
