@@ -50,6 +50,7 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
   const today = new Date().toISOString().split("T")[0];
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [pending, setPending] = useState(false);
 
   const logSet = useMemo(() => new Set(habit.logs), [habit.logs]);
 
@@ -96,12 +97,15 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
   }, [menuOpen]);
 
   async function handleCellClick(dateStr: string) {
-    if (dateStr > today) return;
-    if (habit.logs.includes(dateStr)) {
+    if (dateStr > today || pending) return;
+    setPending(true);
+    const isChecked = dateStr === today ? checkedToday : habit.logs.includes(dateStr);
+    if (isChecked) {
       await undoCheckIn(habit.id, dateStr);
     } else {
       await checkIn(habit.id, dateStr);
     }
+    setPending(false);
   }
 
   function handleDelete() {
