@@ -624,18 +624,19 @@ export default function Dashboard() {
                 )}
               </section>
 
-              <HabitFormModal
-                isOpen={habitFormOpen}
-                onClose={() => {
-                  setHabitFormOpen(false);
-                  setEditingHabit(null);
-                }}
-                onSave={handleSaveHabit}
-                habit={editingHabit}
-              />
             </>}
             </div>
           )}
+
+          <HabitFormModal
+            isOpen={habitFormOpen}
+            onClose={() => {
+              setHabitFormOpen(false);
+              setEditingHabit(null);
+            }}
+            onSave={handleSaveHabit}
+            habit={editingHabit}
+          />
         </main>
       </div>
 
