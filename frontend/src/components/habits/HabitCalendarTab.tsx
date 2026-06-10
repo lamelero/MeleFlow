@@ -7,6 +7,7 @@ import { HABIT_CATEGORIES } from "../../lib/habit-categories";
 
 interface HabitCalendarTabProps {
   habit: Habit;
+  onChange?: () => void;
 }
 
 const DAY_HEADERS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -21,7 +22,7 @@ function getMonthDays(year: number, month: number) {
   return days;
 }
 
-export default function HabitCalendarTab({ habit }: HabitCalendarTabProps) {
+export default function HabitCalendarTab({ habit, onChange }: HabitCalendarTabProps) {
   const { t } = useTranslation();
   const { checkIn, undoCheckIn } = useHabitStore();
   const catInfo = HABIT_CATEGORIES[habit.category] || HABIT_CATEGORIES.OTROS;
@@ -46,17 +47,16 @@ export default function HabitCalendarTab({ habit }: HabitCalendarTabProps) {
     setViewDate((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1));
   }
 
-  function handleDayClick(day: number) {
+  async function handleDayClick(day: number) {
     if (!day) return;
     const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     if (dateStr > todayStr) return;
     if (logSet.has(dateStr)) {
-      undoCheckIn(habit.id, dateStr);
-      toast.success("Check-in removed");
+      await undoCheckIn(habit.id, dateStr);
     } else {
-      checkIn(habit.id, dateStr);
-      toast.success("Check-in added");
+      await checkIn(habit.id, dateStr);
     }
+    onChange?.();
   }
 
   const getDayStatus = useCallback((dateStr: string, day: number) => {

@@ -48,12 +48,13 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
   const catInfo = HABIT_CATEGORIES[habit.category] || HABIT_CATEGORIES.OTROS;
   const Icon = catInfo.icon;
   const today = new Date().toISOString().split("T")[0];
-  const checkedToday = habit.logs.includes(today);
-
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [checkKey, setCheckKey] = useState(0);
 
   const logSet = useMemo(() => new Set(habit.logs), [habit.logs]);
+
+  const checkedToday = useMemo(() => logSet.has(today) || habit.completedToday, [logSet, today, habit.completedToday, checkKey]);
 
   const weekDays = useMemo(() => {
     const wd = getWeekDays(habit.startDate);
@@ -61,7 +62,8 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
       if (logSet.has(d.dateStr)) d.completed = true;
     });
     return wd;
-  }, [logSet, habit.startDate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [logSet, habit.startDate, habit.streakCount, checkKey]);
 
   const score = useMemo(() => {
     if (!habit.startDate || habit.totalDays === 0) return 0;
@@ -95,13 +97,14 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [menuOpen]);
 
-  function handleCellClick(dateStr: string) {
+  async function handleCellClick(dateStr: string) {
     if (dateStr > today) return;
     if (habit.logs.includes(dateStr)) {
-      undoCheckIn(habit.id, dateStr);
+      await undoCheckIn(habit.id, dateStr);
     } else {
-      checkIn(habit.id, dateStr);
+      await checkIn(habit.id, dateStr);
     }
+    setCheckKey((k) => k + 1);
   }
 
   function handleDelete() {

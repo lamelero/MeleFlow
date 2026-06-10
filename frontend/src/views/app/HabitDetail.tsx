@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
@@ -19,12 +19,13 @@ export default function HabitDetail() {
   const { fetchHabit } = useHabitStore();
   const [habit, setHabit] = useState<Habit | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const activeTab = searchParams.get("tab") || "calendar";
   const tabIndex = TABS.indexOf(activeTab as typeof TABS[number]);
   const safeTab = tabIndex >= 0 ? activeTab : "calendar";
 
-  useEffect(() => {
+  const loadHabit = useCallback(() => {
     if (!id) return;
     setLoading(true);
     fetchHabit(id)
@@ -32,7 +33,15 @@ export default function HabitDetail() {
       .finally(() => setLoading(false));
   }, [id, fetchHabit]);
 
-  if (loading) {
+  useEffect(() => {
+    loadHabit();
+  }, [loadHabit, refreshKey]);
+
+  function handleChange() {
+    setRefreshKey((k) => k + 1);
+  }
+
+  if (loading && !habit) {
     return (
       <AppLayout title="">
         <div className="flex h-40 items-center justify-center">
@@ -118,7 +127,7 @@ export default function HabitDetail() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.15 }}
         >
-          {safeTab === "calendar" && <HabitCalendarTab habit={habit} />}
+          {safeTab === "calendar" && <HabitCalendarTab habit={habit} onChange={handleChange} />}
           {safeTab === "stats" && <HabitStatsTab habit={habit} />}
           {safeTab === "edit" && <HabitEditTab habit={habit} />}
         </motion.div>
