@@ -31,7 +31,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const view: "all" | "tasks" | "calendar" = searchParams.get("view") === "calendar" ? "calendar" : searchParams.get("view") === "tasks" ? "tasks" : "all";
+  const view: "all" | "tasks" | "habits" | "calendar" = searchParams.get("view") === "calendar" ? "calendar" : searchParams.get("view") === "tasks" ? "tasks" : searchParams.get("view") === "habits" ? "habits" : "all";
   const [activeListId, setActiveListId] = useState<string | undefined>();
   const [activeTagId, setActiveTagId] = useState<string | undefined>();
   const [newTaskTitle, setNewTaskTitle] = useState("");
@@ -139,7 +139,7 @@ export default function Dashboard() {
   }
 
   return (
-    <AppLayout title={view === "calendar" ? t("calendar.title") : view === "tasks" ? t("dashboard.tasks") : t("dashboard.title")}>
+    <AppLayout title={view === "calendar" ? t("calendar.title") : view === "habits" ? t("dashboard.habits") : view === "tasks" ? t("dashboard.tasks") : t("dashboard.title")}>
       <motion.div
         className="h-full"
         initial={{ opacity: 0, y: 12 }}
@@ -182,9 +182,9 @@ export default function Dashboard() {
                 {t("dashboard.tasks")}
               </button>
               <button
-                onClick={() => navigate("/app/habits")}
+                onClick={() => navigate("/app?view=habits")}
                 className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-sm transition-colors ${
-                  location.pathname.startsWith("/app/habits")
+                  view === "habits"
                     ? "bg-primary/10 font-medium text-primary"
                     : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
                 }`}
@@ -454,6 +454,48 @@ export default function Dashboard() {
         <main className="min-w-0 flex-1 overflow-y-auto">
           {view === "calendar" ? (
             <CalendarContent standalone={false} />
+          ) : view === "habits" ? (
+            <div className="space-y-6 p-4">
+              <div className="flex items-center justify-between">
+                <h1 className="font-outfit text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  {t("dashboard.habits")}
+                </h1>
+                <button
+                  onClick={() => { setEditingHabit(null); setHabitFormOpen(true); }}
+                  className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                  {t("dashboard.newHabit")}
+                </button>
+              </div>
+
+              {habits.filter((h) => !h.isArchived).length === 0 ? (
+                <div className="rounded-2xl bg-white p-10 text-center shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
+                  <p className="font-urbanist text-sm text-gray-400">{t("dashboard.noHabits")}</p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {habits.filter((h) => !h.isArchived).map((habit) => (
+                    <HabitCard key={habit.id} habit={habit} onEdit={handleEditHabit} />
+                  ))}
+                </div>
+              )}
+
+              {habits.filter((h) => h.isArchived).length > 0 && (
+                <div>
+                  <h2 className="mb-3 font-outfit text-base font-semibold text-gray-500 dark:text-gray-400">
+                    {t("dashboard.archived")}
+                  </h2>
+                  <div className="flex flex-col gap-3 opacity-50">
+                    {habits.filter((h) => h.isArchived).map((habit) => (
+                      <HabitCard key={habit.id} habit={habit} onEdit={handleEditHabit} />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           ) : (
             <div className="space-y-8">
               <section>

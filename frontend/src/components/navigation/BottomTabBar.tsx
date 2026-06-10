@@ -13,7 +13,7 @@ const tabs = [
     </svg>,
   },
   {
-    path: "/app/habits",
+    path: "/app?view=habits",
     labelKey: "bottomNav.habits",
     icon: <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
@@ -54,7 +54,8 @@ export default function BottomTabBar() {
   const { t } = useTranslation();
 
   const isActive = (path: string) => {
-    if (path === "/app?view=tasks") return location.search === "?view=tasks" || location.pathname === "/app";
+    if (path === "/app?view=tasks") return location.search === "?view=tasks" || (location.pathname === "/app" && location.search !== "?view=calendar" && location.search !== "?view=habits");
+    if (path === "/app?view=habits") return location.search === "?view=habits";
     if (path === "/app?view=calendar") return location.search === "?view=calendar";
     return location.pathname.startsWith(path);
   };

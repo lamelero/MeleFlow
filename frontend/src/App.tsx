@@ -8,7 +8,6 @@ import Login from "./views/auth/Login";
 import Register from "./views/auth/Register";
 import TwoFactorVerify from "./views/auth/TwoFactorVerify";
 import Dashboard from "./views/app/Dashboard";
-import HabitsView from "./views/app/HabitsView";
 import HabitDetail from "./views/app/HabitDetail";
 import TimerView from "./views/app/TimerView";
 import Profile from "./views/app/Profile";
@@ -144,11 +143,7 @@ export default function App() {
           />
           <Route
             path="/app/habits"
-            element={
-              <ProtectedRoute>
-                <HabitsView />
-              </ProtectedRoute>
-            }
+            element={<Navigate to="/app?view=habits" replace />}
           />
           <Route
             path="/app/habits/:id"
