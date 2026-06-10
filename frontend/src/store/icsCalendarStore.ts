@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import toast from "react-hot-toast";
 import { client } from "../api/client";
+import { updateIcsData } from "../lib/browserNotifications";
 
 export interface IcsCalendar {
   id: string;
@@ -133,6 +134,13 @@ export const useIcsCalendarStore = create<IcsCalendarState>((set, get) => ({
           }),
         ),
       });
+      updateIcsData(
+        data.map((e: { id: string; title: string; startTime: string }) => ({
+          id: e.id,
+          summary: e.title,
+          startDate: e.startTime,
+        }))
+      );
     } catch {
       // silent
     }

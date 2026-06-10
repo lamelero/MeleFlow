@@ -16,6 +16,7 @@ import TagManager from "./views/app/TagManager";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ServerConfig from "./components/ServerConfig";
 import { isNative, getServerUrl, setupAppListeners, getFontSize, getBoldFont, requestNotificationPermission, createNotificationChannel, requestExactAlarmPermission } from "./capacitor/register";
+import { requestBrowserPermission } from "./lib/browserNotifications";
 import { initClientBaseUrl } from "./api/client";
 import "./i18n";
 
@@ -59,6 +60,8 @@ export default function App() {
         } else {
           console.warn("[notifications] permission denied by user");
         }
+      } else {
+        requestBrowserPermission();
       }
       setReady(true);
     }

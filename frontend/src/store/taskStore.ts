@@ -2,6 +2,7 @@ import { create } from "zustand";
 import toast from "react-hot-toast";
 import { client } from "../api/client";
 import { scheduleTaskReminders } from "../capacitor/localNotifications";
+import { updateTaskData } from "../lib/browserNotifications";
 
 export interface Attachment {
   id: string;
@@ -107,6 +108,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       const { data } = await client.get(`/tasks${qs ? `?${qs}` : ""}`);
       set({ tasks: data, isLoading: false, error: null });
       scheduleTaskReminders(data);
+      updateTaskData(data);
     } catch (err) {
       if (retry < 3) {
         const delay = Math.pow(2, retry) * 1000;
