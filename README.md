@@ -310,6 +310,67 @@ MeleFlow supports English and Spanish. Language can be changed from the profile 
 
 SMTP settings are configurable from the admin panel under "Email Configuration". Once configured and enabled, the worker sends task and habit reminder emails. You can also send a test email from the admin panel to verify your setup.
 
+## Push Notifications (Android APK)
+
+MeleFlow supports **push notifications** via Firebase Cloud Messaging (FCM) for the Android APK. Notifications arrive even when the app is closed.
+
+### One-time Firebase Setup
+
+1. Go to [Firebase Console](https://console.firebase.google.com) and create a project
+2. Add an **Android app** with package name `com.meleflow.app`
+3. Download `google-services.json` and place it at `frontend/android/app/google-services.json`
+
+### Building the APK
+
+```bash
+cd frontend
+npm install
+npx cap sync android
+npx vite build
+npx cap copy
+cd android && ./gradlew assembleDebug
+```
+
+The APK is at `android/app/build/outputs/apk/debug/meleflow.apk`.
+
+### Backend: Firebase Admin SDK
+
+For the backend to send push notifications, it needs a **service account key**:
+
+1. In Firebase Console → Project Settings → **Service accounts** → **Generate new private key**
+2. Save the downloaded JSON file on your server (e.g., `/opt/meleflow/firebase-key.json`)
+3. Mount it as a volume in `docker-compose.yml`:
+
+```yaml
+backend:
+  volumes:
+    - /opt/meleflow/firebase-key.json:/usr/src/app/firebase-key.json:ro
+  environment:
+    - FIREBASE_SERVICE_ACCOUNT_PATH=/usr/src/app/firebase-key.json
+
+worker:
+  volumes:
+    - /opt/meleflow/firebase-key.json:/usr/src/app/firebase-key.json:ro
+  environment:
+    - FIREBASE_SERVICE_ACCOUNT_PATH=/usr/src/app/firebase-key.json
+```
+
+4. Restart the services:
+```bash
+docker compose pull && docker compose up -d
+```
+
+> ⚠️ The service account key is **sensitive**. Do not commit it to Git. Use a secure path on your server.
+
+### How It Works
+
+| Component | Role |
+|-----------|------|
+| **APK** | Registers the device FCM token on first launch via `POST /api/notifications/register-token` |
+| **Backend** | Stores tokens in the `DeviceToken` table and sends pushes via `firebase-admin` |
+| **Worker** | Sends push notifications alongside email when task/habit reminders fire |
+| **FCM** | Google's infrastructure delivers the notification to the device |
+
 ## License
 
 MIT
