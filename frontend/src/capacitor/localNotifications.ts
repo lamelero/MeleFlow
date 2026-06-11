@@ -127,15 +127,22 @@ export async function scheduleTaskReminders(
             cursor.setUTCHours(hour, minute, 0, 0);
           }
         } else {
-          notifs.push({
-            title: task.title,
-            body: "Daily reminder",
-            id: notifId++,
-            schedule: { on: { hour, minute } },
-            smallIcon: "ic_stat_icon",
-            iconColor: "#14B8A6",
-            channelId: "meleflow-default",
-          });
+          for (let d = 0; d < 30; d++) {
+            const at = new Date(todayUTC);
+            at.setUTCDate(at.getUTCDate() + d);
+            at.setUTCHours(hour, minute, 0, 0);
+            if (at.getTime() <= nowMs) continue;
+            notifs.push({
+              title: task.title,
+              body: "Daily reminder",
+              id: notifId++,
+              schedule: { at },
+              smallIcon: "ic_stat_icon",
+              iconColor: "#14B8A6",
+              channelId: "meleflow-default",
+              sound: "default",
+            });
+          }
         }
       } else if (rem.frequency === "weekly" && rem.days && rem.days.length > 0) {
         if (dueDate) {
@@ -166,17 +173,24 @@ export async function scheduleTaskReminders(
             cursor.setUTCHours(hour, minute, 0, 0);
           }
         } else {
-          for (const dayIdx of rem.days) {
-            notifs.push({
-              title: task.title,
-              body: "",
-              id: notifId++,
-              schedule: { on: { hour, minute, weekday: fromDayIndex(dayIdx) } },
-              smallIcon: "ic_stat_icon",
-              iconColor: "#14B8A6",
-              channelId: "meleflow-default",
-              sound: "default",
-            });
+          for (let d = 0; d < 30; d++) {
+            const at = new Date(todayUTC);
+            at.setUTCDate(at.getUTCDate() + d);
+            at.setUTCHours(hour, minute, 0, 0);
+            if (at.getTime() <= nowMs) continue;
+            const uiIdx = at.getUTCDay() === 0 ? 6 : at.getUTCDay() - 1;
+            if (rem.days.includes(uiIdx)) {
+              notifs.push({
+                title: task.title,
+                body: "Weekly reminder",
+                id: notifId++,
+                schedule: { at },
+                smallIcon: "ic_stat_icon",
+                iconColor: "#14B8A6",
+                channelId: "meleflow-default",
+                sound: "default",
+              });
+            }
           }
         }
       } else if (rem.frequency === "before_due" && task.dueDate) {

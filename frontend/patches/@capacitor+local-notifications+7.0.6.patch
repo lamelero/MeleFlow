@@ -119,11 +119,11 @@ index 0000000..1c983fc
 Binary files /dev/null and b/node_modules/@capacitor/local-notifications/android/build/intermediates/incremental/debug-mergeJavaRes/merge-state differ
 diff --git a/node_modules/@capacitor/local-notifications/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties b/node_modules/@capacitor/local-notifications/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties
 new file mode 100644
-index 0000000..408992c
+index 0000000..0d6c73d
 --- /dev/null
 +++ b/node_modules/@capacitor/local-notifications/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties
 @@ -0,0 +1,2 @@
-+#Thu Jun 11 13:00:05 CEST 2026
++#Thu Jun 11 13:45:52 CEST 2026
 +com.capacitorjs.plugins.localnotifications.capacitor-local-notifications-main-6\:/drawable/ic_transparent.xml=/home/luis/dev/meleflow/frontend/node_modules/@capacitor/local-notifications/android/build/intermediates/packaged_res/debug/packageDebugResources/drawable/ic_transparent.xml
 diff --git a/node_modules/@capacitor/local-notifications/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml b/node_modules/@capacitor/local-notifications/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml
 new file mode 100644
@@ -481,37 +481,3 @@ index bf23d00..eac1054 100644
          }
          return next;
      }
-diff --git a/node_modules/@capacitor/local-notifications/android/src/main/java/com/capacitorjs/plugins/localnotifications/LocalNotificationManager.java b/node_modules/@capacitor/local-notifications/android/src/main/java/com/capacitorjs/plugins/localnotifications/LocalNotificationManager.java
-index 0b826a5..2165fd4 100644
---- a/node_modules/@capacitor/local-notifications/android/src/main/java/com/capacitorjs/plugins/localnotifications/LocalNotificationManager.java
-+++ b/node_modules/@capacitor/local-notifications/android/src/main/java/com/capacitorjs/plugins/localnotifications/LocalNotificationManager.java
-@@ -388,7 +388,10 @@ public class LocalNotificationManager {
-                 alarmManager.set(AlarmManager.RTC, trigger, pendingIntent);
-             }
-         } else {
--            if (schedule.allowWhileIdle()) {
-+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-+                AlarmManager.AlarmClockInfo info = new AlarmManager.AlarmClockInfo(trigger, pendingIntent);
-+                alarmManager.setAlarmClock(info, pendingIntent);
-+            } else if (schedule.allowWhileIdle()) {
-                 alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, trigger, pendingIntent);
-             } else {
-                 alarmManager.setExact(AlarmManager.RTC, trigger, pendingIntent);
-diff --git a/node_modules/@capacitor/local-notifications/android/src/main/java/com/capacitorjs/plugins/localnotifications/TimedNotificationPublisher.java b/node_modules/@capacitor/local-notifications/android/src/main/java/com/capacitorjs/plugins/localnotifications/TimedNotificationPublisher.java
-index 0a5c0ad..baa8a5f 100644
---- a/node_modules/@capacitor/local-notifications/android/src/main/java/com/capacitorjs/plugins/localnotifications/TimedNotificationPublisher.java
-+++ b/node_modules/@capacitor/local-notifications/android/src/main/java/com/capacitorjs/plugins/localnotifications/TimedNotificationPublisher.java
-@@ -78,7 +78,12 @@ public class TimedNotificationPublisher extends BroadcastReceiver {
-                 );
-                 alarmManager.set(AlarmManager.RTC, trigger, pendingIntent);
-             } else {
--                alarmManager.setExact(AlarmManager.RTC, trigger, pendingIntent);
-+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-+                    AlarmManager.AlarmClockInfo info = new AlarmManager.AlarmClockInfo(trigger, pendingIntent);
-+                    alarmManager.setAlarmClock(info, pendingIntent);
-+                } else {
-+                    alarmManager.setExact(AlarmManager.RTC, trigger, pendingIntent);
-+                }
-             }
-             SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-             Logger.debug(Logger.tags("LN"), "notification " + id + " will next fire at " + sdf.format(new Date(trigger)));
