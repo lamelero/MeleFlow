@@ -69,12 +69,12 @@ export async function setServerUrl(url: string): Promise<void> {
   await Preferences.set({ key: "serverUrl", value: url });
 }
 
-export async function setupStatusBar() {
+export async function setupStatusBar(isDark = true) {
   if (!isNative()) return;
   try {
     const StatusBar = (window as any).Capacitor?.Plugins?.StatusBar;
     if (StatusBar) {
-      await StatusBar.setStyle({ style: "DARK" });
+      await StatusBar.setStyle({ style: isDark ? "DARK" : "LIGHT" });
       await StatusBar.setBackgroundColor({ color: "transparent" });
       await StatusBar.setOverlaysWebView({ overlay: true });
     }
@@ -124,9 +124,9 @@ export async function setBoldFont(enabled: boolean): Promise<void> {
   await Preferences.set({ key: BOLD_FONT_KEY, value: enabled ? "true" : "false" });
 }
 
-export function setupAppListeners() {
+export function setupAppListeners(isDark = true) {
   if (!isNative()) return;
-  setupStatusBar();
+  setupStatusBar(isDark);
   App.addListener("backButton", ({ canGoBack }) => {
     for (const handler of backHandlers) {
       if (handler()) return;

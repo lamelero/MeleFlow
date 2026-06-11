@@ -18,6 +18,7 @@ import ServerConfig from "./components/ServerConfig";
 import { isNative, getServerUrl, setupAppListeners, getFontSize, getBoldFont, requestNotificationPermission, createNotificationChannel, requestExactAlarmPermission } from "./capacitor/register";
 import { requestBrowserPermission } from "./lib/browserNotifications";
 import { registerPushNotifications } from "./capacitor/pushNotifications";
+import { useThemeStore } from "./store/themeStore";
 import { initClientBaseUrl } from "./api/client";
 import "./i18n";
 
@@ -33,7 +34,7 @@ export default function App() {
   useEffect(() => {
     async function init() {
       if (isNative()) {
-        setupAppListeners();
+        setupAppListeners(useThemeStore.getState().theme === "dark");
         await initClientBaseUrl();
         const url = await getServerUrl();
         const size = await getFontSize();
