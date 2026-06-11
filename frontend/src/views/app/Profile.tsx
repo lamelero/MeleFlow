@@ -10,6 +10,7 @@ import AppLayout from "../../components/AppLayout";
 import { isNative, getFontSize, setFontSize, getBoldFont, setBoldFont } from "../../capacitor/register";
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { version as appVersion } from "../../../package.json";
+import { scheduleTestNotification } from "../../lib/testNotification";
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -781,7 +782,7 @@ export default function Profile() {
               {new Date(__BUILD_TIME__).toLocaleString()}
             </span>
           </div>
-          {isNative() && (
+          {isNative() && (<>
             <button
               onClick={async () => {
                 try {
@@ -800,7 +801,20 @@ export default function Profile() {
             >
               {t("profile.checkNotifs") || "Diagnose notifications"}
             </button>
-          )}
+            <button
+              onClick={async () => {
+                const ok = await scheduleTestNotification();
+                if (ok) {
+                  toast.success("Test notification in 10s", { duration: 3000 });
+                } else {
+                  toast.error("Failed to schedule test");
+                }
+              }}
+              className="mt-2 w-full rounded-lg bg-primary px-3 py-2 font-urbanist text-xs font-medium text-white transition-colors hover:bg-teal-600"
+            >
+              {t("profile.testNotif") || "Test notification (10s)"}
+            </button>
+          </>)}
         </div>
       </div>
       </motion.div>
