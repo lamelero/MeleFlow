@@ -19,6 +19,7 @@
     "@capacitor/core": "^7.6.6",
     "@capacitor/local-notifications": "7.0.6",
     "@capacitor/preferences": "^7.0.4",
+    "@capacitor/push-notifications": "^7.0.6",
     "@capacitor/status-bar": "^7.0.6",
     "@types/react-datepicker": "^6.2.0",
     "axios": "^1.7.9",
