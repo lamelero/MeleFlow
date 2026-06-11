@@ -109,12 +109,13 @@ export async function scheduleTaskReminders(
           cursor.setUTCHours(hour, minute, 0, 0);
 
           const dueEnd = new Date(dueUTC);
+          let dayOffset = 0;
           while (cursor.getTime() <= dueEnd.getTime()) {
             const at = new Date(cursor);
             notifs.push({
               title: task.title,
               body: "Task reminder",
-              id: makeId(task.id, ri, 0),
+              id: makeId(task.id, ri, dayOffset),
               schedule: { at },
               smallIcon: "ic_stat_icon",
               iconColor: "#14B8A6",
@@ -123,6 +124,7 @@ export async function scheduleTaskReminders(
             });
             cursor.setUTCDate(cursor.getUTCDate() + 1);
             cursor.setUTCHours(hour, minute, 0, 0);
+            dayOffset++;
           }
         } else {
           for (let d = 0; d < 30; d++) {
@@ -152,6 +154,7 @@ export async function scheduleTaskReminders(
           if (cursor.getTime() <= nowMs) cursor.setUTCDate(cursor.getUTCDate() + 1);
 
           const dueEnd = new Date(dueUTC);
+          let dayOffset = 0;
           while (cursor.getTime() <= dueEnd.getTime()) {
             const uiIdx = cursor.getUTCDay() === 0 ? 6 : cursor.getUTCDay() - 1;
             if (rem.days.includes(uiIdx)) {
@@ -160,7 +163,7 @@ export async function scheduleTaskReminders(
               notifs.push({
                 title: task.title,
                 body: "Weekly reminder",
-                id: makeId(task.id, ri, 0),
+                id: makeId(task.id, ri, dayOffset),
                 schedule: { at },
                 smallIcon: "ic_stat_icon",
                 iconColor: "#14B8A6",
@@ -170,6 +173,7 @@ export async function scheduleTaskReminders(
             }
             cursor.setUTCDate(cursor.getUTCDate() + 1);
             cursor.setUTCHours(hour, minute, 0, 0);
+            dayOffset++;
           }
         } else {
           for (let d = 0; d < 30; d++) {
