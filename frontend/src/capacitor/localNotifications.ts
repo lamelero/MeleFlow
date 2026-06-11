@@ -11,6 +11,23 @@ async function hasPermission(): Promise<boolean> {
   }
 }
 
+async function ensureChannel() {
+  try {
+    await LocalNotifications.createChannel({
+      id: "meleflow-default",
+      name: "MeleFlow",
+      description: "Task and habit reminders",
+      importance: 5,
+      visibility: 1,
+      sound: "default",
+      vibration: true,
+      lights: true,
+    });
+  } catch (err) {
+    console.warn("[localNotifications] channel creation error:", err);
+  }
+}
+
 function fromDayIndex(idx: number): Weekday {
   const wd = (idx + 2) % 7;
   return (wd === 0 ? 7 : wd) as Weekday;
@@ -37,15 +54,15 @@ export async function scheduleTaskReminders(
     return;
   }
 
-  const pending = await LocalNotifications.getPending();
-  if (pending.notifications.length > 0) {
-    await LocalNotifications.cancel({
-      notifications: pending.notifications.map((n) => ({ id: n.id })),
-    });
-  }
+  await ensureChannel();
 
+  // Get currently scheduled notifications
+  const pending = await LocalNotifications.getPending();
+  const pendingMap = new Map(pending.notifications.map((n) => [n.id, n]));
+
+  // Build new notifications
   const notifs: LocalNotificationSchema[] = [];
-  let notifId = 1;
+  let notifId = 1000; // start high to avoid conflicts
 
   for (const task of tasks) {
     if (!task.reminderEnabled || !task.reminderConfig) continue;
@@ -103,6 +120,7 @@ export async function scheduleTaskReminders(
               schedule: { at },
               smallIcon: "ic_stat_icon",
               iconColor: "#14B8A6",
+              channelId: "meleflow-default",
             });
             cursor.setUTCDate(cursor.getUTCDate() + 1);
             cursor.setUTCHours(hour, minute, 0, 0);
@@ -115,6 +133,7 @@ export async function scheduleTaskReminders(
             schedule: { on: { hour, minute } },
             smallIcon: "ic_stat_icon",
             iconColor: "#14B8A6",
+            channelId: "meleflow-default",
           });
         }
       } else if (rem.frequency === "weekly" && rem.days && rem.days.length > 0) {
@@ -139,6 +158,7 @@ export async function scheduleTaskReminders(
                 schedule: { at },
                 smallIcon: "ic_stat_icon",
                 iconColor: "#14B8A6",
+                channelId: "meleflow-default",
               });
             }
             cursor.setUTCDate(cursor.getUTCDate() + 1);
@@ -153,6 +173,7 @@ export async function scheduleTaskReminders(
               schedule: { on: { hour, minute, weekday: fromDayIndex(dayIdx) } },
               smallIcon: "ic_stat_icon",
               iconColor: "#14B8A6",
+              channelId: "meleflow-default",
             });
           }
         }
@@ -168,19 +189,34 @@ export async function scheduleTaskReminders(
             schedule: { at },
             smallIcon: "ic_stat_icon",
             iconColor: "#14B8A6",
+            channelId: "meleflow-default",
           });
         }
       }
     }
   }
 
-  if (notifs.length === 0) return;
+  // Cancel only notifications that no longer exist in the new list
+  const newIds = new Set(notifs.map((n) => n.id));
+  const toCancel = pending.notifications.filter((n) => !newIds.has(n.id));
+  if (toCancel.length > 0) {
+    await LocalNotifications.cancel({
+      notifications: toCancel.map((n) => ({ id: n.id })),
+    });
+    console.log(`[localNotifications] cancelled ${toCancel.length} stale notifications`);
+  }
 
-  try {
-    await LocalNotifications.schedule({ notifications: notifs });
-    console.log(`[localNotifications] scheduled ${notifs.length} notifications`);
-  } catch (err) {
-    console.error("[localNotifications] schedule error:", err);
+  // Schedule only new notifications (skip ones already pending)
+  const toSchedule = notifs.filter((n) => !pendingMap.has(n.id));
+  if (toSchedule.length > 0) {
+    try {
+      await LocalNotifications.schedule({ notifications: toSchedule });
+      console.log(`[localNotifications] scheduled ${toSchedule.length} new notifications (${pendingMap.size} kept existing)`);
+    } catch (err) {
+      console.error("[localNotifications] schedule error:", err);
+    }
+  } else {
+    console.log(`[localNotifications] no new notifications to schedule (${pendingMap.size} already pending)`);
   }
 }
 
@@ -191,5 +227,6 @@ export async function clearAllNotifications() {
     await LocalNotifications.cancel({
       notifications: pending.notifications.map((n) => ({ id: n.id })),
     });
+    console.log(`[localNotifications] cleared ${pending.notifications.length} notifications`);
   }
 }
