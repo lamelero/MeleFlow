@@ -1,4 +1,5 @@
 import { PushNotifications } from "@capacitor/push-notifications";
+import { LocalNotifications } from "@capacitor/local-notifications";
 import { isNative } from "./register";
 import { client } from "../api/client";
 
@@ -34,7 +35,22 @@ export async function registerPushNotifications() {
   });
 
   // Handle foreground notifications
-  PushNotifications.addListener("pushNotificationReceived", (notification) => {
+  PushNotifications.addListener("pushNotificationReceived", async (notification) => {
     console.log("[push] received in foreground:", notification);
+    try {
+      await LocalNotifications.schedule({
+        notifications: [{
+          title: notification.title || "MeleFlow",
+          body: notification.body || "",
+          id: Math.floor(Math.random() * 100000) + 90000,
+          smallIcon: "ic_stat_icon",
+          iconColor: "#14B8A6",
+          channelId: "meleflow-default",
+          sound: "default",
+        }],
+      });
+    } catch (err) {
+      console.error("[push] foreground display error:", err);
+    }
   });
 }
