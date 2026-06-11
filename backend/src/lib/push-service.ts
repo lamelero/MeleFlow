@@ -1,12 +1,29 @@
 import * as admin from "firebase-admin";
 import { getMessaging } from "firebase-admin/messaging";
 import { prisma } from "../config/database";
+import fs from "fs";
 
 let initialized = false;
 
+function getCredentials(): string | null {
+  const fromEnv = process.env.FIREBASE_SERVICE_ACCOUNT;
+  if (fromEnv) return fromEnv;
+
+  const filePath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
+  if (filePath) {
+    try {
+      return fs.readFileSync(filePath, "utf-8");
+    } catch (err) {
+      console.warn(`[push] could not read ${filePath}:`, (err as Error).message);
+    }
+  }
+
+  return null;
+}
+
 function getMessagingInstance() {
   if (!initialized) {
-    const credentialsStr = process.env.FIREBASE_SERVICE_ACCOUNT;
+    const credentialsStr = getCredentials();
     if (!credentialsStr) {
       console.warn("[push] FIREBASE_SERVICE_ACCOUNT not set, push disabled");
       return null;
