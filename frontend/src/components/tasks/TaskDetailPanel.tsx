@@ -5,6 +5,7 @@ import DatePicker from "react-datepicker";
 import Markdown from "react-markdown";
 import toast from "react-hot-toast";
 import type { Task, Attachment } from "../../store/taskStore";
+import { getNextTrigger, formatNextTrigger } from "../../lib/nextTriggerTime";
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -181,7 +182,8 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
     setReminders(newReminders);
     setEditingReminder(null);
     await updateTask(t.id, { reminderEnabled: newReminders.length > 0, reminderConfig: JSON.stringify(newReminders) });
-    toast.success(trans("common.toasts.reminderSaved"));
+    const next = getNextTrigger(JSON.stringify(newReminders), t.dueDate);
+    toast.success(`${trans("common.toasts.reminderSaved")} — next: ${formatNextTrigger(next)}`);
   }
 
   async function handleDeleteReminder(id: string) {
@@ -196,7 +198,8 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
     setReminders(newReminders);
     setEditingReminder(null);
     await updateTask(t.id, { reminderEnabled: true, reminderConfig: JSON.stringify(newReminders) });
-    toast.success(trans("common.toasts.reminderSaved"));
+    const next = getNextTrigger(JSON.stringify(newReminders), t.dueDate);
+    toast.success(`${trans("common.toasts.reminderSaved")} — next: ${formatNextTrigger(next)}`);
   }
 
   async function handleDateChange(date: Date | null) {

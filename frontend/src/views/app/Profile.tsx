@@ -11,6 +11,7 @@ import { isNative, getFontSize, setFontSize, getBoldFont, setBoldFont } from "..
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { version as appVersion } from "../../../package.json";
 import { scheduleTestAt, scheduleTestOn } from "../../lib/testNotification";
+import { getNextTrigger, formatNextTrigger } from "../../lib/nextTriggerTime";
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -780,6 +781,22 @@ export default function Profile() {
             </span>
             <span className="font-urbanist text-xs text-gray-900 dark:text-gray-100">
               {new Date(__BUILD_TIME__).toLocaleString()}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="font-urbanist text-xs text-gray-500 dark:text-gray-400">
+              {t("profile.systemTime") || "System time"}
+            </span>
+            <span className="font-urbanist text-xs text-gray-900 dark:text-gray-100">
+              {new Date().toLocaleTimeString()} {Intl.DateTimeFormat().resolvedOptions().timeZone}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="font-urbanist text-xs text-gray-500 dark:text-gray-400">
+              {t("profile.timezone") || "Timezone"}
+            </span>
+            <span className="font-urbanist text-xs text-gray-900 dark:text-gray-100">
+              {Intl.DateTimeFormat().resolvedOptions().timeZone}
             </span>
           </div>
           {isNative() && (<>
