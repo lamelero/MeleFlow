@@ -139,7 +139,11 @@ export async function buildApp(opts: Record<string, unknown> = {}) {
   await app.register(tagRoutes, { prefix: "/api/tags" });
   await app.register(habitRoutes, { prefix: "/api/habits" });
   await app.register(habitCategoryRoutes, { prefix: "/api" });
-  await app.register(notificationRoutes, { prefix: "/api" });
+  try {
+    await app.register(notificationRoutes, { prefix: "/api" });
+  } catch (err) {
+    console.error("[app] failed to register notification routes:", err);
+  }
   await app.register(pomodoroRoutes, { prefix: "/api/pomodoro" });
   await app.register(adminRoutes, { prefix: "/api/admin" });
   await app.register(settingsRoutes, { prefix: "/api" });
