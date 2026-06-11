@@ -115,7 +115,7 @@ export async function scheduleTaskReminders(
             const at = new Date(cursor);
             notifs.push({
               title: task.title,
-              body: "",
+              body: "Task reminder",
               id: notifId++,
               schedule: { at },
               smallIcon: "ic_stat_icon",
@@ -128,7 +128,7 @@ export async function scheduleTaskReminders(
         } else {
           notifs.push({
             title: task.title,
-            body: "",
+            body: "Daily reminder",
             id: notifId++,
             schedule: { on: { hour, minute } },
             smallIcon: "ic_stat_icon",
@@ -153,7 +153,7 @@ export async function scheduleTaskReminders(
               at.setUTCHours(hour, minute, 0, 0);
               notifs.push({
                 title: task.title,
-                body: "",
+                body: "Weekly reminder",
                 id: notifId++,
                 schedule: { at },
                 smallIcon: "ic_stat_icon",
