@@ -8,6 +8,8 @@ import { resolveImageUrl } from "../../lib/url";
 import { useIcsCalendarStore } from "../../store/icsCalendarStore";
 import AppLayout from "../../components/AppLayout";
 import { isNative, getFontSize, setFontSize, getBoldFont, setBoldFont } from "../../capacitor/register";
+import { LocalNotifications } from "@capacitor/local-notifications";
+import { version as appVersion } from "../../../package.json";
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -756,6 +758,51 @@ export default function Profile() {
           </div>
         </div>
       )}
+
+      {/* About section */}
+      <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
+        <h2 className="mb-3 font-outfit text-sm font-semibold text-gray-900 dark:text-gray-100">
+          {t("profile.about") || "About"}
+        </h2>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="font-urbanist text-xs text-gray-500 dark:text-gray-400">
+              {t("profile.version") || "Version"}
+            </span>
+            <span className="font-urbanist text-xs text-gray-900 dark:text-gray-100">
+              v{appVersion}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="font-urbanist text-xs text-gray-500 dark:text-gray-400">
+              {t("profile.buildDate") || "Build date"}
+            </span>
+            <span className="font-urbanist text-xs text-gray-900 dark:text-gray-100">
+              {new Date(__BUILD_TIME__).toLocaleString()}
+            </span>
+          </div>
+          {isNative() && (
+            <button
+              onClick={async () => {
+                try {
+                  const pending = await LocalNotifications.getPending();
+                  toast.success(
+                    `${t("profile.pendingNotifs") || "Pending notifications"}: ${pending.notifications.length}`,
+                    { duration: 5000 }
+                  );
+                  console.log("[profile] pending notifications:", pending.notifications);
+                } catch (err) {
+                  toast.error("Error checking notifications");
+                  console.error("[profile]", err);
+                }
+              }}
+              className="mt-2 w-full rounded-lg bg-gray-100 px-3 py-2 font-urbanist text-xs text-gray-600 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+            >
+              {t("profile.checkNotifs") || "Diagnose notifications"}
+            </button>
+          )}
+        </div>
+      </div>
       </motion.div>
     </AppLayout>
   );
