@@ -1,5 +1,6 @@
 import { PushNotifications } from "@capacitor/push-notifications";
 import { LocalNotifications } from "@capacitor/local-notifications";
+import toast from "react-hot-toast";
 import { isNative } from "./register";
 import { client } from "../api/client";
 
@@ -17,7 +18,14 @@ export async function registerPushNotifications() {
   }
 
   // Register with FCM
-  await PushNotifications.register();
+  try {
+    await PushNotifications.register();
+    console.log("[push] registered with FCM");
+  } catch (err) {
+    console.error("[push] registration failed:", err);
+    toast.error("Push registration failed");
+    return;
+  }
 
   // Listen for token
   PushNotifications.addListener("registration", async (token) => {
@@ -25,6 +33,7 @@ export async function registerPushNotifications() {
     try {
       await client.post("/notifications/register-token", { token: token.value });
       console.log("[push] token sent to backend");
+      toast.success("Push notifications ready", { duration: 2000 });
     } catch (err) {
       console.error("[push] failed to send token:", err);
     }
