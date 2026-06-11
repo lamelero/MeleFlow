@@ -121,6 +121,7 @@ export async function scheduleTaskReminders(
               smallIcon: "ic_stat_icon",
               iconColor: "#14B8A6",
               channelId: "meleflow-default",
+              sound: "default",
             });
             cursor.setUTCDate(cursor.getUTCDate() + 1);
             cursor.setUTCHours(hour, minute, 0, 0);
@@ -174,6 +175,7 @@ export async function scheduleTaskReminders(
               smallIcon: "ic_stat_icon",
               iconColor: "#14B8A6",
               channelId: "meleflow-default",
+              sound: "default",
             });
           }
         }
