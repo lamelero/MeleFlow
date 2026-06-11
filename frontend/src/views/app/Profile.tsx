@@ -836,6 +836,20 @@ export default function Profile() {
             </button>
             <button
               onClick={async () => {
+                try {
+                  await client.post("/notifications/test-push");
+                  toast.success("Test push sent! Check your phone.", { duration: 5000 });
+                } catch (err) {
+                  toast.error("Failed to send test push");
+                  console.error("[profile]", err);
+                }
+              }}
+              className="mt-2 w-full rounded-lg bg-primary px-3 py-2 font-urbanist text-xs font-medium text-white transition-colors hover:bg-teal-600"
+            >
+              {t("profile.testPush") || "Send test push"}
+            </button>
+            <button
+              onClick={async () => {
                 const ok = await scheduleTestAt(10000);
                 toast.success(ok ? "Test in 10s" : "Failed", { duration: 3000 });
               }}
