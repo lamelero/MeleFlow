@@ -28,11 +28,6 @@ async function ensureChannel() {
   }
 }
 
-function fromDayIndex(idx: number): Weekday {
-  const wd = (idx + 2) % 7;
-  return (wd === 0 ? 7 : wd) as Weekday;
-}
-
 interface ReminderItem {
   id?: string;
   time: string;
@@ -41,8 +36,10 @@ interface ReminderItem {
   beforeDays?: number;
 }
 
-function uiIndexToJsDay(uiIdx: number): number {
-  return uiIdx === 6 ? 0 : uiIdx + 1;
+function makeId(taskId: string, ri: number, day: number): number {
+  let h = 0;
+  for (let i = 0; i < taskId.length; i++) h = ((h << 5) - h) + taskId.charCodeAt(i);
+  return (Math.abs(h) % 900000) + ri * 100 + day + 100;
 }
 
 export async function scheduleTaskReminders(
@@ -56,13 +53,16 @@ export async function scheduleTaskReminders(
 
   await ensureChannel();
 
-  // Get currently scheduled notifications
+  // Cancel all existing to force clean reschedule
   const pending = await LocalNotifications.getPending();
-  const pendingMap = new Map(pending.notifications.map((n) => [n.id, n]));
+  if (pending.notifications.length > 0) {
+    await LocalNotifications.cancel({
+      notifications: pending.notifications.map((n) => ({ id: n.id })),
+    });
+    console.log(`[localNotifications] cancelled ${pending.notifications.length} existing`);
+  }
 
-  // Build new notifications
   const notifs: LocalNotificationSchema[] = [];
-  let notifId = 1000; // start high to avoid conflicts
 
   for (const task of tasks) {
     if (!task.reminderEnabled || !task.reminderConfig) continue;
@@ -78,8 +78,6 @@ export async function scheduleTaskReminders(
           reminders.push({ time: parsed.reminderTime, frequency: "always" });
         } else if (parsed.type === "weekly" && parsed.days?.length > 0) {
           reminders.push({ time: parsed.reminderTime, frequency: "weekly", days: parsed.days });
-        } else if (parsed.type === "monthly") {
-          reminders.push({ time: parsed.reminderTime, frequency: "weekly", days: [new Date().getDay() === 0 ? 6 : new Date().getDay() - 1] });
         }
       } else {
         continue;
@@ -91,10 +89,10 @@ export async function scheduleTaskReminders(
     const dueDate = task.dueDate ? new Date(task.dueDate) : null;
     const now = new Date();
     const todayUTC = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
-    const todayStart = new Date(todayUTC);
     const nowMs = now.getTime();
 
-    for (const rem of reminders) {
+    for (let ri = 0; ri < reminders.length; ri++) {
+      const rem = reminders[ri];
       const [hourStr, minuteStr] = rem.time.split(":");
       const hour = parseInt(hourStr, 10);
       const minute = parseInt(minuteStr, 10);
@@ -116,7 +114,7 @@ export async function scheduleTaskReminders(
             notifs.push({
               title: task.title,
               body: "Task reminder",
-              id: notifId++,
+              id: makeId(task.id, ri, 0),
               schedule: { at },
               smallIcon: "ic_stat_icon",
               iconColor: "#14B8A6",
@@ -135,7 +133,7 @@ export async function scheduleTaskReminders(
             notifs.push({
               title: task.title,
               body: "Daily reminder",
-              id: notifId++,
+              id: makeId(task.id, ri, d),
               schedule: { at },
               smallIcon: "ic_stat_icon",
               iconColor: "#14B8A6",
@@ -162,11 +160,12 @@ export async function scheduleTaskReminders(
               notifs.push({
                 title: task.title,
                 body: "Weekly reminder",
-                id: notifId++,
+                id: makeId(task.id, ri, 0),
                 schedule: { at },
                 smallIcon: "ic_stat_icon",
                 iconColor: "#14B8A6",
                 channelId: "meleflow-default",
+                sound: "default",
               });
             }
             cursor.setUTCDate(cursor.getUTCDate() + 1);
@@ -183,7 +182,7 @@ export async function scheduleTaskReminders(
               notifs.push({
                 title: task.title,
                 body: "Weekly reminder",
-                id: notifId++,
+                id: makeId(task.id, ri, d),
                 schedule: { at },
                 smallIcon: "ic_stat_icon",
                 iconColor: "#14B8A6",
@@ -200,39 +199,29 @@ export async function scheduleTaskReminders(
         if (at.getTime() > nowMs) {
           notifs.push({
             title: task.title,
-            body: "",
-            id: notifId++,
+            body: "Upcoming due date",
+            id: makeId(task.id, ri, 0),
             schedule: { at },
             smallIcon: "ic_stat_icon",
             iconColor: "#14B8A6",
             channelId: "meleflow-default",
+            sound: "default",
           });
         }
       }
     }
   }
 
-  // Cancel only notifications that no longer exist in the new list
-  const newIds = new Set(notifs.map((n) => n.id));
-  const toCancel = pending.notifications.filter((n) => !newIds.has(n.id));
-  if (toCancel.length > 0) {
-    await LocalNotifications.cancel({
-      notifications: toCancel.map((n) => ({ id: n.id })),
-    });
-    console.log(`[localNotifications] cancelled ${toCancel.length} stale notifications`);
+  if (notifs.length === 0) {
+    console.log("[localNotifications] no notifications to schedule");
+    return;
   }
 
-  // Schedule only new notifications (skip ones already pending)
-  const toSchedule = notifs.filter((n) => !pendingMap.has(n.id));
-  if (toSchedule.length > 0) {
-    try {
-      await LocalNotifications.schedule({ notifications: toSchedule });
-      console.log(`[localNotifications] scheduled ${toSchedule.length} new notifications (${pendingMap.size} kept existing)`);
-    } catch (err) {
-      console.error("[localNotifications] schedule error:", err);
-    }
-  } else {
-    console.log(`[localNotifications] no new notifications to schedule (${pendingMap.size} already pending)`);
+  try {
+    await LocalNotifications.schedule({ notifications: notifs });
+    console.log(`[localNotifications] scheduled ${notifs.length} notifications`);
+  } catch (err) {
+    console.error("[localNotifications] schedule error:", err);
   }
 }
 
