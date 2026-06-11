@@ -124,9 +124,9 @@ export async function setBoldFont(enabled: boolean): Promise<void> {
   await Preferences.set({ key: BOLD_FONT_KEY, value: enabled ? "true" : "false" });
 }
 
-export function setupAppListeners(isDark = true) {
+export function setupAppListeners() {
   if (!isNative()) return;
-  setupStatusBar(isDark);
+  setupStatusBar();
   App.addListener("backButton", ({ canGoBack }) => {
     for (const handler of backHandlers) {
       if (handler()) return;

@@ -15,7 +15,7 @@ import AdminPanel from "./views/app/AdminPanel";
 import TagManager from "./views/app/TagManager";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ServerConfig from "./components/ServerConfig";
-import { isNative, getServerUrl, setupAppListeners, getFontSize, getBoldFont, requestNotificationPermission, createNotificationChannel, requestExactAlarmPermission } from "./capacitor/register";
+import { isNative, getServerUrl, setupAppListeners, setupStatusBar, getFontSize, getBoldFont, requestNotificationPermission, createNotificationChannel, requestExactAlarmPermission } from "./capacitor/register";
 import { requestBrowserPermission } from "./lib/browserNotifications";
 import { registerPushNotifications } from "./capacitor/pushNotifications";
 import { useThemeStore } from "./store/themeStore";
@@ -34,7 +34,7 @@ export default function App() {
   useEffect(() => {
     async function init() {
       if (isNative()) {
-        setupAppListeners(useThemeStore.getState().theme === "dark");
+        setupAppListeners();
         await initClientBaseUrl();
         const url = await getServerUrl();
         const size = await getFontSize();
@@ -74,6 +74,12 @@ export default function App() {
     }
     init();
   }, [initialize]);
+
+  const theme = useThemeStore((s) => s.theme);
+
+  useEffect(() => {
+    setupStatusBar(theme === "dark");
+  }, [theme]);
 
   useEffect(() => {
     if (user?.language && user.language !== i18n.language) {
