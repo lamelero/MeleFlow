@@ -5,6 +5,7 @@ import cron from "node-cron";
 import { prisma } from "./config/database";
 import { redis } from "./config/redis";
 import { sendEmail, buildReminderEmail, buildHabitReminderEmail } from "./lib/email-service";
+import { sendPushToUser } from "./lib/push-service";
 import { t } from "./lib/email-i18n";
 import { HabitService } from "./modules/habits/habits.service";
 import { runScheduledBackup } from "./modules/admin/backup.service";
@@ -75,6 +76,9 @@ cron.schedule("* * * * *", async () => {
       } else {
         console.log(`[Worker] Email skipped (disabled or misconfigured) for task "${task.title}"`);
       }
+
+      // Send push notification regardless of email status
+      await sendPushToUser(task.user.id, task.title, t(lang, "taskBody") || "This task is due today");
 
       // Set TTL to prevent re-sending (24 hours)
       await redis.set(reminderKey, "1", "EX", 86400);
@@ -178,6 +182,8 @@ cron.schedule("* * * * *", async () => {
             console.log(`[Worker] Recurring reminder skipped (disabled/misconfigured) for task "${task.title}"`);
           }
 
+          await sendPushToUser(task.user.id, task.title, t(lang, "taskRecurringBody") || "Recurring task reminder");
+
           await redis.set(dedupKey, "1", "EX", 86400);
         }
       } catch (err) {
@@ -230,6 +236,8 @@ cron.schedule("* * * * *", async () => {
       } else {
         console.log(`[Worker] Habit reminder skipped (disabled/misconfigured) for "${habit.name}" (${today} ${remTime})`);
       }
+
+      await sendPushToUser(habit.user.id, habit.name, `Habit reminder — streak: ${habit.streakCount}d`);
 
       await redis.set(reminderKey, "1", "EX", 86400);
     }
