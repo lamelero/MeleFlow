@@ -237,7 +237,7 @@ cron.schedule("* * * * *", async () => {
         console.log(`[Worker] Habit reminder skipped (disabled/misconfigured) for "${habit.name}" (${today} ${remTime})`);
       }
 
-      await sendPushToUser(habit.user.id, habit.name, `Habit reminder — streak: ${habit.streakCount}d`);
+      await sendPushToUser(habit.user.id, habit.name, t(lang, "habitBody") || "Habit reminder");
 
       await redis.set(reminderKey, "1", "EX", 86400);
     }
