@@ -10,7 +10,7 @@ import AppLayout from "../../components/AppLayout";
 import { isNative, getFontSize, setFontSize, getBoldFont, setBoldFont } from "../../capacitor/register";
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { version as appVersion } from "../../../package.json";
-import { scheduleTestNotification } from "../../lib/testNotification";
+import { scheduleTestAt, scheduleTestOn } from "../../lib/testNotification";
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -803,16 +803,38 @@ export default function Profile() {
             </button>
             <button
               onClick={async () => {
-                const ok = await scheduleTestNotification();
-                if (ok) {
-                  toast.success("Test notification in 10s", { duration: 3000 });
-                } else {
-                  toast.error("Failed to schedule test");
-                }
+                const ok = await scheduleTestAt(10000);
+                toast.success(ok ? "Test in 10s" : "Failed", { duration: 3000 });
               }}
               className="mt-2 w-full rounded-lg bg-primary px-3 py-2 font-urbanist text-xs font-medium text-white transition-colors hover:bg-teal-600"
             >
-              {t("profile.testNotif") || "Test notification (10s)"}
+              Test {`{at}`} (10s)
+            </button>
+            <button
+              onClick={async () => {
+                const ok = await scheduleTestAt(300000);
+                toast.success(ok ? "Test in 5min" : "Failed", { duration: 3000 });
+              }}
+              className="mt-2 w-full rounded-lg px-3 py-2 font-urbanist text-xs font-medium text-white transition-colors"
+              style={{ backgroundColor: "#8B5CF6" }}
+            >
+              Test {`{at}`} (5min)
+            </button>
+            <button
+              onClick={async () => {
+                const ok = await scheduleTestOn();
+                if (ok) {
+                  const now = new Date();
+                  const nextMin = (now.getMinutes() + 1) % 60;
+                  toast.success(`Test {on} next minute (:${nextMin})`, { duration: 5000 });
+                } else {
+                  toast.error("Failed");
+                }
+              }}
+              className="mt-2 w-full rounded-lg px-3 py-2 font-urbanist text-xs font-medium text-white transition-colors"
+              style={{ backgroundColor: "#EF4444" }}
+            >
+              Test {`{on}`} (next min)
             </button>
           </>)}
         </div>
