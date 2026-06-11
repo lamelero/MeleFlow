@@ -39,7 +39,15 @@ export async function sendPushToUser(userId: string, title: string, body: string
     const response = await messaging.sendEachForMulticast({
       tokens: tokens.map((t) => t.token),
       notification: { title, body },
-      android: { priority: "high" },
+      android: {
+        priority: "high",
+        notification: {
+          channelId: "meleflow-default",
+          sound: "default",
+          icon: "ic_stat_icon",
+          color: "#14B8A6",
+        },
+      },
     });
 
     console.log(`[push] sent to ${response.successCount}/${tokens.length} devices`);
