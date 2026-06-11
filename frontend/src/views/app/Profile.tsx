@@ -820,6 +820,22 @@ export default function Profile() {
             </button>
             <button
               onClick={async () => {
+                try {
+                  const { data } = await client.get("/notifications/tokens");
+                  const count = data?.tokens?.length ?? 0;
+                  toast.success(`Push tokens: ${count}`, { duration: 5000 });
+                  console.log("[profile] push tokens:", data?.tokens);
+                } catch (err) {
+                  toast.error("Error checking push tokens");
+                  console.error("[profile]", err);
+                }
+              }}
+              className="mt-2 w-full rounded-lg bg-gray-100 px-3 py-2 font-urbanist text-xs text-gray-600 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+            >
+              {t("profile.checkPushToken") || "Check push token"}
+            </button>
+            <button
+              onClick={async () => {
                 const ok = await scheduleTestAt(10000);
                 toast.success(ok ? "Test in 10s" : "Failed", { duration: 3000 });
               }}

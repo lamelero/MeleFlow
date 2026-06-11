@@ -61,7 +61,11 @@ export default function App() {
         } else {
           console.warn("[notifications] permission denied by user");
         }
-        registerPushNotifications();
+        try {
+          await registerPushNotifications();
+        } catch (err) {
+          console.error("[app] push registration failed:", err);
+        }
       } else {
         requestBrowserPermission();
       }
