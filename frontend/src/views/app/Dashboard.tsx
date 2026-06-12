@@ -162,7 +162,7 @@ export default function Dashboard() {
             <nav className="space-y-0.5">
               <button
                 onClick={() => navigate("/app")}
-                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-sm transition-colors ${
+                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-[15px] transition-colors ${
                   view === "all"
                     ? "bg-primary/10 font-medium text-primary"
                     : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
@@ -173,7 +173,7 @@ export default function Dashboard() {
               </button>
               <button
                 onClick={() => navigate("/app?view=tasks")}
-                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-sm transition-colors ${
+                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-[15px] transition-colors ${
                   view === "tasks"
                     ? "bg-primary/10 font-medium text-primary"
                     : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
@@ -184,7 +184,7 @@ export default function Dashboard() {
               </button>
               <button
                 onClick={() => navigate("/app?view=habits")}
-                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-sm transition-colors ${
+                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-[15px] transition-colors ${
                   view === "habits"
                     ? "bg-primary/10 font-medium text-primary"
                     : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
@@ -195,7 +195,7 @@ export default function Dashboard() {
               </button>
               <button
                 onClick={() => navigate("/app?view=calendar")}
-                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-sm transition-colors ${
+                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-[15px] transition-colors ${
                   view === "calendar"
                     ? "bg-primary/10 font-medium text-primary"
                     : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
@@ -279,7 +279,7 @@ export default function Dashboard() {
                             setActiveListId(list.id);
                             setActiveTagId(undefined);
                           }}
-                          className={`flex flex-1 items-center rounded-lg px-3 py-2 text-left font-urbanist text-sm transition-colors ${
+                          className={`flex flex-1 items-center rounded-lg px-3 py-2 text-left font-urbanist text-[15px] transition-colors ${
                             activeListId === list.id
                               ? "bg-primary/10 font-medium text-primary"
                               : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
@@ -429,7 +429,7 @@ export default function Dashboard() {
                   <button
                     key={tag.id}
                     onClick={() => handleTagClick(tag.id)}
-                  className={`flex items-center w-full rounded-lg px-3 py-2 text-left font-urbanist text-sm transition-colors ${
+                  className={`flex items-center w-full rounded-lg px-3 py-2 text-left font-urbanist text-[15px] transition-colors ${
                       activeTagId === tag.id
                         ? "bg-primary/10 font-medium text-primary"
                         : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
@@ -510,7 +510,7 @@ export default function Dashboard() {
                       value={newTaskTitle}
                       onChange={(e) => setNewTaskTitle(e.target.value)}
                       placeholder={t("dashboard.newTask")}
-                      className="w-full rounded-2xl bg-white px-5 py-3.5 font-urbanist text-sm outline-none placeholder:text-gray-400 dark:bg-gray-900 dark:text-gray-100 dark:placeholder-gray-500"
+                      className="w-full rounded-2xl bg-white px-5 py-3.5 font-urbanist text-[15px] outline-none placeholder:text-gray-400 dark:bg-gray-900 dark:text-gray-100 dark:placeholder-gray-500"
                     />
                   </div>
                 </form>

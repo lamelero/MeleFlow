@@ -154,11 +154,11 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
             <Icon />
           </div>
           <div>
-            <h3 className="font-urbanist text-sm font-medium text-gray-900 dark:text-gray-100">
+            <h3 className="font-urbanist text-[15px] font-medium text-gray-900 dark:text-gray-100">
               {habit.name}
             </h3>
             {habit.frequency && (
-              <p className="font-urbanist text-[11px] font-medium" style={{ color: catInfo.color }}>
+              <p className="font-urbanist text-xs font-medium" style={{ color: catInfo.color }}>
                 {((): string => {
                   try {
                     const f = JSON.parse(habit.frequency);

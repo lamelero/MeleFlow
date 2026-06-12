@@ -97,7 +97,7 @@ export default function TaskCard({ task, onClick }: TaskCardProps) {
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <h3
-            className={`font-urbanist text-sm font-medium ${
+            className={`font-urbanist text-[15px] font-medium ${
               task.isCompleted
                 ? "text-gray-400 line-through dark:text-gray-500"
                 : "text-gray-900 dark:text-gray-100"
