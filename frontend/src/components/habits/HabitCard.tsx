@@ -195,13 +195,20 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
             <div
               className={`flex h-8 w-8 items-center justify-center rounded-lg text-[11px] font-semibold transition-all
                 ${day.completed
-                  ? "bg-primary text-white"
+                  ? "text-white border-0"
                   : day.isToday
-                    ? "border-2 border-primary/40 bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                    ? "bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-200"
                     : "bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500"
                 }
                 ${day.dateStr > today ? "opacity-20" : "cursor-pointer hover:scale-105"}
               `}
+              style={
+                day.completed
+                  ? { backgroundColor: catInfo.color }
+                  : day.isToday
+                    ? { border: `2px solid ${catInfo.color}66` }
+                    : undefined
+              }
             >
               {day.dayNum}
             </div>
@@ -234,13 +241,10 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
       <div className="flex items-center gap-1 border-t border-gray-100 pt-2 dark:border-gray-800">
         <button
           onClick={() => handleCellClick(today)}
-          className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 font-urbanist text-xs font-medium transition-all ${
-            checkedToday
-              ? "bg-primary/10 text-primary"
-              : "text-white"
-          }`}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 font-urbanist text-xs font-medium transition-all"
           style={{
-            backgroundColor: checkedToday ? undefined : catInfo.color,
+            backgroundColor: checkedToday ? `${catInfo.color}1A` : catInfo.color,
+            color: checkedToday ? catInfo.color : "#fff",
           }}
         >
           {checkedToday ? (
