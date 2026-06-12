@@ -43,7 +43,7 @@ function makeId(taskId: string, ri: number, day: number): number {
 }
 
 export async function scheduleTaskReminders(
-  tasks: { id: string; title: string; dueDate?: string | null; reminderEnabled?: boolean; reminderConfig?: string | null }[]
+  tasks: { id: string; title: string; dueDate?: string | null; reminderEnabled?: boolean; reminderConfig?: string | null; isCompleted?: boolean }[]
 ) {
   if (!isNative()) return;
   if (!(await hasPermission())) {
@@ -65,6 +65,7 @@ export async function scheduleTaskReminders(
   const notifs: LocalNotificationSchema[] = [];
 
   for (const task of tasks) {
+    if (task.isCompleted) continue;
     if (!task.reminderEnabled || !task.reminderConfig) continue;
 
     let reminders: ReminderItem[];
