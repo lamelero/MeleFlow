@@ -147,6 +147,7 @@ export class TaskService {
         title: input.title,
         description: input.description ?? null,
         priority: input.priority ?? 4,
+        status: input.status ?? "todo",
         type: input.type ?? "TEXT",
         dueDate: input.dueDate ? new Date(input.dueDate) : null,
         rrule: input.rrule ?? null,
@@ -198,6 +199,7 @@ export class TaskService {
       ...(input.title !== undefined && { title: input.title }),
       ...(input.description !== undefined && { description: input.description }),
       ...(input.priority !== undefined && { priority: input.priority }),
+      ...(input.status !== undefined && { status: input.status }),
       ...(input.isCompleted !== undefined && { isCompleted: input.isCompleted }),
       ...(input.type !== undefined && { type: input.type }),
       ...(input.dueDate !== undefined && {

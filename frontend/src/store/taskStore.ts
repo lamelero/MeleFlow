@@ -25,6 +25,7 @@ export interface Task {
   title: string;
   description: string | null;
   priority: number;
+  status: "todo" | "in_progress" | "completed";
   type: "TEXT" | "CHECKLIST";
   isCompleted: boolean;
   dueDate: string | null;
@@ -72,6 +73,7 @@ interface TaskState {
     title: string;
     description: string | null;
     priority: number;
+    status: "todo" | "in_progress" | "completed";
     type: "TEXT" | "CHECKLIST";
     isCompleted: boolean;
     dueDate: string | null;

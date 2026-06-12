@@ -94,6 +94,7 @@ model Task {
   title       String
   description String?
   priority    Int       @default(4) // 1=Urgent 2=High 3=Medium 4=Low
+  status      String    @default("todo") // "todo" | "in_progress" | "completed"
   type        TaskType  @default(TEXT)
   dueDate     DateTime? @default(now())
   rrule       String?   // RRULE string for recurrence (RFC 5545)

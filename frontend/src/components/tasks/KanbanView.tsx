@@ -40,15 +40,15 @@ export default function KanbanView({ tasks, filter, onTaskClick }: KanbanViewPro
   }, [tasks, filter]);
 
   const columnTasks = useMemo(() => ({
-    pending: filteredTasks.filter((t) => !t.isCompleted && !t.dueDate),
-    in_progress: filteredTasks.filter((t) => !t.isCompleted && t.dueDate),
-    completed: filteredTasks.filter((t) => t.isCompleted),
+    pending: filteredTasks.filter((t) => t.status === "todo" || (t.status === undefined && !t.isCompleted)),
+    in_progress: filteredTasks.filter((t) => t.status === "in_progress" && !t.isCompleted),
+    completed: filteredTasks.filter((t) => t.status === "completed" || t.isCompleted),
   }), [filteredTasks]);
 
   function handleDropColumn(taskId: string, colId: string) {
-    if (colId === "pending") updateTask(taskId, { isCompleted: false });
-    else if (colId === "in_progress") updateTask(taskId, { isCompleted: false });
-    else if (colId === "completed") updateTask(taskId, { isCompleted: true });
+    if (colId === "pending") updateTask(taskId, { status: "todo", isCompleted: false });
+    else if (colId === "in_progress") updateTask(taskId, { status: "in_progress", isCompleted: false });
+    else if (colId === "completed") updateTask(taskId, { status: "completed", isCompleted: true });
   }
 
   function handleDragOver(e: React.DragEvent) {
