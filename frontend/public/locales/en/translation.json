@@ -124,7 +124,11 @@
       "recoveryCodesNewWarning": "Save these immediately. They won't be shown again.",
       "saveRecoveryCodes": "Save these safely! Each code can be used only once.",
       "generateNewCodes": "Generate new recovery codes"
-    }
+    },
+    "notifications": "Notification Preferences",
+    "notifEmail": "Email",
+    "notifPush": "Push (APK)",
+    "notifBrowser": "Browser (Web)"
   },
   "usermenu": {
     "profile": "Profile",

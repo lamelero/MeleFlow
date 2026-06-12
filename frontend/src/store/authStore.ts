@@ -12,6 +12,7 @@ export interface User {
   notificationEmail?: string | null;
   bio?: string | null;
   timezone?: string | null;
+  notificationPrefs?: { email: boolean; push: boolean; browser: boolean };
   role: string;
   language: string;
   isTwoFactorEnabled?: boolean;
@@ -38,6 +39,7 @@ interface AuthState {
   initialize: () => Promise<void>;
   updateLanguage: (lang: string) => Promise<void>;
   updateProfile: (data: { displayName?: string; notificationEmail?: string; bio?: string; timezone?: string }) => Promise<void>;
+  updateNotificationPrefs: (prefs: { email?: boolean; push?: boolean; browser?: boolean }) => Promise<void>;
   uploadAvatar: (file: File) => Promise<string>;
   clearError: () => void;
 }
@@ -189,6 +191,13 @@ export const useAuthStore = create<AuthState>((set) => ({
   updateProfile: async (data) => {
     const res = await client.patch("/auth/profile", data);
     set({ user: res.data });
+  },
+
+  updateNotificationPrefs: async (prefs) => {
+    const res = await client.patch("/auth/notification-prefs", prefs);
+    set((state) => ({
+      user: state.user ? { ...state.user, notificationPrefs: res.data } : null,
+    }));
   },
 
   uploadAvatar: async (file: File) => {

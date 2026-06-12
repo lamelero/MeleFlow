@@ -236,6 +236,31 @@ export async function authRoutes(app: FastifyInstance) {
     },
   );
 
+  app.get(
+    "/notification-prefs",
+    { onRequest: [app.authenticate] },
+    async (req, reply) => {
+      const { sub } = req.user;
+      const user = await prisma.user.findUnique({ where: { id: sub }, select: { notificationPrefs: true } });
+      const prefs = user?.notificationPrefs ? JSON.parse(user.notificationPrefs) : { email: true, push: true, browser: true };
+      return reply.send(prefs);
+    },
+  );
+
+  app.patch(
+    "/notification-prefs",
+    { onRequest: [app.authenticate] },
+    async (req, reply) => {
+      const { sub } = req.user;
+      const body = req.body as { email?: boolean; push?: boolean; browser?: boolean };
+      const existing = await prisma.user.findUnique({ where: { id: sub }, select: { notificationPrefs: true } });
+      const current = existing?.notificationPrefs ? JSON.parse(existing.notificationPrefs) : { email: true, push: true, browser: true };
+      const merged = { ...current, ...body };
+      await prisma.user.update({ where: { id: sub }, data: { notificationPrefs: JSON.stringify(merged) } });
+      return reply.send(merged);
+    },
+  );
+
   // ── 2FA Management (authenticated) ──────────────
 
   app.get(

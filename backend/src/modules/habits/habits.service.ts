@@ -251,6 +251,7 @@ export class HabitService {
             notificationEmail: true,
             language: true,
             timezone: true,
+            notificationPrefs: true,
           },
         },
       },

@@ -56,6 +56,7 @@ model User {
   notificationEmail String?
   bio              String?
   timezone         String?
+  notificationPrefs String? @default("{\"email\":true,\"push\":true,\"browser\":true}")
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

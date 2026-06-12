@@ -26,6 +26,7 @@ const ICS_COLORS = [
 export default function Profile() {
   const { t, i18n } = useTranslation();
   const { user, updateLanguage, updateProfile, uploadAvatar } = useAuthStore();
+  const prefs = user?.notificationPrefs ?? { email: true, push: true, browser: true };
   const fileRef = useRef<HTMLInputElement>(null);
 
   const {
@@ -754,9 +755,46 @@ export default function Profile() {
                     </div>
                   ))}
                 </div>
-              )}
+            )}
+          </div>
+
+          <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
+            <h3 className="mb-5 font-outfit text-base font-semibold text-gray-900 dark:text-gray-100">
+              {t("profile.notifications")}
+            </h3>
+            <div className="space-y-4">
+              {[
+                { key: "email" as const, icon: "📧", label: t("profile.notifEmail") },
+                { key: "push" as const, icon: "📱", label: t("profile.notifPush") },
+                { key: "browser" as const, icon: "🌐", label: t("profile.notifBrowser") },
+              ].map((opt) => (
+                <div key={opt.key} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">{opt.icon}</span>
+                    <span className="font-urbanist text-sm text-gray-700 dark:text-gray-300">
+                      {opt.label}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const current = prefs[opt.key];
+                      useAuthStore.getState().updateNotificationPrefs({ [opt.key]: !current });
+                    }}
+                    className={`relative h-6 w-11 rounded-full transition-colors ${
+                      prefs[opt.key] ? "bg-primary" : "bg-gray-300 dark:bg-gray-600"
+                    }`}
+                  >
+                    <span
+                      className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                        prefs[opt.key] ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
+        </div>
         </div>
       )}
 

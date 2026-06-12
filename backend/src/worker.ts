@@ -25,6 +25,16 @@ async function getAppUrl(): Promise<string> {
 
 console.log(" MeleFlow Worker started — checking for reminders every minute");
 
+async function shouldNotify(user: { notificationPrefs?: string | null }, type: "email" | "push"): Promise<boolean> {
+  if (!user.notificationPrefs) return true;
+  try {
+    const prefs = JSON.parse(user.notificationPrefs);
+    return prefs[type] !== false;
+  } catch {
+    return true;
+  }
+}
+
 // ── Reminder check every minute ────────────────
 cron.schedule("* * * * *", async () => {
   try {
@@ -37,7 +47,7 @@ cron.schedule("* * * * *", async () => {
         dueDate: { gte: now, lte: in24h },
       },
       include: {
-        user: { select: { id: true, email: true, username: true, notificationEmail: true, language: true, timezone: true } },
+        user: { select: { id: true, email: true, username: true, notificationEmail: true, language: true, timezone: true, notificationPrefs: true } },
       },
     });
 
@@ -69,16 +79,19 @@ cron.schedule("* * * * *", async () => {
         lang,
       );
 
-      const sent = await sendEmail(emailTo, subject, html);
-
-      if (sent) {
-        console.log(`[Worker] Email sent to ${emailTo} for task "${task.title}"`);
-      } else {
-        console.log(`[Worker] Email skipped (disabled or misconfigured) for task "${task.title}"`);
+      const emailPrefsOk = await shouldNotify(task.user, "email");
+      if (emailPrefsOk) {
+        const sent = await sendEmail(emailTo, subject, html);
+        if (sent) {
+          console.log(`[Worker] Email sent to ${emailTo} for task "${task.title}"`);
+        } else {
+          console.log(`[Worker] Email skipped (disabled or misconfigured) for task "${task.title}"`);
+        }
       }
 
-      // Send push notification regardless of email status
-      await sendPushToUser(task.user.id, task.title, t(lang, "taskBody") || "This task is due today");
+      if (await shouldNotify(task.user, "push")) {
+        await sendPushToUser(task.user.id, task.title, t(lang, "taskBody") || "This task is due today");
+      }
 
       // Set TTL to prevent re-sending (24 hours)
       await redis.set(reminderKey, "1", "EX", 86400);
@@ -96,7 +109,7 @@ cron.schedule("* * * * *", async () => {
         reminderConfig: { not: null },
       },
       include: {
-        user: { select: { id: true, email: true, username: true, notificationEmail: true, language: true, timezone: true } },
+        user: { select: { id: true, email: true, username: true, notificationEmail: true, language: true, timezone: true, notificationPrefs: true } },
       },
     });
 
@@ -175,14 +188,18 @@ cron.schedule("* * * * *", async () => {
             lang,
           );
 
-          const sent = await sendEmail(emailTo, subject, html);
-          if (sent) {
-            console.log(`[Worker] Recurring reminder sent to ${emailTo} for task "${task.title}"`);
-          } else {
-            console.log(`[Worker] Recurring reminder skipped (disabled/misconfigured) for task "${task.title}"`);
+          if (await shouldNotify(task.user, "email")) {
+            const sent = await sendEmail(emailTo, subject, html);
+            if (sent) {
+              console.log(`[Worker] Recurring reminder sent to ${emailTo} for task "${task.title}"`);
+            } else {
+              console.log(`[Worker] Recurring reminder skipped (disabled/misconfigured) for task "${task.title}"`);
+            }
           }
 
-          await sendPushToUser(task.user.id, task.title, t(lang, "taskRecurringBody") || "Recurring task reminder");
+          if (await shouldNotify(task.user, "push")) {
+            await sendPushToUser(task.user.id, task.title, t(lang, "taskRecurringBody") || "Recurring task reminder");
+          }
 
           await redis.set(dedupKey, "1", "EX", 86400);
         }
@@ -229,15 +246,18 @@ cron.schedule("* * * * *", async () => {
         lang,
       );
 
-      const sent = await sendEmail(emailTo, subject, html);
-
-      if (sent) {
-        console.log(`[Worker] Habit reminder sent to ${emailTo} for "${habit.name}" (${today} ${remTime})`);
-      } else {
-        console.log(`[Worker] Habit reminder skipped (disabled/misconfigured) for "${habit.name}" (${today} ${remTime})`);
+      if (await shouldNotify(habit.user, "email")) {
+        const sent = await sendEmail(emailTo, subject, html);
+        if (sent) {
+          console.log(`[Worker] Habit reminder sent to ${emailTo} for "${habit.name}" (${today} ${remTime})`);
+        } else {
+          console.log(`[Worker] Habit reminder skipped (disabled/misconfigured) for "${habit.name}" (${today} ${remTime})`);
+        }
       }
 
-      await sendPushToUser(habit.user.id, habit.name, t(lang, "habitBody") || "Habit reminder");
+      if (await shouldNotify(habit.user, "push")) {
+        await sendPushToUser(habit.user.id, habit.name, t(lang, "habitBody") || "Habit reminder");
+      }
 
       await redis.set(reminderKey, "1", "EX", 86400);
     }
