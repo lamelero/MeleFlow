@@ -12,6 +12,38 @@ const priorityColors: Record<number, string> = {
   4: "#9CA3AF",
 };
 
+function isDueDateOverdue(dueDate: string): boolean {
+  const due = new Date(dueDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return due < today;
+}
+
+function renderDueDate(dueDate: string, lang: string): string {
+  const due = new Date(dueDate);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  due.setHours(0, 0, 0, 0);
+  const diffMs = due.getTime() - now.getTime();
+  const diffDays = Math.round(diffMs / 86400000);
+
+  if (diffDays < 0) {
+    const past = Math.abs(diffDays);
+    if (past === 0) return "Overdue";
+    if (past === 1) return lang.startsWith("es") ? "Ayer" : "Yesterday";
+    return lang.startsWith("es") ? `Vence hace ${past}d` : `${past}d overdue`;
+  }
+  if (diffDays === 0) return lang.startsWith("es") ? "Hoy" : "Today";
+  if (diffDays === 1) return lang.startsWith("es") ? "Mañana" : "Tomorrow";
+  if (diffDays <= 7) {
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const esDays = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+    const dayName = lang.startsWith("es") ? esDays[due.getDay()] : days[due.getDay()];
+    return `${dayName} ${due.getDate()}`;
+  }
+  return due.toLocaleDateString(lang, { month: "short", day: "numeric" });
+}
+
 interface TaskCardProps {
   task: Task;
   onClick: (task: Task) => void;
@@ -123,11 +155,10 @@ export default function TaskCard({ task, onClick }: TaskCardProps) {
 
         <div className="mt-2 flex items-center gap-3">
           {task.dueDate && (
-            <span className="font-urbanist text-xs text-gray-400 dark:text-gray-500">
-              {new Date(task.dueDate).toLocaleDateString(i18n.language, {
-                month: "short",
-                day: "numeric",
-              })}
+            <span className={`font-urbanist text-xs ${
+              isDueDateOverdue(task.dueDate) ? "text-red-500 font-medium" : "text-gray-400 dark:text-gray-500"
+            }`}>
+              {renderDueDate(task.dueDate, i18n.language)}
             </span>
           )}
           {task.subTasks && task.subTasks.length > 0 && (

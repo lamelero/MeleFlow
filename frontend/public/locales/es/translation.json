@@ -486,5 +486,12 @@
     "habits": "Hábitos",
     "calendar": "Calendario",
     "timer": "Temporizador"
+  },
+  "filters": {
+    "all": "Todo",
+    "today": "Hoy",
+    "week": "Próximos 7 días",
+    "overdue": "Vencidas",
+    "noDate": "Sin fecha"
   }
 }

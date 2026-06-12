@@ -486,5 +486,12 @@
     "habits": "Habits",
     "calendar": "Calendar",
     "timer": "Timer"
+  },
+  "filters": {
+    "all": "All",
+    "today": "Today",
+    "week": "Next 7 days",
+    "overdue": "Overdue",
+    "noDate": "No date"
   }
 }

@@ -9,6 +9,8 @@ import { useHabitStore, type Habit } from "../../store/habitStore";
 import { useHabitCategoryStore } from "../../store/habitCategoryStore";
 import { useTagStore } from "../../store/tagStore";
 import TaskList from "../../components/tasks/TaskList";
+import TaskFilters from "../../components/tasks/TaskFilters";
+import type { FilterPreset } from "../../components/tasks/TaskFilters";
 import TaskCard from "../../components/tasks/TaskCard";
 import TaskDetailPanel from "../../components/tasks/TaskDetailPanel";
 import HabitCard from "../../components/habits/HabitCard";
@@ -19,6 +21,8 @@ import IconPicker from "../../components/lists/IconPicker";
 import { ListIcon, LIST_ICONS } from "../../components/lists/listIcons";
 import { isNative } from "../../capacitor/register";
 import { LayoutList, CheckSquare, Heart, Calendar } from "lucide-react";
+import { parseTaskInput } from "../../lib/nlp";
+import { registerShortcuts, clearShortcuts } from "../../lib/keyboardShortcuts";
 
 const LIST_COLORS = [
   "#14B8A6", "#EF4444", "#F59E0B", "#3B82F6",
@@ -38,6 +42,7 @@ export default function Dashboard() {
   const view: "all" | "tasks" | "habits" | "calendar" = searchParams.get("view") === "calendar" ? "calendar" : searchParams.get("view") === "tasks" ? "tasks" : searchParams.get("view") === "habits" ? "habits" : "all";
   const [activeListId, setActiveListId] = useState<string | undefined>();
   const [activeTagId, setActiveTagId] = useState<string | undefined>();
+  const [filterPreset, setFilterPreset] = useState<FilterPreset>("all");
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [showNewList, setShowNewList] = useState(false);
   const [newListName, setNewListName] = useState("");
@@ -72,6 +77,17 @@ export default function Dashboard() {
     if (editingListId) renameInputRef.current?.focus();
   }, [editingListId]);
 
+  useEffect(() => {
+    registerShortcuts({
+      "n": () => { inputRef.current?.focus(); },
+      "1": () => navigate("/app"),
+      "2": () => navigate("/app?view=tasks"),
+      "3": () => navigate("/app?view=habits"),
+      "4": () => navigate("/app?view=calendar"),
+    });
+    return () => clearShortcuts();
+  }, [navigate]);
+
   // Close menu on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -102,7 +118,8 @@ export default function Dashboard() {
   async function handleCreateTask(e: React.FormEvent) {
     e.preventDefault();
     if (!newTaskTitle.trim()) return;
-    await createTask({ title: newTaskTitle.trim(), listId: activeListId ?? null });
+    const parsed = parseTaskInput(newTaskTitle);
+    await createTask({ title: parsed.title, dueDate: parsed.dueDate, listId: activeListId ?? null });
     setNewTaskTitle("");
     inputRef.current?.focus();
   }
@@ -515,8 +532,12 @@ export default function Dashboard() {
                   </div>
                 </form>
 
+                <div className="mb-4">
+                  <TaskFilters active={filterPreset} onChange={setFilterPreset} />
+                </div>
+
                 <TaskList
-                  filter={{ listId: activeListId, tagId: activeTagId }}
+                  filter={{ listId: activeListId, tagId: activeTagId, preset: filterPreset }}
                   onTaskClick={setSelectedTask}
                   emptyMessage={
                     activeListId
