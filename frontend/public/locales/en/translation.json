@@ -359,7 +359,11 @@
       "attachmentDeleteFailed": "Failed to delete attachment",
       "failedAddCollaborator": "Failed to add collaborator",
       "failedRemoveCollaborator": "Failed to remove collaborator"
-    }
+    },
+    "todo": "To Do",
+    "inProgress": "In Progress",
+    "completed": "Done",
+    "status": "Status"
   },
   "calendar": {
     "title": "Calendar",

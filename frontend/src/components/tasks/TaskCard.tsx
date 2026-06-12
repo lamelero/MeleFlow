@@ -126,9 +126,14 @@ export default function TaskCard({ task, onClick }: TaskCardProps) {
         </motion.button>
       </div>
 
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <h3
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              {task.status === "in_progress" && (
+                <span className="shrink-0 rounded bg-blue-100 px-1.5 py-0.5 font-urbanist text-[9px] font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                  {i18n.language?.startsWith("es") ? "En curso" : "In progress"}
+                </span>
+              )}
+              <h3
             className={`font-urbanist text-[15px] font-medium ${
               task.isCompleted
                 ? "text-gray-400 line-through dark:text-gray-500"

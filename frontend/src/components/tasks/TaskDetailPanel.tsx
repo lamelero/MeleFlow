@@ -52,6 +52,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
   const [shareSearching, setShareSearching] = useState(false);
   const [collaborators, setCollaborators] = useState<{ id: string; username: string; displayName: string | null; avatarUrl: string | null }[]>([]);
   const [priority, setPriority] = useState(4);
+  const [status, setStatus] = useState<"todo" | "in_progress" | "completed">("todo");
   const tagInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const checklistInputRef = useRef<HTMLInputElement>(null);
@@ -68,6 +69,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
       setDescription(t.description || "");
       setDueDate(t.dueDate ? new Date(t.dueDate) : null);
       setPriority(t.priority ?? 4);
+      setStatus(t.status || "todo");
       setTaskType(t.type || "TEXT");
       setChecklistItems(t.checklistItems ?? []);
       if (t.reminderEnabled && t.reminderConfig) {
@@ -211,6 +213,11 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
   async function handlePriorityChange(p: number) {
     setPriority(p);
     await updateTask(t.id, { priority: p });
+  }
+
+  async function handleStatusChange(s: "todo" | "in_progress" | "completed") {
+    setStatus(s);
+    await updateTask(t.id, { status: s, isCompleted: s === "completed" });
   }
 
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -462,6 +469,33 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
               ))}
             </div>
           </div>
+
+          <div className="mb-4">
+            <label className="mb-2 block font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+              {trans("common.status")}
+            </label>
+            <div className="flex gap-1.5">
+              {[
+                { value: "todo" as const, color: "#9CA3AF", label: trans("common.todo") },
+                { value: "in_progress" as const, color: "#3B82F6", label: trans("common.inProgress") },
+                { value: "completed" as const, color: "#10B981", label: trans("common.completed") },
+              ].map((s) => (
+                <button
+                  key={s.value}
+                  onClick={() => handleStatusChange(s.value)}
+                  className={`flex-1 rounded-lg px-2.5 py-1.5 text-center font-urbanist text-xs font-medium transition-all ${
+                    status === s.value
+                      ? "text-white shadow-sm"
+                      : "bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+                  }`}
+                  style={status === s.value ? { backgroundColor: s.color } : undefined}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {t.tags && t.tags.length > 0 && (
             <div className="mb-4">
               <label className="mb-2 block font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">

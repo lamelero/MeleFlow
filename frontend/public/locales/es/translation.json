@@ -359,7 +359,11 @@
       "attachmentDeleteFailed": "Error al eliminar archivo adjunto",
       "failedAddCollaborator": "Error al añadir colaborador",
       "failedRemoveCollaborator": "Error al eliminar colaborador"
-    }
+    },
+    "todo": "Por hacer",
+    "inProgress": "En curso",
+    "completed": "Hecho",
+    "status": "Estado"
   },
   "calendar": {
     "title": "Calendario",
