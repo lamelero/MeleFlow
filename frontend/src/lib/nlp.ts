@@ -27,6 +27,23 @@ function nextWeekday(name: string): Date {
   return d;
 }
 
+function handleNextWeekday(name: string, forceNext: boolean): Date {
+  const target = DAY_NAMES[name.toLowerCase()];
+  if (target === undefined) return null as unknown as Date;
+  const now = new Date();
+  const today = now.getDay();
+  let diff = target - today;
+  if (forceNext) {
+    if (diff <= 0) diff += 7;
+  } else {
+    if (diff < 0) diff += 7;
+  }
+  const d = new Date(now);
+  d.setDate(d.getDate() + diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
 export function parseTaskInput(text: string): ParsedTask {
   let title = text.trim();
   let dueDate: string | undefined;
@@ -59,7 +76,15 @@ export function parseTaskInput(text: string): ParsedTask {
       },
     },
     {
-      regex: /el (lunes|martes|mi[ée]rcoles|jueves|viernes|s[áa]bado|domingo|monday|tuesday|wednesday|thursday|friday|saturday|sunday)/i,
+      regex: /\bel\s+(próximo|proximo|próxima|proxima|este)\s+(lunes|martes|mi[ée]rcoles|jueves|viernes|s[áa]bado|domingo|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i,
+      handler: (m) => handleNextWeekday(m[2], true),
+    },
+    {
+      regex: /\b(próximo|proximo|próxima|proxima|este)\s+(lunes|martes|mi[ée]rcoles|jueves|viernes|s[áa]bado|domingo|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i,
+      handler: (m) => handleNextWeekday(m[2], m[1].toLowerCase().startsWith("pró") || m[1].toLowerCase().startsWith("pro")),
+    },
+    {
+      regex: /\bel\s+(lunes|martes|mi[ée]rcoles|jueves|viernes|s[áa]bado|domingo|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i,
       handler: (m) => nextWeekday(m[1]),
     },
     {
