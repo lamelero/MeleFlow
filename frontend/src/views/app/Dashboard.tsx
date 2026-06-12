@@ -10,6 +10,8 @@ import { useHabitCategoryStore } from "../../store/habitCategoryStore";
 import { useTagStore } from "../../store/tagStore";
 import TaskList from "../../components/tasks/TaskList";
 import TaskFilters from "../../components/tasks/TaskFilters";
+import KanbanView from "../../components/tasks/KanbanView";
+import EisenhowerMatrix from "../../components/tasks/EisenhowerMatrix";
 import type { FilterPreset } from "../../components/tasks/TaskFilters";
 import TaskCard from "../../components/tasks/TaskCard";
 import TaskDetailPanel from "../../components/tasks/TaskDetailPanel";
@@ -33,6 +35,7 @@ export default function Dashboard() {
   const { t } = useTranslation();
   const { lists, fetchLists, createList, updateList, deleteList } = useListStore();
   const { createTask, fetchSharedTasks, sharedTasks } = useTaskStore();
+  const tasks = useTaskStore((s) => s.tasks);
   const { habits, fetchHabits, createHabit } = useHabitStore();
   const { fetchCategories } = useHabitCategoryStore();
   const { tags, fetchTags } = useTagStore();
@@ -43,6 +46,7 @@ export default function Dashboard() {
   const [activeListId, setActiveListId] = useState<string | undefined>();
   const [activeTagId, setActiveTagId] = useState<string | undefined>();
   const [filterPreset, setFilterPreset] = useState<FilterPreset>("all");
+  const [viewMode, setViewMode] = useState<"list" | "kanban" | "matrix">("list");
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [showNewList, setShowNewList] = useState(false);
   const [newListName, setNewListName] = useState("");
@@ -532,21 +536,55 @@ export default function Dashboard() {
                   </div>
                 </form>
 
-                <div className="mb-4">
-                  <TaskFilters active={filterPreset} onChange={setFilterPreset} />
+                <div className="mb-4 flex items-center gap-2">
+                  <div className="flex-1">
+                    <TaskFilters active={filterPreset} onChange={setFilterPreset} />
+                  </div>
+                  <div className="flex gap-1 rounded-lg bg-gray-100 p-0.5 dark:bg-gray-800">
+                    {(["list", "kanban", "matrix"] as const).map((vm) => (
+                      <button
+                        key={vm}
+                        onClick={() => setViewMode(vm)}
+                        className={`rounded-md px-2.5 py-1 font-urbanist text-xs font-medium transition-all ${
+                          viewMode === vm
+                            ? "bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-gray-100"
+                            : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                        }`}
+                      >
+                        {vm === "list" && "List"}
+                        {vm === "kanban" && "Kanban"}
+                        {vm === "matrix" && "Matrix"}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                <TaskList
-                  filter={{ listId: activeListId, tagId: activeTagId, preset: filterPreset }}
-                  onTaskClick={setSelectedTask}
-                  emptyMessage={
-                    activeListId
-                      ? t("dashboard.noTasksInList")
-                      : activeTagId
-                        ? t("dashboard.noTasksWithTag")
-                        : t("dashboard.noTasks")
-                  }
-                />
+                {viewMode === "list" && (
+                  <TaskList
+                    filter={{ listId: activeListId, tagId: activeTagId, preset: filterPreset }}
+                    onTaskClick={setSelectedTask}
+                    emptyMessage={
+                      activeListId
+                        ? t("dashboard.noTasksInList")
+                        : activeTagId
+                          ? t("dashboard.noTasksWithTag")
+                          : t("dashboard.noTasks")
+                    }
+                  />
+                )}
+                {viewMode === "kanban" && (
+                  <KanbanView
+                    tasks={tasks}
+                    filter={{ listId: activeListId, tagId: activeTagId, preset: filterPreset }}
+                    onTaskClick={setSelectedTask}
+                  />
+                )}
+                {viewMode === "matrix" && (
+                  <EisenhowerMatrix
+                    tasks={tasks}
+                    onTaskClick={setSelectedTask}
+                  />
+                )}
               </section>
 
               {sharedTasks.length > 0 && (

@@ -493,5 +493,29 @@
     "week": "Next 7 days",
     "overdue": "Overdue",
     "noDate": "No date"
+  },
+  "kanban": {
+    "pending": "To Do",
+    "inProgress": "In Progress",
+    "completed": "Done",
+    "dropHere": "Drop tasks here"
+  },
+  "matrix": {
+    "do": "Do",
+    "decide": "Decide",
+    "delegate": "Delegate",
+    "eliminate": "Eliminate",
+    "empty": "No tasks"
+  },
+  "statistics": {
+    "title": "Statistics",
+    "week": "Week",
+    "month": "Month",
+    "tasksDone": "Tasks completed",
+    "pending": "Pending",
+    "avgPerDay": "Avg per day",
+    "habitRate": "Habit rate",
+    "focusTime": "Focus time",
+    "tasksPerDay": "Tasks per day"
   }
 }

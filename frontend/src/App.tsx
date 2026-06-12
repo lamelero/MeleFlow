@@ -9,6 +9,7 @@ import Register from "./views/auth/Register";
 import TwoFactorVerify from "./views/auth/TwoFactorVerify";
 import Dashboard from "./views/app/Dashboard";
 import HabitDetail from "./views/app/HabitDetail";
+import Statistics from "./views/app/Statistics";
 import TimerView from "./views/app/TimerView";
 import Profile from "./views/app/Profile";
 import AdminPanel from "./views/app/AdminPanel";
@@ -171,6 +172,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <HabitDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/statistics"
+            element={
+              <ProtectedRoute>
+                <Statistics />
               </ProtectedRoute>
             }
           />
