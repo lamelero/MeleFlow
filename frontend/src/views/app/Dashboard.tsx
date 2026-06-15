@@ -182,7 +182,7 @@ export default function Dashboard() {
             </h2>
             <nav className="space-y-0.5">
               <button
-                onClick={() => navigate("/app")}
+                onClick={() => { navigate("/app"); setActiveListId(undefined); setActiveTagId(undefined); }}
                 className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-[15px] transition-colors ${
                   view === "all"
                     ? "bg-primary/10 font-medium text-primary"
@@ -193,7 +193,7 @@ export default function Dashboard() {
                 {t("dashboard.todo")}
               </button>
               <button
-                onClick={() => navigate("/app?view=tasks")}
+                onClick={() => { navigate("/app?view=tasks"); setActiveListId(undefined); setActiveTagId(undefined); }}
                 className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-[15px] transition-colors ${
                   view === "tasks"
                     ? "bg-primary/10 font-medium text-primary"
@@ -297,7 +297,7 @@ export default function Dashboard() {
                       <>
                         <button
                           onClick={() => {
-                            setActiveListId(list.id);
+                            setActiveListId(activeListId === list.id ? undefined : list.id);
                             setActiveTagId(undefined);
                           }}
                           className={`flex flex-1 items-center rounded-lg px-3 py-2 text-left font-urbanist text-[15px] transition-colors ${
