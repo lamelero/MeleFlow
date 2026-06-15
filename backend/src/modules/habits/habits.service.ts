@@ -8,26 +8,81 @@ function normalizeDate(d: Date): Date {
   return dt;
 }
 
-export function calculateStreak(dates: Date[]): number {
-  if (dates.length === 0) return 0;
-  const sorted = dates
-    .map(normalizeDate)
-    .filter((d) => !isNaN(d.getTime()))
-    .sort((a, b) => b.getTime() - a.getTime());
+interface StreakLog {
+  date: Date;
+  status: string;
+}
 
-  const today = normalizeDate(new Date());
-  const hasToday = sorted[0].getTime() === today.getTime();
-  let expected = hasToday ? today : new Date(today.getTime() - 86400000);
-  let streak = 0;
+function getActiveDays(frequency: string | null): number[] | null {
+  if (!frequency) return null;
+  try {
+    const f = JSON.parse(frequency);
+    if (f.type === "weekly" && Array.isArray(f.days) && f.days.length > 0) {
+      return f.days;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
-  for (const date of sorted) {
-    if (date.getTime() === expected.getTime()) {
-      streak++;
-      expected = new Date(expected.getTime() - 86400000);
-    } else if (date.getTime() < expected.getTime()) {
-      break;
+function isActiveDay(day: number, activeDays: number[] | null): boolean {
+  if (!activeDays) return true;
+  // Convert JS getDay() (0=Sun) to UI index (0=Mon)
+  const uiIdx = day === 0 ? 6 : day - 1;
+  return activeDays.includes(uiIdx);
+}
+
+export function calculateStreak(logs: StreakLog[], frequency: string | null = null): number {
+  if (logs.length === 0) return 0;
+
+  const activeDays = getActiveDays(frequency);
+
+  // Build a map: dateStr → status
+  const statusMap = new Map<string, string>();
+  for (const log of logs) {
+    const d = normalizeDate(log.date);
+    if (!isNaN(d.getTime())) {
+      statusMap.set(d.toISOString().split("T")[0], log.status);
     }
   }
+
+  const today = normalizeDate(new Date());
+
+  // Walk backwards from today
+  let cursor = new Date(today);
+  let streak = 0;
+  const maxLookback = 365; // safety limit
+
+  for (let i = 0; i < maxLookback; i++) {
+    const dateStr = cursor.toISOString().split("T")[0];
+    const dayOfWeek = cursor.getUTCDay();
+    const uiDay = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
+    // Check if this day is active for this habit's frequency
+    if (activeDays && !activeDays.includes(uiDay)) {
+      // Inactive day, skip it (move cursor backward)
+      cursor.setUTCDate(cursor.getUTCDate() - 1);
+      continue;
+    }
+
+    const status = statusMap.get(dateStr);
+
+    if (status === "completed") {
+      streak++;
+    } else if (status === "skipped") {
+      // Skipped doesn't break streak but doesn't add either
+    } else {
+      // No log or any other status → streak broken
+      break;
+    }
+
+    cursor.setUTCDate(cursor.getUTCDate() - 1);
+
+    // Safety: don't look back forever
+    if (i > 700) break;
+  }
+
   return streak;
 }
 
@@ -54,20 +109,21 @@ export class HabitService {
       orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
     });
 
-    // Recalculate streak for all habits from all completed logs
+    // Recalculate streak for all habits from all logs
     const allLogs = await prisma.habitLog.findMany({
-      where: { habit: { userId }, status: "completed" },
-      select: { habitId: true, date: true },
+      where: { habit: { userId } },
+      select: { habitId: true, date: true, status: true },
     });
     const streakByHabit = new Map<string, number>();
-    const grouped = new Map<string, Date[]>();
+    const grouped = new Map<string, { date: Date; status: string }[]>();
     for (const log of allLogs) {
       const arr = grouped.get(log.habitId) ?? [];
-      arr.push(log.date);
+      arr.push({ date: log.date, status: log.status });
       grouped.set(log.habitId, arr);
     }
-    for (const [habitId, dates] of grouped) {
-      streakByHabit.set(habitId, calculateStreak(dates));
+    for (const [habitId, logs] of grouped) {
+      const habit = habits.find((h) => h.id === habitId);
+      streakByHabit.set(habitId, calculateStreak(logs, habit?.frequency ?? null));
     }
 
     return habits.map(({ _count, ...h }) => ({
@@ -176,20 +232,22 @@ export class HabitService {
       });
     }
 
-    // For streak calculation, only count 'completed' logs (skipped doesn't break or add to streak)
+    // Recalculate streak from all logs
     const logs = await prisma.habitLog.findMany({
-      where: { habitId, status: "completed" },
+      where: { habitId },
       orderBy: { date: "desc" },
-      select: { date: true },
+      select: { date: true, status: true },
     });
 
-    const streak = calculateStreak(logs.map((l) => l.date));
+    const streak = calculateStreak(logs, habit.frequency);
     await prisma.habit.update({
       where: { id: habitId },
       data: { streakCount: streak },
     });
 
-    return { alreadyCheckedIn: false, streak, totalDays: logs.length };
+    const totalDays = await prisma.habitLog.count({ where: { habitId, status: "completed" } });
+
+    return { alreadyCheckedIn: false, streak, totalDays };
   }
 
   async undoCheckIn(userId: string, habitId: string, dateStr?: string) {
@@ -206,18 +264,20 @@ export class HabitService {
     });
 
     const logs = await prisma.habitLog.findMany({
-      where: { habitId, status: "completed" },
+      where: { habitId },
       orderBy: { date: "desc" },
-      select: { date: true },
+      select: { date: true, status: true },
     });
 
-    const streak = calculateStreak(logs.map((l) => l.date));
+    const streak = calculateStreak(logs, habit.frequency);
     await prisma.habit.update({
       where: { id: habitId },
       data: { streakCount: streak },
     });
 
-    return { streak, totalDays: logs.length };
+    const totalDays = await prisma.habitLog.count({ where: { habitId, status: "completed" } });
+
+    return { streak, totalDays };
   }
 
   async resetProgress(userId: string, habitId: string) {
