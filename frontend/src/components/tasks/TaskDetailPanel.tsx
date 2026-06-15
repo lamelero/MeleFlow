@@ -53,6 +53,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
   const [collaborators, setCollaborators] = useState<{ id: string; username: string; displayName: string | null; avatarUrl: string | null }[]>([]);
   const [priority, setPriority] = useState(4);
   const [status, setStatus] = useState<"todo" | "in_progress" | "completed">("todo");
+  const [title, setTitle] = useState("");
   const tagInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const checklistInputRef = useRef<HTMLInputElement>(null);
@@ -66,6 +67,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
 
   useEffect(() => {
     if (t) {
+      setTitle(t.title);
       setDescription(t.description || "");
       setDueDate(t.dueDate ? new Date(t.dueDate) : null);
       setPriority(t.priority ?? 4);
@@ -428,9 +430,20 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
                 t.isCompleted ? "bg-green-500" : "bg-primary"
               }`}
             />
-            <h2 className="font-outfit text-lg font-semibold text-gray-900 dark:text-gray-100">
-              {t.title}
-            </h2>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onBlur={async () => {
+                if (title.trim() && title !== t.title) {
+                  await updateTask(t.id, { title: title.trim() });
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                if (e.key === "Escape") setTitle(t.title);
+              }}
+              className="w-full bg-transparent font-outfit text-lg font-semibold text-gray-900 outline-none dark:text-gray-100"
+            />
           </div>
           <button
             onClick={onClose}
