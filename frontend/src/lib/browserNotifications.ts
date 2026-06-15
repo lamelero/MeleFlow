@@ -3,10 +3,40 @@ let cachedTasks: TaskLike[] = [];
 let cachedHabits: HabitLike[] = [];
 let cachedIcs: IcsEventLike[] = [];
 
-export function requestBrowserPermission() {
-  if (!("Notification" in window)) return;
-  if (Notification.permission === "default") {
-    Notification.requestPermission();
+export function requestBrowserPermission(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (!("Notification" in window)) {
+      console.warn("[browserNotifications] Notifications not supported");
+      resolve(false);
+      return;
+    }
+    if (Notification.permission === "granted") {
+      resolve(true);
+      return;
+    }
+    if (Notification.permission === "denied") {
+      resolve(false);
+      return;
+    }
+    Notification.requestPermission().then((result) => {
+      resolve(result === "granted");
+    });
+  });
+}
+
+export function testBrowserNotification(): boolean {
+  if (!("Notification" in window) || Notification.permission !== "granted") {
+    return false;
+  }
+  try {
+    new Notification("MeleFlow", {
+      body: "Browser notifications work!",
+      icon: "/logo192.png",
+    });
+    return true;
+  } catch (err) {
+    console.error("[browserNotifications] test error:", err);
+    return false;
   }
 }
 

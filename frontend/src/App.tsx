@@ -69,7 +69,10 @@ export default function App() {
           console.error("[app] push registration failed:", err);
         }
       } else {
-        requestBrowserPermission();
+        const granted = await requestBrowserPermission();
+        if (!granted) {
+          console.warn("[browser] notification permission denied");
+        }
       }
       setReady(true);
     }
