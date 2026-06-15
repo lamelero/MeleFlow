@@ -95,8 +95,8 @@ function parseTime(timeStr: string): { hour: number; minute: number } {
 
 function getNextDaily(hour: number, minute: number, dueDate?: Date | null): Date | null {
   const now = new Date();
-  const next = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute, 0, 0));
-  if (next.getTime() <= now.getTime()) next.setUTCDate(next.getUTCDate() + 1);
+  const next = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute, 0, 0);
+  if (next.getTime() <= now.getTime()) next.setDate(next.getDate() + 1);
   if (dueDate && next.getTime() > dueDate.getTime()) return null;
   return next;
 }
@@ -104,10 +104,9 @@ function getNextDaily(hour: number, minute: number, dueDate?: Date | null): Date
 function getNextWeekly(hour: number, minute: number, days: number[], dueDate?: Date | null): Date | null {
   const now = new Date();
   for (let i = 0; i < 7; i++) {
-    const next = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute, 0, 0));
-    next.setUTCDate(next.getUTCDate() + i);
+    const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i, hour, minute, 0, 0);
     if (next.getTime() <= now.getTime()) continue;
-    const uiIdx = next.getUTCDay() === 0 ? 6 : next.getUTCDay() - 1;
+    const uiIdx = next.getDay() === 0 ? 6 : next.getDay() - 1;
     if (days.includes(uiIdx)) {
       if (dueDate && next.getTime() > dueDate.getTime()) return null;
       return next;
@@ -118,7 +117,7 @@ function getNextWeekly(hour: number, minute: number, days: number[], dueDate?: D
 
 function getNextBeforeDue(hour: number, minute: number, beforeDays: number, dueDate: Date): Date | null {
   const at = new Date(dueDate.getTime() - beforeDays * 86400000);
-  at.setUTCHours(hour, minute, 0, 0);
+  at.setHours(hour, minute, 0, 0);
   return at.getTime() > Date.now() ? at : null;
 }
 
