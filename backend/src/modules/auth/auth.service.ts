@@ -443,11 +443,17 @@ export class AuthService {
           role: true,
           language: true,
           isTwoFactorEnabled: true,
+          notificationPrefs: true,
         },
       });
 
       if (!user) throw new AppError(404, "User not found");
-      return user;
+
+      // Parse notificationPrefs for frontend
+      return {
+        ...user,
+        notificationPrefs: user.notificationPrefs ? JSON.parse(user.notificationPrefs) : { email: true, push: true, browser: true },
+      };
     } catch (err) {
       if (err instanceof AppError) throw err;
 
@@ -461,11 +467,15 @@ export class AuthService {
           role: true,
           language: true,
           isTwoFactorEnabled: true,
+          notificationPrefs: true,
         },
       });
 
       if (!user) throw new AppError(404, "User not found");
-      return user;
+      return {
+        ...user,
+        notificationPrefs: user.notificationPrefs ? JSON.parse(user.notificationPrefs) : { email: true, push: true, browser: true },
+      };
     }
   }
 
