@@ -146,17 +146,21 @@ export default function HabitCalendarTab({ habit, onChange }: HabitCalendarTabPr
             >
               <div
                 className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium relative ${
-                  status === "completed"
+                  status === "completed" || status === "skipped" || status === "missed"
                     ? "text-white"
                     : status === "today"
                       ? "border-2 border-primary/40 bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-200"
-                      : status === "missed"
-                        ? "bg-red-100 text-rose-500 dark:bg-red-900/30 dark:text-rose-400"
-                        : status === "skipped"
-                          ? ""
-                          : ""
+                      : ""
                 }`}
-                style={status === "completed" ? { backgroundColor: "#14B8A6" } : status === "skipped" ? { backgroundColor: "#F59E0B25" } : undefined}
+                style={
+                  status === "completed"
+                    ? { backgroundColor: "#14B8A6" }
+                    : status === "skipped"
+                      ? { backgroundColor: "#F59E0B" }
+                      : status === "missed"
+                        ? { backgroundColor: "#EF4444" }
+                        : undefined
+                }
               >
                 {day}
                 {status === "skipped" && (
