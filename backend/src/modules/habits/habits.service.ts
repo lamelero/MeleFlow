@@ -160,13 +160,21 @@ export class HabitService {
     });
 
     if (existing) {
-      const totalDays = await prisma.habitLog.count({ where: { habitId, status: "completed" } });
-      return { alreadyCheckedIn: true, streak: habit.streakCount, totalDays };
+      if (existing.status === status) {
+        // Same status - nothing to do
+        const totalDays = await prisma.habitLog.count({ where: { habitId, status: "completed" } });
+        return { alreadyCheckedIn: true, streak: habit.streakCount, totalDays };
+      }
+      // Update existing log to new status
+      await prisma.habitLog.update({
+        where: { id: existing.id },
+        data: { status },
+      });
+    } else {
+      await prisma.habitLog.create({
+        data: { habitId, date, status },
+      });
     }
-
-    await prisma.habitLog.create({
-      data: { habitId, date, status },
-    });
 
     // For streak calculation, only count 'completed' logs (skipped doesn't break or add to streak)
     const logs = await prisma.habitLog.findMany({
