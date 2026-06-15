@@ -63,10 +63,9 @@ export function calculateStreak(logs: StreakLog[], frequency: string | null = nu
   for (let i = 0; i < maxLookback; i++) {
     const dateStr = cursor.toISOString().split("T")[0];
     const dayOfWeek = cursor.getUTCDay();
-    const uiDay = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
 
     // Check if this day is active for this habit's frequency
-    if (activeDays && !activeDays.includes(uiDay)) {
+    if (activeDays && !activeDays.includes(dayOfWeek)) {
       // Inactive day, skip it (move cursor backward)
       cursor.setUTCDate(cursor.getUTCDate() - 1);
       continue;
