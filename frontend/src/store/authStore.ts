@@ -198,6 +198,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     set((state) => ({
       user: state.user ? { ...state.user, notificationPrefs: res.data } : null,
     }));
+    if (prefs.browser === false) {
+      const { cancelBrowserReminders } = await import("../lib/browserNotifications");
+      cancelBrowserReminders();
+    }
   },
 
   uploadAvatar: async (file: File) => {
