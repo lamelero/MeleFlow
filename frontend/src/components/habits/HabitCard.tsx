@@ -19,6 +19,7 @@ interface DayCircle {
   isToday: boolean;
   completed: boolean;
   skipped: boolean;
+  missed: boolean;
 }
 
 function getWeekDays(habitStart: string | null, locale: string): DayCircle[] {
@@ -38,6 +39,7 @@ function getWeekDays(habitStart: string | null, locale: string): DayCircle[] {
       isToday: false,
       completed: false,
       skipped: false,
+      missed: false,
     });
   }
   days[6].isToday = true;
@@ -86,6 +88,7 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
       const st = logSet.get(d.dateStr);
       if (st === "completed") d.completed = true;
       if (st === "skipped") d.skipped = true;
+      if (!d.completed && !d.skipped && !d.isToday && d.dateStr < today) d.missed = true;
     });
     return wd;
   })();
@@ -208,7 +211,8 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
             <div
               className={`flex h-8 w-8 items-center justify-center rounded-lg text-[11px] font-semibold transition-all relative
                 ${day.dateStr > today ? "opacity-20" : "cursor-pointer hover:scale-105"}
-                ${!day.completed && !day.skipped && !day.isToday ? "bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500" : ""}
+                ${!day.completed && !day.skipped && !day.isToday && !day.missed ? "bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500" : ""}
+                ${day.missed ? "bg-red-50 text-rose-500 dark:bg-red-900/20" : ""}
                 ${day.isToday && !day.completed && !day.skipped ? "bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-200" : ""}
                 ${day.completed ? "text-white" : ""}
                 ${day.skipped ? "" : ""}

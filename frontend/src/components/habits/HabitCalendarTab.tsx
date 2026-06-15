@@ -150,9 +150,11 @@ export default function HabitCalendarTab({ habit, onChange }: HabitCalendarTabPr
                     ? "text-white"
                     : status === "today"
                       ? "border-2 border-primary/40 bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-200"
-                      : status === "missed" || status === "skipped"
-                        ? "bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500"
-                        : ""
+                      : status === "missed"
+                        ? "bg-red-50 text-rose-500 dark:bg-red-900/20"
+                        : status === "skipped"
+                          ? ""
+                          : ""
                 }`}
                 style={status === "completed" ? { backgroundColor: catInfo.color } : status === "skipped" ? { backgroundColor: catInfo.color + "25" } : undefined}
               >
