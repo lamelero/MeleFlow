@@ -687,15 +687,17 @@ export class AuthService {
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true, username: true, displayName: true, avatarUrl: true, role: true, language: true, timezone: true },
+      select: { id: true, email: true, username: true, displayName: true, avatarUrl: true, notificationEmail: true, bio: true, timezone: true, role: true, language: true, notificationPrefs: true },
     });
+
+    const parsedPrefs = user?.notificationPrefs ? JSON.parse(user.notificationPrefs) : { email: true, push: true, browser: true };
 
     return {
       accessToken,
       refreshToken: rawToken,
       refreshTokenExpiresAt: expiresAt.toISOString(),
       rememberMe,
-      user,
+      user: { ...user, notificationPrefs: parsedPrefs },
     };
   }
 
