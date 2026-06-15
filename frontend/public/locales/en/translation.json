@@ -44,7 +44,11 @@
       "unknown": "Something went wrong",
       "tooManyAttempts": "Too many login attempts. Please try again later.",
       "invalid2FACode": "Invalid 2FA code"
-    }
+    },
+    "verifyCode": "Verify Code",
+    "sending": "Sending...",
+    "resendCode": "Resend code",
+    "emailCodeSent": "Enter the code sent to"
   },
   "profile": {
     "title": "Profile Settings",

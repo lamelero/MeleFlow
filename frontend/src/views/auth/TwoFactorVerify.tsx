@@ -124,8 +124,8 @@ export default function TwoFactorVerify() {
       </div>
       <p className="mt-1 font-urbanist text-sm text-gray-500 dark:text-gray-400">
         {method === "email"
-          ? `Enter the code sent to ${email}`
-          : "Enter the 6-digit code from your authenticator app or a recovery code."}
+          ? `${t("auth.emailCodeSent") || "Enter the code sent to"} ${email}`
+          : t("auth.twoFactorCode")}
       </p>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-6">
@@ -170,7 +170,7 @@ export default function TwoFactorVerify() {
           disabled={submitting || code.join("").length !== 6}
           className="w-full rounded-xl bg-primary px-4 py-2.5 font-outfit font-semibold text-white transition-colors hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {submitting ? "Verifying..." : "Verify"}
+          {submitting ? t("auth.verifying") || "Verifying..." : t("auth.verify")}
         </button>
 
         <button
@@ -180,10 +180,10 @@ export default function TwoFactorVerify() {
           className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
         >
           {sendingOtp
-            ? "Sending..."
+            ? t("auth.sending") || "Sending..."
             : resendCooldown > 0
-              ? `Resend (${resendCooldown}s)`
-              : "Resend code"}
+              ? `${t("auth.resendCode")} (${resendCooldown}s)`
+              : t("auth.resendCode")}
         </button>
 
         <button
@@ -191,7 +191,7 @@ export default function TwoFactorVerify() {
           onClick={() => navigate("/login")}
           className="w-full text-center font-urbanist text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
         >
-          Back to login
+          {t("auth.backToLogin")}
         </button>
       </form>
     </AuthLayout>

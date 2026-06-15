@@ -44,7 +44,11 @@
       "unknown": "Algo salió mal",
       "tooManyAttempts": "Demasiados intentos de inicio de sesión. Intenta de nuevo más tarde.",
       "invalid2FACode": "Código 2FA inválido"
-    }
+    },
+    "verifyCode": "Verificar código",
+    "sending": "Enviando...",
+    "resendCode": "Reenviar código",
+    "emailCodeSent": "Ingresa el código enviado a"
   },
   "profile": {
     "title": "Configuración de perfil",
