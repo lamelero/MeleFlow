@@ -151,12 +151,12 @@ export default function HabitCalendarTab({ habit, onChange }: HabitCalendarTabPr
                     : status === "today"
                       ? "border-2 border-primary/40 bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-200"
                       : status === "missed"
-                        ? "text-gray-400 dark:text-gray-500"
+                        ? "bg-red-100 text-rose-500 dark:bg-red-900/30 dark:text-rose-400"
                         : status === "skipped"
                           ? ""
                           : ""
                 }`}
-                style={status === "completed" ? { backgroundColor: "#14B8A6" } : status === "skipped" ? { backgroundColor: "#F59E0B25" } : status === "missed" ? { backgroundColor: "#EF444410" } : undefined}
+                style={status === "completed" ? { backgroundColor: "#14B8A6" } : status === "skipped" ? { backgroundColor: "#F59E0B25" } : undefined}
               >
                 {day}
                 {status === "skipped" && (
