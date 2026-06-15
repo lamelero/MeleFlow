@@ -371,7 +371,9 @@
     "todo": "Por hacer",
     "inProgress": "En curso",
     "completed": "Hecho",
-    "status": "Estado"
+    "status": "Estado",
+    "list": "Lista",
+    "noList": "Sin lista"
   },
   "calendar": {
     "title": "Calendario",

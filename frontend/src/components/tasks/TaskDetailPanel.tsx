@@ -16,6 +16,7 @@ function formatBytes(bytes: number): string {
 }
 import { useTaskStore } from "../../store/taskStore";
 import { useAuthStore } from "../../store/authStore";
+import { useListStore } from "../../store/listStore";
 import { useTagStore, type Tag, randomTagColor } from "../../store/tagStore";
 import { client } from "../../api/client";
 import TagPill from "../tags/TagPill";
@@ -30,6 +31,7 @@ interface TaskDetailPanelProps {
 export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps) {
   const { t: trans } = useTranslation();
   const { updateTask, replaceTask, addCollaborator, removeCollaborator } = useTaskStore();
+  const { lists, fetchLists } = useListStore();
   const currentUser = useAuthStore((s) => s.user);
   const { tags, fetchTags, createTag } = useTagStore();
   const [description, setDescription] = useState("");
@@ -97,8 +99,8 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
   }, [t?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (t) fetchTags();
-  }, [t, fetchTags]);
+    if (t) { fetchTags(); fetchLists(); }
+  }, [t, fetchTags, fetchLists]);
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
@@ -507,6 +509,22 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="mb-4">
+            <label className="mb-2 block font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+              {trans("common.list") || "List"}
+            </label>
+            <select
+              value={t.listId || ""}
+              onChange={(e) => updateTask(t.id, { listId: e.target.value || null })}
+              className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+            >
+              <option value="">{trans("common.noList") || "No list"}</option>
+              {lists.map((list) => (
+                <option key={list.id} value={list.id}>{list.name}</option>
+              ))}
+            </select>
           </div>
 
           {t.tags && t.tags.length > 0 && (

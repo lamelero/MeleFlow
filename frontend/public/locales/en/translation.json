@@ -371,7 +371,9 @@
     "todo": "To Do",
     "inProgress": "In Progress",
     "completed": "Done",
-    "status": "Status"
+    "status": "Status",
+    "list": "List",
+    "noList": "No list"
   },
   "calendar": {
     "title": "Calendar",
