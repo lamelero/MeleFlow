@@ -10,7 +10,7 @@ import AppLayout from "../../components/AppLayout";
 import { isNative, getFontSize, setFontSize, getBoldFont, setBoldFont } from "../../capacitor/register";
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { version as appVersion } from "../../../package.json";
-import { testBrowserNotification } from "../../lib/browserNotifications";
+import { testBrowserNotification, getDiagnostics } from "../../lib/browserNotifications";
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -894,6 +894,19 @@ export default function Profile() {
             className="mt-2 w-full rounded-lg bg-gray-100 px-3 py-2 font-urbanist text-xs text-gray-600 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
           >
             {t("profile.testBrowser") || "Test browser notification"}
+          </button>
+          <button
+            onClick={() => {
+              const diag = getDiagnostics();
+              toast.success(
+                `Prefs:${diag.browserPref} Tasks:${diag.tasksWithReminders} Timers:${diag.activeTimers} Next:${diag.nextTitle || "none"}`,
+                { duration: 8000 }
+              );
+              console.log("[profile] browser diagnostics:", diag);
+            }}
+            className="mt-2 w-full rounded-lg bg-gray-100 px-3 py-2 font-urbanist text-xs text-gray-600 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+          >
+            {t("profile.diagBrowser") || "Diagnose browser"}
           </button>
         </div>
       </div>

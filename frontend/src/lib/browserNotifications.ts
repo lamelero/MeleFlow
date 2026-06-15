@@ -1,3 +1,5 @@
+import { useAuthStore } from "../store/authStore";
+
 let timers: number[] = [];
 let cachedTasks: TaskLike[] = [];
 let cachedHabits: HabitLike[] = [];
@@ -38,6 +40,26 @@ export function testBrowserNotification(): boolean {
     console.error("[browserNotifications] test error:", err);
     return false;
   }
+}
+
+export function getDiagnostics() {
+  const prefs = useAuthStore.getState().user?.notificationPrefs;
+  const tasksWithReminders = cachedTasks.filter((t) => t.reminderEnabled).length;
+  const taskRems = computeTaskReminders(cachedTasks);
+  const habitRems = computeHabitReminders(cachedHabits);
+  const icsRems = computeIcsReminders(cachedIcs);
+  const all = [...taskRems, ...habitRems, ...icsRems].sort((a, b) => a.nextTime.getTime() - b.nextTime.getTime());
+  return {
+    browserPref: prefs?.browser ?? true,
+    tasksWithReminders,
+    cachedTasks: cachedTasks.length,
+    cachedHabits: cachedHabits.length,
+    cachedIcs: cachedIcs.length,
+    remindersGenerated: all.length,
+    nextTitle: all[0]?.title ?? null,
+    nextIn: all[0] ? Math.round((all[0].nextTime.getTime() - Date.now()) / 1000) + "s" : null,
+    activeTimers: timers.length,
+  };
 }
 
 interface BrowserReminder {
@@ -162,6 +184,14 @@ function computeIcsReminders(events: IcsEventLike[], beforeMinutes = 5): Browser
 function scheduleAll() {
   timers.forEach(clearTimeout);
   timers = [];
+
+  // Respect notification preferences
+  const prefs = useAuthStore.getState().user?.notificationPrefs;
+  if (prefs && prefs.browser === false) {
+    console.log("[browserNotifications] browser notifications disabled by user");
+    return;
+  }
+
   const rems = [...computeTaskReminders(cachedTasks), ...computeHabitReminders(cachedHabits), ...computeIcsReminders(cachedIcs)];
   const now = Date.now();
   for (const rem of rems) {
