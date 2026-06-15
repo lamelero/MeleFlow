@@ -54,6 +54,12 @@ export function calculateStreak(logs: StreakLog[], frequency: string | null = nu
   let streak = 0;
   const maxLookback = 365; // safety limit
 
+  // If today is not completed, start streak from yesterday
+  const todayStr = today.toISOString().split("T")[0];
+  if (statusMap.get(todayStr) !== "completed") {
+    cursor.setUTCDate(cursor.getUTCDate() - 1);
+  }
+
   for (let i = 0; i < maxLookback; i++) {
     const dateStr = cursor.toISOString().split("T")[0];
     const dayOfWeek = cursor.getUTCDay();
