@@ -141,6 +141,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         : [data, ...state.tasks],
     }));
     toast.success("Task created");
+    updateTaskData(get().tasks);
     return data;
   },
 
@@ -158,6 +159,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       }));
       toast.success("Task updated");
       scheduleTaskReminders(get().tasks);
+      updateTaskData(get().tasks);
     } catch {
       set({ tasks: prev });
       toast.error("Failed to update task");
@@ -182,6 +184,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       }));
       toast.success(completed ? "Task completed" : "Task reopened");
       scheduleTaskReminders(get().tasks);
+      updateTaskData(get().tasks);
     } catch {
       set({ tasks: prev });
       toast.error("Failed to update task");
@@ -197,6 +200,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       await client.delete(`/tasks/${id}`);
       toast.success("Task deleted");
       scheduleTaskReminders(get().tasks);
+      updateTaskData(get().tasks);
     } catch {
       set({ tasks: prev });
       toast.error("Failed to delete task");
