@@ -156,7 +156,7 @@ export default function HabitCalendarTab({ habit, onChange }: HabitCalendarTabPr
                           ? ""
                           : ""
                 }`}
-                style={status === "completed" ? { backgroundColor: catInfo.color } : status === "skipped" ? { backgroundColor: catInfo.color + "25" } : status === "missed" ? { backgroundColor: catInfo.color + "10" } : undefined}
+                style={status === "completed" ? { backgroundColor: "#14B8A6" } : status === "skipped" ? { backgroundColor: "#F59E0B25" } : status === "missed" ? { backgroundColor: "#EF444410" } : undefined}
               >
                 {day}
                 {status === "skipped" && (

@@ -219,13 +219,13 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
               `}
               style={
                 day.completed
-                  ? { backgroundColor: catInfo.color }
+                  ? { backgroundColor: "#14B8A6" }
                   : day.skipped
-                    ? { backgroundColor: catInfo.color + "25", color: catInfo.color }
+                    ? { backgroundColor: "#F59E0B25", color: "#F59E0B" }
                     : day.missed
-                      ? { backgroundColor: catInfo.color + "10" }
+                      ? { backgroundColor: "#EF444410" }
                       : day.isToday
-                        ? { border: `2px solid ${catInfo.color}66` }
+                        ? { border: `2px solid #14B8A666` }
                         : undefined
               }
             >
