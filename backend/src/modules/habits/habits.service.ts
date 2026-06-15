@@ -46,7 +46,7 @@ export class HabitService {
         logs: {
           where: { date: { gte: threeMonthsAgo } },
           orderBy: { date: "desc" },
-          select: { date: true, isCompleted: true },
+          select: { date: true, status: true },
         },
         habitCategory: true,
         _count: { select: { logs: true } },
@@ -56,7 +56,7 @@ export class HabitService {
 
     // Recalculate streak for all habits from all completed logs
     const allLogs = await prisma.habitLog.findMany({
-      where: { habit: { userId }, isCompleted: true },
+      where: { habit: { userId }, status: "completed" },
       select: { habitId: true, date: true },
     });
     const streakByHabit = new Map<string, number>();
@@ -73,7 +73,7 @@ export class HabitService {
     return habits.map(({ _count, ...h }) => ({
       ...h,
       streakCount: streakByHabit.get(h.id) ?? 0,
-      logs: h.logs.map((l) => l.date.toISOString().split("T")[0]),
+      logs: h.logs.map((l) => ({ date: l.date.toISOString().split("T")[0], status: l.status })),
       totalDays: _count.logs,
       completedToday: h.logs.some((l) => l.date.getTime() === todayStart.getTime()),
     }));
@@ -86,7 +86,7 @@ export class HabitService {
       include: {
         logs: {
           orderBy: { date: "desc" },
-          select: { date: true, isCompleted: true },
+          select: { date: true, status: true },
         },
         habitCategory: true,
         _count: { select: { logs: true } },
@@ -95,7 +95,7 @@ export class HabitService {
     if (!habit) throw new AppError(404, "Habit not found");
     return {
       ...habit,
-      logs: habit.logs.map((l) => l.date.toISOString().split("T")[0]),
+      logs: habit.logs.map((l) => ({ date: l.date.toISOString().split("T")[0], status: l.status })),
       totalDays: habit._count.logs,
       completedToday: habit.logs.some((l) => l.date.getTime() === todayStart.getTime()),
     };
@@ -144,7 +144,7 @@ export class HabitService {
     return habit;
   }
 
-  async checkIn(userId: string, habitId: string, dateStr?: string) {
+  async checkIn(userId: string, habitId: string, dateStr?: string, statusVal?: string) {
     const habit = await prisma.habit.findFirst({
       where: { id: habitId, userId },
     });
@@ -153,21 +153,24 @@ export class HabitService {
     const date = dateStr ? normalizeDate(new Date(dateStr + "T00:00:00Z")) : normalizeDate(new Date());
     if (isNaN(date.getTime())) throw new AppError(400, "Invalid date");
 
+    const status = statusVal === "skipped" ? "skipped" : "completed";
+
     const existing = await prisma.habitLog.findUnique({
       where: { habitId_date: { habitId, date } },
     });
 
     if (existing) {
-      const totalDays = await prisma.habitLog.count({ where: { habitId, isCompleted: true } });
+      const totalDays = await prisma.habitLog.count({ where: { habitId, status: "completed" } });
       return { alreadyCheckedIn: true, streak: habit.streakCount, totalDays };
     }
 
     await prisma.habitLog.create({
-      data: { habitId, date, isCompleted: true },
+      data: { habitId, date, status },
     });
 
+    // For streak calculation, only count 'completed' logs (skipped doesn't break or add to streak)
     const logs = await prisma.habitLog.findMany({
-      where: { habitId, isCompleted: true },
+      where: { habitId, status: "completed" },
       orderBy: { date: "desc" },
       select: { date: true },
     });
@@ -195,7 +198,7 @@ export class HabitService {
     });
 
     const logs = await prisma.habitLog.findMany({
-      where: { habitId, isCompleted: true },
+      where: { habitId, status: "completed" },
       orderBy: { date: "desc" },
       select: { date: true },
     });

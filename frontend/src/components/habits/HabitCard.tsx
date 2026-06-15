@@ -18,6 +18,7 @@ interface DayCircle {
   dayLabel: string;
   isToday: boolean;
   completed: boolean;
+  skipped: boolean;
 }
 
 function getWeekDays(habitStart: string | null, locale: string): DayCircle[] {
@@ -36,6 +37,7 @@ function getWeekDays(habitStart: string | null, locale: string): DayCircle[] {
       dayLabel: fmt.format(d),
       isToday: false,
       completed: false,
+      skipped: false,
     });
   }
   days[6].isToday = true;
@@ -67,14 +69,23 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const [pending, setPending] = useState(false);
 
-  const logSet = useMemo(() => new Set(habit.logs), [habit.logs]);
+  const logSet = useMemo(() => {
+    const set = new Map<string, string>();
+    for (const log of habit.logs) {
+      set.set(log.date, log.status);
+    }
+    return set;
+  }, [habit.logs]);
 
-  const checkedToday = logSet.has(today) || habit.completedToday;
+  const checkedToday = logSet.has(today) && logSet.get(today) === "completed";
+  const skippedToday = logSet.has(today) && logSet.get(today) === "skipped";
 
   const weekDays = (() => {
     const wd = getWeekDays(habit.startDate, i18n.language);
     wd.forEach((d) => {
-      if (logSet.has(d.dateStr)) d.completed = true;
+      const st = logSet.get(d.dateStr);
+      if (st === "completed") d.completed = true;
+      if (st === "skipped") d.skipped = true;
     });
     return wd;
   })();
@@ -114,11 +125,13 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
   async function handleCellClick(dateStr: string) {
     if (dateStr > today || pending) return;
     setPending(true);
-    const isChecked = dateStr === today ? checkedToday : habit.logs.includes(dateStr);
-    if (isChecked) {
-      await undoCheckIn(habit.id, dateStr);
+    const currentStatus = logSet.get(dateStr);
+    if (!currentStatus) {
+      await checkIn(habit.id, dateStr, "completed");
+    } else if (currentStatus === "completed") {
+      await checkIn(habit.id, dateStr, "skipped");
     } else {
-      await checkIn(habit.id, dateStr);
+      await undoCheckIn(habit.id, dateStr);
     }
     setPending(false);
   }
@@ -193,24 +206,25 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
               {day.dayLabel}
             </span>
             <div
-              className={`flex h-8 w-8 items-center justify-center rounded-lg text-[11px] font-semibold transition-all
-                ${day.completed
-                  ? "text-white border-0"
-                  : day.isToday
-                    ? "bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-200"
-                    : "bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500"
-                }
+              className={`flex h-8 w-8 items-center justify-center rounded-lg text-[11px] font-semibold transition-all relative
                 ${day.dateStr > today ? "opacity-20" : "cursor-pointer hover:scale-105"}
               `}
               style={
                 day.completed
-                  ? { backgroundColor: catInfo.color }
-                  : day.isToday
-                    ? { border: `2px solid ${catInfo.color}66` }
-                    : undefined
+                  ? { backgroundColor: catInfo.color, color: "#fff" }
+                  : day.skipped
+                    ? { backgroundColor: catInfo.color + "25", color: catInfo.color }
+                    : day.isToday
+                      ? { border: `2px solid ${catInfo.color}66`, backgroundColor: "#fff", color: "#374151" }
+                      : { backgroundColor: "#f3f4f6", color: "#9ca3af" }
               }
             >
               {day.dayNum}
+              {day.skipped && (
+                <svg className="absolute inset-0 h-full w-full" viewBox="0 0 32 32" fill="none" stroke={catInfo.color} strokeWidth={1.5} opacity={0.5}>
+                  <line x1="6" y1="26" x2="26" y2="6" />
+                </svg>
+              )}
             </div>
           </button>
         ))}
@@ -243,8 +257,8 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
           onClick={() => handleCellClick(today)}
           className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 font-urbanist text-xs font-medium transition-all"
           style={{
-            backgroundColor: checkedToday ? `${catInfo.color}1A` : catInfo.color,
-            color: checkedToday ? catInfo.color : "#fff",
+            backgroundColor: checkedToday ? `${catInfo.color}1A` : skippedToday ? `${catInfo.color}25` : catInfo.color,
+            color: (checkedToday || skippedToday) ? catInfo.color : "#fff",
           }}
         >
           {checkedToday ? (
@@ -253,6 +267,13 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
               {t("habits.doneToday")}
+            </>
+          ) : skippedToday ? (
+            <>
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <line x1="6" y1="18" x2="18" y2="6" />
+              </svg>
+              {t("habits.skipped") || "Skipped"}
             </>
           ) : (
             <>

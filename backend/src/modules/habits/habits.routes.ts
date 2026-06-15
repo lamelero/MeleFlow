@@ -48,7 +48,7 @@ export async function habitRoutes(app: FastifyInstance) {
   app.post("/:id/progress", async (req, reply) => {
     const { id } = req.params as { id: string };
     const query = progressQuerySchema.parse(req.query);
-    const result = await service.checkIn(req.user.sub, id, query.date);
+    const result = await service.checkIn(req.user.sub, id, query.date, query.status);
     return reply.send(result);
   });
 

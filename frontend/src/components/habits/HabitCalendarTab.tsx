@@ -31,7 +31,13 @@ export default function HabitCalendarTab({ habit, onChange }: HabitCalendarTabPr
   const todayStr = today.toISOString().split("T")[0];
 
   const [viewDate, setViewDate] = useState(() => new Date());
-  const logSet = useMemo(() => new Set(habit.logs), [habit.logs]);
+  const logSet = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const log of habit.logs) {
+      map.set(log.date, log.status);
+    }
+    return map;
+  }, [habit.logs]);
 
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
@@ -51,10 +57,13 @@ export default function HabitCalendarTab({ habit, onChange }: HabitCalendarTabPr
     if (!day) return;
     const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     if (dateStr > todayStr) return;
-    if (logSet.has(dateStr)) {
-      await undoCheckIn(habit.id, dateStr);
+    const currentStatus = logSet.get(dateStr);
+    if (!currentStatus) {
+      await checkIn(habit.id, dateStr, "completed");
+    } else if (currentStatus === "completed") {
+      await checkIn(habit.id, dateStr, "skipped");
     } else {
-      await checkIn(habit.id, dateStr);
+      await undoCheckIn(habit.id, dateStr);
     }
     onChange?.();
   }
@@ -62,7 +71,9 @@ export default function HabitCalendarTab({ habit, onChange }: HabitCalendarTabPr
   const getDayStatus = useCallback((dateStr: string, day: number) => {
     if (!day) return "empty";
     if (dateStr > todayStr) return "future";
-    if (logSet.has(dateStr)) return "completed";
+    const st = logSet.get(dateStr);
+    if (st === "completed") return "completed";
+    if (st === "skipped") return "skipped";
     if (dateStr === todayStr) return "today";
     return "missed";
   }, [logSet, todayStr]);
@@ -134,17 +145,23 @@ export default function HabitCalendarTab({ habit, onChange }: HabitCalendarTabPr
               }`}
             >
               <div
-                className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium ${
+                className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium relative ${
                   status === "completed"
-                    ? "bg-primary text-white"
+                    ? "text-white"
                     : status === "today"
                       ? "border-2 border-primary/40 bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-200"
-                      : status === "missed"
+                      : status === "missed" || status === "skipped"
                         ? "bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500"
                         : ""
                 }`}
+                style={status === "completed" ? { backgroundColor: catInfo.color } : status === "skipped" ? { backgroundColor: catInfo.color + "25" } : undefined}
               >
                 {day}
+                {status === "skipped" && (
+                  <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 32 32" fill="none" stroke={catInfo.color} strokeWidth={1.5} opacity={0.5}>
+                    <line x1="8" y1="24" x2="24" y2="8" />
+                  </svg>
+                )}
               </div>
             </button>
           );

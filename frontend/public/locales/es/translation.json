@@ -463,7 +463,8 @@
     "newCategory": "Nueva categoría",
     "categoryName": "Nombre de categoría",
     "createCategory": "Crear",
-    "customCategories": "Categorías personalizadas"
+    "customCategories": "Categorías personalizadas",
+    "skipped": "Omitido"
   },
   "pomodoro": {
     "focus": "Enfoque",

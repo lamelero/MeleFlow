@@ -244,11 +244,11 @@ model HabitCategoryModel {
 // ── HabitLog (daily check-in) ────────────────────
 
 model HabitLog {
-  id          String   @id @default(cuid())
-  date        DateTime @db.Date
-  isCompleted Boolean  @default(true)
-  note        String?
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  date      DateTime @db.Date
+  status    String   @default("completed") // "completed" | "skipped"
+  note      String?
+  createdAt DateTime @default(now())
 
   habitId String
   habit   Habit  @relation(fields: [habitId], references: [id], onDelete: Cascade)

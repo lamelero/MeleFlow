@@ -54,7 +54,7 @@ export default function Statistics() {
     let completedCount = 0;
     for (const h of active) {
       for (const log of h.logs) {
-        if (log >= cutoff.toISOString().split("T")[0] && log <= todayStr) completedCount++;
+        if (log.status === "completed" && log.date >= cutoff.toISOString().split("T")[0] && log.date <= todayStr) completedCount++;
       }
     }
     return expectedTotal > 0 ? Math.round((completedCount / expectedTotal) * 100) : 0;

@@ -33,9 +33,10 @@ export default function HabitStatsTab({ habit }: HabitStatsTabProps) {
     let thisYear = 0;
 
     for (const log of habit.logs) {
-      if (log >= yearStart) thisYear++;
-      if (log >= monthStart) thisMonth++;
-      if (log >= weekStart) thisWeek++;
+      if (log.status !== "completed") continue;
+      if (log.date >= yearStart) thisYear++;
+      if (log.date >= monthStart) thisMonth++;
+      if (log.date >= weekStart) thisWeek++;
     }
 
     // Score
@@ -43,16 +44,16 @@ export default function HabitStatsTab({ habit }: HabitStatsTabProps) {
       ? Math.min(100, Math.round((habit.totalDays / Math.max(1, Math.round((today.getTime() - new Date(habit.startDate).getTime()) / (1000 * 60 * 60 * 24)))) * 100))
       : 0;
 
-    // Best streak (frontend calculation from logs)
-    const sorted = [...habit.logs].sort();
+    // Best streak (frontend calculation from completed logs)
+    const completedDates = habit.logs.filter((l) => l.status === "completed").map((l) => l.date).sort();
     let bestStreak = 0;
     let currentStreak = 0;
-    for (let i = 0; i < sorted.length; i++) {
+    for (let i = 0; i < completedDates.length; i++) {
       if (i === 0) {
         currentStreak = 1;
       } else {
-        const prev = new Date(sorted[i - 1]);
-        const curr = new Date(sorted[i]);
+        const prev = new Date(completedDates[i - 1]);
+        const curr = new Date(completedDates[i]);
         const diff = (curr.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24);
         if (diff === 1) {
           currentStreak++;

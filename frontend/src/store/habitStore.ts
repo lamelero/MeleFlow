@@ -18,7 +18,7 @@ export interface Habit {
   streakCount: number;
   totalDays: number;
   completedToday: boolean;
-  logs: string[];
+  logs: { date: string; status: string }[];
   categoryId?: string | null;
   habitCategory?: { id: string; name: string; icon: string; color: string } | null;
 }
@@ -54,7 +54,7 @@ interface HabitState {
   createHabit: (input: CreateHabitInput) => Promise<void>;
   updateHabit: (id: string, input: UpdateHabitInput) => Promise<void>;
   deleteHabit: (id: string) => Promise<void>;
-  checkIn: (id: string, date?: string) => Promise<void>;
+  checkIn: (id: string, date?: string, status?: string) => Promise<void>;
   undoCheckIn: (id: string, date?: string) => Promise<void>;
   resetProgress: (id: string) => Promise<void>;
 }
@@ -134,10 +134,12 @@ export const useHabitStore = create<HabitState>((set, get) => ({
     }
   },
 
-  checkIn: async (id, date) => {
+  checkIn: async (id, date, status?) => {
     try {
-      const params = date ? `?date=${date}` : "";
-      await client.post(`/habits/${id}/progress${params}`);
+      const params = new URLSearchParams();
+      if (date) params.set("date", date);
+      if (status) params.set("status", status);
+      await client.post(`/habits/${id}/progress?${params}`);
       await get().fetchHabits();
     } catch (err: unknown) {
       const msg =
