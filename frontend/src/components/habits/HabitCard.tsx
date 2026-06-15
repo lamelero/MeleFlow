@@ -212,7 +212,7 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
               className={`flex h-8 w-8 items-center justify-center rounded-lg text-[11px] font-semibold transition-all relative
                 ${day.dateStr > today ? "opacity-20" : "cursor-pointer hover:scale-105"}
                 ${!day.completed && !day.skipped && !day.isToday && !day.missed ? "bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500" : ""}
-                ${day.missed ? "bg-red-100 text-rose-500 dark:bg-red-900/30 dark:text-rose-400" : ""}
+                ${day.missed ? "" : ""}
                 ${day.isToday && !day.completed && !day.skipped ? "bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-200" : ""}
                 ${day.completed || day.skipped || day.missed ? "text-white" : ""}
                 ${day.missed ? "" : ""}
