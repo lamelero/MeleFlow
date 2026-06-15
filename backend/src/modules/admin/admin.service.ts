@@ -208,6 +208,12 @@ export class AdminService {
       await upsert("frontendUrl", input.frontendUrl);
     }
 
+    // Reset email transporter so new SMTP settings take effect immediately
+    if (input.smtpHost !== undefined || input.smtpPort !== undefined || input.smtpUser !== undefined || input.smtpPassword !== undefined || input.smtpPassword === "••••••••" || input.fromEmail !== undefined || input.emailEnabled !== undefined) {
+      const { resetTransport } = await import("../../lib/email-service");
+      resetTransport();
+    }
+
     return this.getSettings();
   }
 

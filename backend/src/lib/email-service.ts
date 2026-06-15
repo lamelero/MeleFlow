@@ -5,6 +5,10 @@ import { getCategoryIcon, TASK_ICON } from "./email-icons";
 
 let transporter: nodemailer.Transporter | null = null;
 
+export function resetTransport(): void {
+  transporter = null;
+}
+
 export interface EmailConfig {
   smtpHost: string;
   smtpPort: number;
