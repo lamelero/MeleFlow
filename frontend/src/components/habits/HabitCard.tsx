@@ -19,7 +19,6 @@ interface DayCircle {
   isToday: boolean;
   completed: boolean;
   skipped: boolean;
-  missed: boolean;
 }
 
 function getWeekDays(habitStart: string | null, locale: string): DayCircle[] {
@@ -39,7 +38,6 @@ function getWeekDays(habitStart: string | null, locale: string): DayCircle[] {
       isToday: false,
       completed: false,
       skipped: false,
-      missed: false,
     });
   }
   days[6].isToday = true;
@@ -88,7 +86,6 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
       const st = logSet.get(d.dateStr);
       if (st === "completed") d.completed = true;
       if (st === "skipped") d.skipped = true;
-      if (!d.completed && !d.skipped && !d.isToday && d.dateStr < today) d.missed = true;
     });
     return wd;
   })();
@@ -211,22 +208,16 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
             <div
               className={`flex h-8 w-8 items-center justify-center rounded-lg text-[11px] font-semibold transition-all relative
                 ${day.dateStr > today ? "opacity-20" : "cursor-pointer hover:scale-105"}
-                ${!day.completed && !day.skipped && !day.isToday && !day.missed ? "bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500" : ""}
-                ${day.missed ? "" : ""}
-                ${day.isToday && !day.completed && !day.skipped ? "bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-200" : ""}
-                ${day.completed || day.skipped || day.missed ? "text-white" : ""}
-                ${day.missed ? "" : ""}
+                ${!day.completed && !day.skipped && !day.isToday ? "border border-gray-300 bg-gray-50 text-gray-400 dark:border-gray-600 dark:bg-gray-800/50 dark:text-gray-500" : ""}
+                ${day.isToday && !day.completed && !day.skipped ? "border-2 border-primary/40 bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-200" : ""}
+                ${day.completed || day.skipped ? "text-white" : ""}
               `}
               style={
                 day.completed
                   ? { backgroundColor: "#14B8A6" }
                   : day.skipped
                     ? { backgroundColor: "#F59E0B" }
-                    : day.missed
-                      ? { backgroundColor: "#EF4444" }
-                      : day.isToday
-                        ? { border: `2px solid #14B8A666` }
-                        : undefined
+                    : undefined
               }
             >
               {day.dayNum}

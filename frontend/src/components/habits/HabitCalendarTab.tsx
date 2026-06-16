@@ -78,7 +78,7 @@ export default function HabitCalendarTab({ habit, onChange }: HabitCalendarTabPr
     if (st === "completed") return "completed";
     if (st === "skipped") return "skipped";
     if (dateStr === todayStr) return "today";
-    return "missed";
+    return "unmarked";
   }, [logSet, todayStr]);
 
   const monthlyStreak = useMemo(() => {
@@ -149,20 +149,20 @@ export default function HabitCalendarTab({ habit, onChange }: HabitCalendarTabPr
             >
               <div
                 className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium relative ${
-                  status === "completed" || status === "skipped" || status === "missed"
+                  status === "completed" || status === "skipped"
                     ? "text-white"
                     : status === "today"
                       ? "border-2 border-primary/40 bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-200"
-                      : ""
+                      : status === "unmarked"
+                        ? "border border-gray-300 bg-white text-gray-400 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-500"
+                        : ""
                 }`}
                 style={
                   status === "completed"
                     ? { backgroundColor: "#14B8A6" }
                     : status === "skipped"
                       ? { backgroundColor: "#F59E0B" }
-                      : status === "missed"
-                        ? { backgroundColor: "#EF4444" }
-                        : undefined
+                      : undefined
                 }
               >
                 {day}
