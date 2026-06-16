@@ -18,7 +18,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ServerConfig from "./components/ServerConfig";
 import { isNative, getServerUrl, setupAppListeners, setupStatusBar, getFontSize, getBoldFont, requestNotificationPermission, createNotificationChannel, requestExactAlarmPermission } from "./capacitor/register";
 import { requestBrowserPermission } from "./lib/browserNotifications";
-import { registerPushNotifications } from "./capacitor/pushNotifications";
+import { registerPushNotifications, setupFcm } from "./capacitor/pushNotifications";
 import { useThemeStore } from "./store/themeStore";
 import { initClientBaseUrl } from "./api/client";
 import "./i18n";
@@ -104,6 +104,7 @@ export default function App() {
       <ServerConfig
         onConfigured={() => {
           initClientBaseUrl().then(() => {
+            setupFcm();
             setNeedsConfig(false);
             initialize();
           });

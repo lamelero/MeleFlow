@@ -11,6 +11,7 @@ const PUSH_TOKEN_KEY = "meleflow_push_token";
 
 let lastToken: string | null = null;
 let tokenPromise: Promise<string | null> | null = null;
+let listenersSetUp = false;
 
 async function getStoredToken(): Promise<string | null> {
   try {
@@ -25,6 +26,69 @@ async function setStoredToken(token: string) {
   try {
     await Preferences.set({ key: PUSH_TOKEN_KEY, value: token });
   } catch {}
+}
+
+function setupListeners() {
+  if (listenersSetUp) return;
+  listenersSetUp = true;
+
+  tokenPromise = new Promise((resolve) => {
+    PushNotifications.addListener("registration", async (token) => {
+      console.log("[push] FCM token received");
+      lastToken = token.value;
+      await setStoredToken(token.value);
+      resolve(token.value);
+      await ensureChannel();
+      try {
+        await client.post("/notifications/register-token", { token: token.value });
+        console.log("[push] token sent to backend");
+        toast.success("Push notifications ready", { duration: 2000 });
+      } catch (err) {
+        console.error("[push] failed to send token:", err);
+      }
+    });
+  });
+
+  PushNotifications.addListener("registrationError", (err) => {
+    console.error("[push] registration error:", err);
+  });
+
+  PushNotifications.addListener("pushNotificationReceived", async (notification) => {
+    console.log("[push] received in foreground:", notification);
+    try {
+      await LocalNotifications.schedule({
+        notifications: [{
+          title: notification.title || "MeleFlow",
+          body: notification.body || "",
+          id: Math.floor(Math.random() * 100000) + 90000,
+          smallIcon: "ic_stat_icon",
+          iconColor: "#14B8A6",
+          channelId: "meleflow-default",
+          sound: "default",
+        }],
+      });
+    } catch (err) {
+      console.error("[push] foreground display error:", err);
+    }
+  });
+
+  // Re-register token when app comes to foreground
+  App.addListener("appStateChange", ({ isActive }) => {
+    if (isActive) {
+      reRegisterPushToken();
+    }
+  });
+}
+
+export async function setupFcm() {
+  if (!isNative()) return;
+  setupListeners();
+  try {
+    await PushNotifications.register();
+    console.log("[push] FCM registration started");
+  } catch (err) {
+    console.error("[push] FCM registration error:", err);
+  }
 }
 
 export async function reRegisterPushToken() {
@@ -42,7 +106,21 @@ export async function reRegisterPushToken() {
     }
   }
 
-  // 2. Force fresh FCM registration with a dedicated one-shot listener
+  // 2. Wait for ongoing registration
+  if (tokenPromise) {
+    try {
+      token = await tokenPromise;
+      if (token) {
+        await client.post("/notifications/register-token", { token });
+        console.log("[push] token re-registered from promise");
+        return;
+      }
+    } catch (err) {
+      console.error("[push] promise re-register failed:", err);
+    }
+  }
+
+  // 3. Force fresh FCM registration with a dedicated one-shot listener
   try {
     token = await new Promise<string | null>((resolve) => {
       PushNotifications.addListener("registration", function handler(result) {
@@ -80,27 +158,7 @@ export async function registerPushNotifications() {
     }
   }
 
-  // Set up listener BEFORE register() to avoid race
-  tokenPromise = new Promise((resolve) => {
-    PushNotifications.addListener("registration", async (token) => {
-      console.log("[push] FCM token received");
-      lastToken = token.value;
-      await setStoredToken(token.value);
-      resolve(token.value);
-      await ensureChannel();
-      try {
-        await client.post("/notifications/register-token", { token: token.value });
-        console.log("[push] token sent to backend");
-        toast.success("Push notifications ready", { duration: 2000 });
-      } catch (err) {
-        console.error("[push] failed to send token:", err);
-      }
-    });
-  });
-
-  PushNotifications.addListener("registrationError", (err) => {
-    console.error("[push] registration error:", err);
-  });
+  setupListeners();
 
   // Register with FCM
   try {
@@ -109,33 +167,5 @@ export async function registerPushNotifications() {
   } catch (err) {
     console.error("[push] registration failed:", err);
     toast.error("Push registration failed");
-    return;
   }
-
-  // Handle foreground notifications
-  PushNotifications.addListener("pushNotificationReceived", async (notification) => {
-    console.log("[push] received in foreground:", notification);
-    try {
-      await LocalNotifications.schedule({
-        notifications: [{
-          title: notification.title || "MeleFlow",
-          body: notification.body || "",
-          id: Math.floor(Math.random() * 100000) + 90000,
-          smallIcon: "ic_stat_icon",
-          iconColor: "#14B8A6",
-          channelId: "meleflow-default",
-          sound: "default",
-        }],
-      });
-    } catch (err) {
-      console.error("[push] foreground display error:", err);
-    }
-  });
-
-  // Re-register token when app comes to foreground
-  App.addListener("appStateChange", ({ isActive }) => {
-    if (isActive) {
-      reRegisterPushToken();
-    }
-  });
 }
