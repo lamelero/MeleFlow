@@ -888,6 +888,14 @@ export default function Profile() {
             <button
               onClick={async () => {
                 try {
+                  const perm = await LocalNotifications.checkPermissions();
+                  if (perm.display !== "granted") {
+                    const req = await LocalNotifications.requestPermissions();
+                    if (req.display !== "granted") {
+                      toast.error("Notification permission denied. Enable it in system settings.", { duration: 5000 });
+                      return;
+                    }
+                  }
                   await LocalNotifications.schedule({
                     notifications: [{
                       title: "Local test",

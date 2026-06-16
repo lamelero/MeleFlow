@@ -20,14 +20,19 @@ export async function reRegisterPushToken() {
 export async function registerPushNotifications() {
   if (!isNative()) return;
 
-  // Request permission
-  let permStatus = await PushNotifications.checkPermissions();
-  if (permStatus.receive === "prompt") {
-    permStatus = await PushNotifications.requestPermissions();
-  }
-  if (permStatus.receive !== "granted") {
-    console.log("[push] permission denied");
+  // Use LocalNotifications permission (POST_NOTIFICATIONS on Android 13+)
+  // PushNotifications.checkPermissions() may not check the same permission
+  let permStatus = await LocalNotifications.checkPermissions();
+  if (permStatus.display === "denied") {
+    console.log("[push] notification permission denied");
     return;
+  }
+  if (permStatus.display === "prompt") {
+    permStatus = await LocalNotifications.requestPermissions();
+    if (permStatus.display !== "granted") {
+      console.log("[push] permission not granted");
+      return;
+    }
   }
 
   // Register with FCM
