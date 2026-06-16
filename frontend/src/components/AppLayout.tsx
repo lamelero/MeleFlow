@@ -57,6 +57,10 @@ export default function AppLayout({ title, children }: { title: string; children
       </header>
       <div className="flex-1 overflow-y-auto">
         {children}
+        <div className="flex items-center justify-center gap-1 py-4 opacity-40">
+          <img src="/meleflow-logo.svg" alt="" className="h-3 w-3" />
+          <span className="text-xs text-gray-400 dark:text-gray-500">MeleFlow</span>
+        </div>
       </div>
       {isNative() && <BottomTabBar />}
     </div>
