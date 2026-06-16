@@ -2,6 +2,7 @@ import { PushNotifications } from "@capacitor/push-notifications";
 import { LocalNotifications } from "@capacitor/local-notifications";
 import toast from "react-hot-toast";
 import { isNative } from "./register";
+import { ensureChannel } from "./localNotifications";
 import { client } from "../api/client";
 
 let lastToken: string | null = null;
@@ -43,6 +44,7 @@ export async function registerPushNotifications() {
   PushNotifications.addListener("registration", async (token) => {
     console.log("[push] FCM token received");
     lastToken = token.value;
+    await ensureChannel();
     try {
       await client.post("/notifications/register-token", { token: token.value });
       console.log("[push] token sent to backend");

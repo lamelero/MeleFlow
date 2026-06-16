@@ -11,7 +11,7 @@ async function hasPermission(): Promise<boolean> {
   }
 }
 
-async function ensureChannel() {
+export async function ensureChannel() {
   try {
     await LocalNotifications.createChannel({
       id: "meleflow-default",
