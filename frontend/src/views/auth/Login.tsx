@@ -37,9 +37,6 @@ export default function Login() {
       .then((r) => r.json())
       .then((data) => setRegistrationAllowed(data.allowRegistration))
       .catch(() => {});
-    if (isNative()) {
-      registerPushNotifications();
-    }
   }, []);
 
   function formatServerUrl(url: string): string {
@@ -84,7 +81,7 @@ export default function Login() {
           },
         });
       } else {
-        await reRegisterPushToken();
+        if (isNative()) await registerPushNotifications();
         navigate("/app");
       }
     } catch {
