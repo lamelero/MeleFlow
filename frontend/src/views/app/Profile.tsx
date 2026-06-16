@@ -885,6 +885,31 @@ export default function Profile() {
             >
               {t("profile.testPush") || "Send test push"}
             </button>
+            <button
+              onClick={async () => {
+                try {
+                  await LocalNotifications.schedule({
+                    notifications: [{
+                      title: "Local test",
+                      body: "10 second test",
+                      id: 99999,
+                      schedule: { at: new Date(Date.now() + 10000) },
+                      smallIcon: "ic_stat_icon",
+                      iconColor: "#14B8A6",
+                      channelId: "meleflow-default",
+                      sound: "default",
+                    }],
+                  });
+                  toast.success("Local test in 10s", { duration: 3000 });
+                } catch (err) {
+                  toast.error("Local test failed");
+                  console.error("[profile]", err);
+                }
+              }}
+              className="mt-2 w-full rounded-lg bg-gray-100 px-3 py-2 font-urbanist text-xs text-gray-600 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+            >
+              Local test (10s)
+            </button>
           </>)}
           <button
             onClick={() => {

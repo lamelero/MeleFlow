@@ -25,7 +25,11 @@ export async function notificationRoutes(app: FastifyInstance) {
   });
 
   app.post("/notifications/test-push", { onRequest: [app.authenticate] }, async (req, reply) => {
-    await sendPushToUser(req.user.sub, "Test push", "If you see this, push notifications work!");
-    return reply.send({ ok: true, message: "Push sent" });
+    try {
+      await sendPushToUser(req.user.sub, "Test push", "If you see this, push notifications work!");
+      return reply.send({ ok: true, message: "Push sent" });
+    } catch (err: unknown) {
+      return reply.code(500).send({ ok: false, error: (err as Error).message || "Push failed" });
+    }
   });
 }
