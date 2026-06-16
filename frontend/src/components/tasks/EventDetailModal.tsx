@@ -46,7 +46,7 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
           >
             <div className="mb-4 flex items-center gap-3">
               <span className="h-4 w-4 shrink-0 rounded-full" style={{ backgroundColor: event.color }} />
-              <h3 className="font-outfit text-lg font-semibold text-gray-900 dark:text-gray-100">
+              <h3 className="break-words font-outfit text-lg font-semibold text-gray-900 dark:text-gray-100">
                 {event.title}
               </h3>
             </div>
@@ -85,7 +85,7 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
 
               {event.description && (
                 <div className="mt-3 rounded-xl bg-gray-50 p-3 dark:bg-gray-800">
-                  <p className="font-urbanist text-sm leading-relaxed text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+                  <p className="break-words font-urbanist text-sm leading-relaxed text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
                     {event.description}
                   </p>
                 </div>
@@ -97,7 +97,7 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
                     <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  <span className="font-urbanist text-sm text-gray-600 dark:text-gray-400">
+                  <span className="break-words font-urbanist text-sm text-gray-600 dark:text-gray-400">
                     {event.location}
                   </span>
                 </div>
