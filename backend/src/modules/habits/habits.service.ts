@@ -215,7 +215,7 @@ export class HabitService {
     const date = dateStr ? normalizeDate(new Date(dateStr + "T00:00:00Z")) : normalizeDate(new Date());
     if (isNaN(date.getTime())) throw new AppError(400, "Invalid date");
 
-    const status = statusVal === "skipped" ? "skipped" : "completed";
+    const status = statusVal === "skipped" || statusVal === "failed" ? statusVal : "completed";
 
     const existing = await prisma.habitLog.findUnique({
       where: { habitId_date: { habitId, date } },

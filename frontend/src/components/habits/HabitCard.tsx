@@ -19,6 +19,7 @@ interface DayCircle {
   isToday: boolean;
   completed: boolean;
   skipped: boolean;
+  failed: boolean;
 }
 
 function getWeekDays(habitStart: string | null, locale: string): DayCircle[] {
@@ -38,6 +39,7 @@ function getWeekDays(habitStart: string | null, locale: string): DayCircle[] {
       isToday: false,
       completed: false,
       skipped: false,
+      failed: false,
     });
   }
   days[6].isToday = true;
@@ -86,6 +88,7 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
       const st = logSet.get(d.dateStr);
       if (st === "completed") d.completed = true;
       if (st === "skipped") d.skipped = true;
+      if (st === "failed") d.failed = true;
     });
     return wd;
   })();
@@ -130,6 +133,8 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
       await checkIn(habit.id, dateStr, "completed");
     } else if (currentStatus === "completed") {
       await checkIn(habit.id, dateStr, "skipped");
+    } else if (currentStatus === "skipped") {
+      await checkIn(habit.id, dateStr, "failed");
     } else {
       await undoCheckIn(habit.id, dateStr);
     }
@@ -208,16 +213,18 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
             <div
               className={`flex h-8 w-8 items-center justify-center rounded-lg text-[11px] font-semibold transition-all relative
                 ${day.dateStr > today ? "opacity-20" : "cursor-pointer hover:scale-105"}
-                ${!day.completed && !day.skipped && !day.isToday ? "border border-gray-300 bg-gray-50 text-gray-400 dark:border-gray-600 dark:bg-gray-800/50 dark:text-gray-500" : ""}
-                ${day.isToday && !day.completed && !day.skipped ? "border-2 border-primary/40 bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-200" : ""}
-                ${day.completed || day.skipped ? "text-white" : ""}
+                ${!day.completed && !day.skipped && !day.failed && !day.isToday ? "border border-gray-300 bg-gray-50 text-gray-400 dark:border-gray-600 dark:bg-gray-800/50 dark:text-gray-500" : ""}
+                ${day.isToday && !day.completed && !day.skipped && !day.failed ? "border-2 border-primary/40 bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-200" : ""}
+                ${day.completed || day.skipped || day.failed ? "text-white" : ""}
               `}
               style={
                 day.completed
                   ? { backgroundColor: "#14B8A6" }
                   : day.skipped
                     ? { backgroundColor: "#F59E0B" }
-                    : undefined
+                    : day.failed
+                      ? { backgroundColor: "#EF4444" }
+                      : undefined
               }
             >
               {day.dayNum}

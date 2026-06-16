@@ -65,6 +65,8 @@ export default function HabitCalendarTab({ habit, onChange }: HabitCalendarTabPr
       await checkIn(habit.id, dateStr, "completed");
     } else if (currentStatus === "completed") {
       await checkIn(habit.id, dateStr, "skipped");
+    } else if (currentStatus === "skipped") {
+      await checkIn(habit.id, dateStr, "failed");
     } else {
       await undoCheckIn(habit.id, dateStr);
     }
@@ -77,6 +79,7 @@ export default function HabitCalendarTab({ habit, onChange }: HabitCalendarTabPr
     const st = logSet.get(dateStr);
     if (st === "completed") return "completed";
     if (st === "skipped") return "skipped";
+    if (st === "failed") return "failed";
     if (dateStr === todayStr) return "today";
     return "unmarked";
   }, [logSet, todayStr]);
@@ -149,7 +152,7 @@ export default function HabitCalendarTab({ habit, onChange }: HabitCalendarTabPr
             >
               <div
                 className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium relative ${
-                  status === "completed" || status === "skipped"
+                  status === "completed" || status === "skipped" || status === "failed"
                     ? "text-white"
                     : status === "today"
                       ? "border-2 border-primary/40 bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-200"
@@ -162,7 +165,9 @@ export default function HabitCalendarTab({ habit, onChange }: HabitCalendarTabPr
                     ? { backgroundColor: "#14B8A6" }
                     : status === "skipped"
                       ? { backgroundColor: "#F59E0B" }
-                      : undefined
+                      : status === "failed"
+                        ? { backgroundColor: "#EF4444" }
+                        : undefined
                 }
               >
                 {day}
