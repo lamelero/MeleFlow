@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { usePomodoroStore, type PomodoroSettings } from "../../store/pomodoroStore";
+import { Target, Coffee, Palmtree } from "lucide-react";
 
 const SIZE = 36;
 const STROKE = 3;
@@ -35,10 +36,10 @@ function formatTime(seconds: number) {
 
 export default function PomodoroTimer() {
   const { t } = useTranslation();
-  const PHASE_LABELS: Record<string, { icon: string; label: string; color: string }> = {
-    FOCUS: { icon: "🎯", label: t("pomodoro.focus"), color: "#14B8A6" },
-    SHORT_BREAK: { icon: "☕", label: t("pomodoro.shortBreak"), color: "#F59E0B" },
-    LONG_BREAK: { icon: "🌴", label: t("pomodoro.longBreak"), color: "#3B82F6" },
+  const PHASE_LABELS: Record<string, { icon: React.ReactNode; label: string; color: string }> = {
+    FOCUS: { icon: <Target className="h-4 w-4" />, label: t("pomodoro.focus"), color: "#14B8A6" },
+    SHORT_BREAK: { icon: <Coffee className="h-4 w-4" />, label: t("pomodoro.shortBreak"), color: "#F59E0B" },
+    LONG_BREAK: { icon: <Palmtree className="h-4 w-4" />, label: t("pomodoro.longBreak"), color: "#3B82F6" },
   };
   const PHASE_OPTIONS: { value: "FOCUS" | "SHORT_BREAK" | "LONG_BREAK"; label: string }[] = [
     { value: "FOCUS", label: t("pomodoro.focus") },
@@ -125,7 +126,7 @@ export default function PomodoroTimer() {
           whileTap={{ scale: 0.95 }}
           className="flex items-center gap-1.5 rounded-xl bg-primary/10 px-3 py-1.5 font-urbanist text-xs font-medium text-primary transition-colors hover:bg-primary/20 dark:bg-primary/20"
         >
-          <span>{nextLabel.icon}</span>
+          {nextLabel.icon}
           <span>{nextLabel.label}</span>
         </motion.button>
       );
@@ -203,7 +204,7 @@ export default function PomodoroTimer() {
               {/* Phase label */}
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-lg">{phase.icon}</span>
+                  {phase.icon}
                   <span className="font-urbanist text-sm font-semibold text-gray-700 dark:text-gray-300"
                     style={{ color: session ? phase.color : undefined }}>
                     {phase.label}
