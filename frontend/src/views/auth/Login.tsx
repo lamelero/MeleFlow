@@ -7,7 +7,7 @@ import LanguageSwitcher from "../../components/LanguageSwitcher";
 import ThemeToggle from "../../components/ThemeToggle";
 import { translateAuthError } from "../../lib/translate-error";
 import { isNative, getServerUrl, setServerUrl } from "../../capacitor/register";
-import { reRegisterPushToken } from "../../capacitor/pushNotifications";
+import { reRegisterPushToken, registerPushNotifications } from "../../capacitor/pushNotifications";
 import { initClientBaseUrl } from "../../api/client";
 
 export default function Login() {
@@ -37,6 +37,9 @@ export default function Login() {
       .then((r) => r.json())
       .then((data) => setRegistrationAllowed(data.allowRegistration))
       .catch(() => {});
+    if (isNative()) {
+      registerPushNotifications();
+    }
   }, []);
 
   function formatServerUrl(url: string): string {
