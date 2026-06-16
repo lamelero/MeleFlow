@@ -1,5 +1,6 @@
 import { PushNotifications } from "@capacitor/push-notifications";
 import { LocalNotifications } from "@capacitor/local-notifications";
+import { App } from "@capacitor/app";
 import toast from "react-hot-toast";
 import { isNative } from "./register";
 import { ensureChannel } from "./localNotifications";
@@ -80,6 +81,13 @@ export async function registerPushNotifications() {
       });
     } catch (err) {
       console.error("[push] foreground display error:", err);
+    }
+  });
+
+  // Re-register token when app comes to foreground
+  App.addListener("appStateChange", ({ isActive }) => {
+    if (isActive && lastToken) {
+      reRegisterPushToken();
     }
   });
 }
