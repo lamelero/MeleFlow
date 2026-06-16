@@ -4,6 +4,18 @@ import toast from "react-hot-toast";
 import { isNative } from "./register";
 import { client } from "../api/client";
 
+let lastToken: string | null = null;
+
+export async function reRegisterPushToken() {
+  if (!isNative() || !lastToken) return;
+  try {
+    await client.post("/notifications/register-token", { token: lastToken });
+    console.log("[push] token re-registered");
+  } catch (err) {
+    console.error("[push] re-register failed:", err);
+  }
+}
+
 export async function registerPushNotifications() {
   if (!isNative()) return;
 
@@ -30,6 +42,7 @@ export async function registerPushNotifications() {
   // Listen for token
   PushNotifications.addListener("registration", async (token) => {
     console.log("[push] FCM token received");
+    lastToken = token.value;
     try {
       await client.post("/notifications/register-token", { token: token.value });
       console.log("[push] token sent to backend");
