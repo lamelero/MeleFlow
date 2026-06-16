@@ -8,12 +8,13 @@ import BottomTabBar from "./navigation/BottomTabBar";
 import { useBrandingStore } from "../store/brandingStore";
 import { useThemeStore } from "../store/themeStore";
 import { isNative } from "../capacitor/register";
+import { resolveImageUrl } from "../api/client";
 
 export default function AppLayout({ title, children }: { title: string; children: ReactNode }) {
   const { t } = useTranslation();
   const { logoUrl, logoUrlDark, fetchLogo } = useBrandingStore();
   const { theme } = useThemeStore();
-  const activeLogo = theme === "dark" && logoUrlDark ? logoUrlDark : logoUrl;
+  const activeLogo = theme === "dark" && logoUrlDark ? resolveImageUrl(logoUrlDark) : resolveImageUrl(logoUrl);
 
   useEffect(() => {
     fetchLogo();

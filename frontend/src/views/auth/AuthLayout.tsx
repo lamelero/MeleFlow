@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useBrandingStore } from "../../store/brandingStore";
 import { useThemeStore } from "../../store/themeStore";
+import { resolveImageUrl } from "../../api/client";
 
 const gridBg = `url("data:image/svg+xml,${encodeURIComponent(
   '<svg width="60" height="60" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="g" patternUnits="userSpaceOnUse" width="60" height="60"><path d="M 60 0 L 0 0 0 60" fill="none" stroke="rgba(20,184,166,0.03)" stroke-width="1"/></pattern></defs><rect width="100%" height="100%" fill="url(#g)"/></svg>',
@@ -13,7 +14,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   const { logoUrl, logoUrlDark, fetchLogo } = useBrandingStore();
   const { theme } = useThemeStore();
-  const activeLogo = theme === "dark" && logoUrlDark ? logoUrlDark : logoUrl;
+  const activeLogo = theme === "dark" && logoUrlDark ? resolveImageUrl(logoUrlDark) : resolveImageUrl(logoUrl);
 
   useEffect(() => {
     fetchLogo();

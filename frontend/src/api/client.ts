@@ -136,4 +136,12 @@ export function getServerOrigin(): string {
   return match ? match[1] : "";
 }
 
+export function resolveImageUrl(path: string | null): string | null {
+  if (!path) return null;
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  const origin = getServerOrigin();
+  if (!origin) return path;
+  return `${origin}${path.startsWith("/") ? "" : "/"}${path}`;
+}
+
 export { client };
