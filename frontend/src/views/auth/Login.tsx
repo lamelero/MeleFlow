@@ -64,7 +64,7 @@ export default function Login() {
     setServerUrlState(finalUrl);
     setEditingUrl(false);
     await initClientBaseUrl();
-    reRegisterPushToken();
+    await reRegisterPushToken();
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -81,7 +81,7 @@ export default function Login() {
           },
         });
       } else {
-        reRegisterPushToken();
+        await reRegisterPushToken();
         navigate("/app");
       }
     } catch {

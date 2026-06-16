@@ -90,7 +90,7 @@ export default function TwoFactorVerify() {
     setSubmitting(true);
     try {
       await verify2FA(twoFactorToken, fullCode, trustDevice);
-      if (isNative()) reRegisterPushToken();
+      if (isNative()) await reRegisterPushToken();
       navigate("/app");
     } catch {
       setCode(["", "", "", "", "", ""]);

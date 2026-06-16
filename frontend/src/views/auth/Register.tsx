@@ -46,7 +46,7 @@ export default function Register() {
     setSubmitting(true);
     try {
       await register(email, username, password);
-      reRegisterPushToken();
+      await reRegisterPushToken();
       navigate("/app");
     } catch {
       // error is set in store

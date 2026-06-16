@@ -29,39 +29,37 @@ async function setStoredToken(token: string) {
 
 export async function reRegisterPushToken() {
   if (!isNative()) return;
-  // Try cached token first (in-memory then persisted)
-  let token = lastToken;
-  if (!token) {
-    token = await getStoredToken();
-  }
+
+  // 1. Try cached token first (fast path)
+  let token = lastToken || await getStoredToken();
   if (token) {
     try {
       await client.post("/notifications/register-token", { token });
-      console.log("[push] token re-registered");
+      console.log("[push] token re-registered from cache");
       return;
     } catch (err) {
-      console.error("[push] re-register failed:", err);
+      console.error("[push] cache re-register failed:", err);
     }
   }
-  // If token still missing, wait for ongoing registration
-  if (tokenPromise) {
-    try {
-      token = await tokenPromise;
-      if (token) {
-        await client.post("/notifications/register-token", { token });
-        console.log("[push] token re-registered from promise");
-        return;
-      }
-    } catch (err) {
-      console.error("[push] re-register from promise failed:", err);
-    }
-  }
-  // Fallback: force fresh registration
+
+  // 2. Force fresh FCM registration with a dedicated one-shot listener
   try {
-    await PushNotifications.register();
-    console.log("[push] fresh registration requested");
+    token = await new Promise<string | null>((resolve) => {
+      PushNotifications.addListener("registration", function handler(result) {
+        resolve(result.value);
+      });
+      PushNotifications.register().catch(() => resolve(null));
+    });
+
+    if (token) {
+      lastToken = token;
+      await setStoredToken(token);
+      await ensureChannel();
+      await client.post("/notifications/register-token", { token });
+      console.log("[push] token re-registered via fresh FCM");
+    }
   } catch (err) {
-    console.warn("[push] fresh registration failed:", err);
+    console.error("[push] fresh registration failed:", err);
   }
 }
 
