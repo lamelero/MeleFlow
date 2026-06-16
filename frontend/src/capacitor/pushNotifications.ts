@@ -9,12 +9,12 @@ import { client } from "../api/client";
 let lastToken: string | null = null;
 
 export async function reRegisterPushToken() {
-  if (!isNative() || !lastToken) return;
+  if (!isNative()) return;
   try {
-    await client.post("/notifications/register-token", { token: lastToken });
-    console.log("[push] token re-registered");
+    await PushNotifications.register();
+    console.log("[push] re-register requested");
   } catch (err) {
-    console.error("[push] re-register failed:", err);
+    console.warn("[push] re-register failed:", err);
   }
 }
 
