@@ -1,30 +1,52 @@
 import { PushNotifications } from "@capacitor/push-notifications";
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { App } from "@capacitor/app";
+import { Preferences } from "@capacitor/preferences";
 import toast from "react-hot-toast";
 import { isNative } from "./register";
 import { ensureChannel } from "./localNotifications";
 import { client } from "../api/client";
 
+const PUSH_TOKEN_KEY = "meleflow_push_token";
+
 let lastToken: string | null = null;
 let tokenPromise: Promise<string | null> | null = null;
 
+async function getStoredToken(): Promise<string | null> {
+  try {
+    const { value } = await Preferences.get({ key: PUSH_TOKEN_KEY });
+    return value || null;
+  } catch {
+    return null;
+  }
+}
+
+async function setStoredToken(token: string) {
+  try {
+    await Preferences.set({ key: PUSH_TOKEN_KEY, value: token });
+  } catch {}
+}
+
 export async function reRegisterPushToken() {
   if (!isNative()) return;
-  // Use cached token if available
-  if (lastToken) {
+  // Try cached token first (in-memory then persisted)
+  let token = lastToken;
+  if (!token) {
+    token = await getStoredToken();
+  }
+  if (token) {
     try {
-      await client.post("/notifications/register-token", { token: lastToken });
-      console.log("[push] token re-registered from cache");
+      await client.post("/notifications/register-token", { token });
+      console.log("[push] token re-registered");
       return;
     } catch (err) {
-      console.error("[push] re-register with cached token failed:", err);
+      console.error("[push] re-register failed:", err);
     }
   }
-  // Wait for fresh token if registration in progress
+  // If token still missing, wait for ongoing registration
   if (tokenPromise) {
     try {
-      const token = await tokenPromise;
+      token = await tokenPromise;
       if (token) {
         await client.post("/notifications/register-token", { token });
         console.log("[push] token re-registered from promise");
@@ -34,7 +56,7 @@ export async function reRegisterPushToken() {
       console.error("[push] re-register from promise failed:", err);
     }
   }
-  // Fallback: request fresh registration
+  // Fallback: force fresh registration
   try {
     await PushNotifications.register();
     console.log("[push] fresh registration requested");
@@ -65,6 +87,7 @@ export async function registerPushNotifications() {
     PushNotifications.addListener("registration", async (token) => {
       console.log("[push] FCM token received");
       lastToken = token.value;
+      await setStoredToken(token.value);
       resolve(token.value);
       await ensureChannel();
       try {
@@ -113,7 +136,7 @@ export async function registerPushNotifications() {
 
   // Re-register token when app comes to foreground
   App.addListener("appStateChange", ({ isActive }) => {
-    if (isActive && lastToken) {
+    if (isActive) {
       reRegisterPushToken();
     }
   });
