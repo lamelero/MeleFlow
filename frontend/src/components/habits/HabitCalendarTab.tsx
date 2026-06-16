@@ -23,7 +23,7 @@ function getMonthDays(year: number, month: number) {
 }
 
 export default function HabitCalendarTab({ habit, onChange }: HabitCalendarTabProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { checkIn, undoCheckIn } = useHabitStore();
   const catInfo = HABIT_CATEGORIES[habit.category] || HABIT_CATEGORIES.OTROS;
   const today = new Date();
@@ -43,7 +43,10 @@ export default function HabitCalendarTab({ habit, onChange }: HabitCalendarTabPr
   const month = viewDate.getMonth();
   const monthDays = useMemo(() => getMonthDays(year, month), [year, month]);
 
-  const monthName = viewDate.toLocaleDateString("default", { month: "long", year: "numeric" });
+  const monthName = (() => {
+    const raw = viewDate.toLocaleDateString(i18n.language, { month: "long", year: "numeric" });
+    return raw.charAt(0).toUpperCase() + raw.slice(1);
+  })();
 
   function prevMonth() {
     setViewDate((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1));
@@ -105,7 +108,7 @@ export default function HabitCalendarTab({ habit, onChange }: HabitCalendarTabPr
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <span className="font-outfit text-sm font-semibold text-gray-900 capitalize dark:text-gray-100">
+        <span className="font-outfit text-sm font-semibold text-gray-900 dark:text-gray-100">
           {monthName}
         </span>
         <button
