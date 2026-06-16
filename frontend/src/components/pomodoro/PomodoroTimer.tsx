@@ -244,9 +244,11 @@ export default function PomodoroTimer() {
               {/* Progress dots */}
               <div className="mb-5 flex items-center justify-center gap-1.5">
                 {Array.from({ length: cycleCount }, (_, i) => (
-                  <span key={i} className="text-sm">
-                    {i < filledDots ? "🍅" : "◻️"}
-                  </span>
+                  i < filledDots ? (
+                    <span key={i} className="inline-block h-2.5 w-2.5 rounded-full bg-primary" />
+                  ) : (
+                    <span key={i} className="inline-block h-2.5 w-2.5 rounded-full border border-gray-300 dark:border-gray-600" />
+                  )
                 ))}
                 <span className="ml-1 text-xs text-gray-400 dark:text-gray-500">
                   {completedCount > 0 ? t("pomodoro.completedToday", { count: completedCount }) : ""}
@@ -279,8 +281,9 @@ export default function PomodoroTimer() {
                 {!session && (
                   <motion.button onClick={handleStart}
                     whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                    className="flex-1 rounded-xl bg-primary px-4 py-2.5 font-urbanist text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-dark">
-                    {readyLabel.icon} {t("pomodoro.start")} {readyLabel.label}
+                    className="flex flex-1 flex-col items-center gap-1 rounded-xl bg-primary px-4 py-3 font-urbanist text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-dark">
+                    {readyLabel.icon}
+                    <span>{t("pomodoro.start")} {readyLabel.label}</span>
                   </motion.button>
                 )}
 
