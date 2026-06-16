@@ -24,7 +24,7 @@ function getMonthDays(year: number, month: number) {
 
 export default function HabitCalendarTab({ habit, onChange }: HabitCalendarTabProps) {
   const { t, i18n } = useTranslation();
-  const { checkIn, undoCheckIn } = useHabitStore();
+  const { checkIn } = useHabitStore();
   const catInfo = HABIT_CATEGORIES[habit.category] || HABIT_CATEGORIES.OTROS;
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
@@ -68,7 +68,7 @@ export default function HabitCalendarTab({ habit, onChange }: HabitCalendarTabPr
     } else if (currentStatus === "skipped") {
       await checkIn(habit.id, dateStr, "failed");
     } else {
-      await undoCheckIn(habit.id, dateStr);
+      await checkIn(habit.id, dateStr, "completed");
     }
     onChange?.();
   }

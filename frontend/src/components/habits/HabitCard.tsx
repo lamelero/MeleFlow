@@ -49,7 +49,7 @@ function getWeekDays(habitStart: string | null, locale: string): DayCircle[] {
 export default function HabitCard({ habit, onEdit }: HabitCardProps) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const { checkIn, undoCheckIn, deleteHabit, resetProgress } = useHabitStore();
+  const { checkIn, deleteHabit, resetProgress } = useHabitStore();
 
   const catInfo = useMemo(() => {
     if (habit.habitCategory) {
@@ -136,7 +136,7 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
     } else if (currentStatus === "skipped") {
       await checkIn(habit.id, dateStr, "failed");
     } else {
-      await undoCheckIn(habit.id, dateStr);
+      await checkIn(habit.id, dateStr, "completed");
     }
     setPending(false);
   }
