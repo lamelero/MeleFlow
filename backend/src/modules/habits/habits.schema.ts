@@ -86,7 +86,7 @@ export const updateHabitSchema = z.object({
 
 export const progressQuerySchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  status: z.enum(["completed", "skipped"]).optional(),
+  status: z.enum(["completed", "skipped", "failed"]).optional(),
 });
 
 export type CreateHabitInput = z.infer<typeof createHabitSchema>;
