@@ -318,7 +318,11 @@ MeleFlow supports **push notifications** via Firebase Cloud Messaging (FCM) for 
 
 1. Go to [Firebase Console](https://console.firebase.google.com) and create a project
 2. Add an **Android app** with package name `com.meleflow.app`
-3. Download `google-services.json` and place it at `frontend/android/app/google-services.json`
+3. Add the **SHA-1 fingerprint** of your debug keystore in Firebase Console (App → "Add fingerprint"):
+   ```bash
+   keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android | grep SHA1
+   ```
+4. Download `google-services.json` and place it at `frontend/android/app/google-services.json`
 
 ### Building the APK
 
@@ -362,7 +366,9 @@ docker compose pull && docker compose up -d
 
 > ⚠️ The service account key is **sensitive**. Do not commit it to Git. Use a secure path on your server.
 
-### How It Works
+> ⚠️ **Multiple servers?** Each server (NAS casa, NAS trabajo, VPS, etc.) needs its **own copy** of the `firebase-key.json` file. The APK (`google-services.json`) is the same for all, but the **service account key** must be mounted on every backend that sends push notifications. Without it, the API accepts token registrations but push messages fail silently.
+
+### Enabling notifications on an existing installation
 
 | Component | Role |
 |-----------|------|
@@ -370,6 +376,15 @@ docker compose pull && docker compose up -d
 | **Backend** | Stores tokens in the `DeviceToken` table and sends pushes via `firebase-admin` |
 | **Worker** | Sends push notifications alongside email when task/habit reminders fire |
 | **FCM** | Google's infrastructure delivers the notification to the device |
+
+### Troubleshooting
+
+| Symptom | Check |
+|---------|-------|
+| **"Test push" returns success but notification doesn't arrive** | `docker compose exec backend env \| grep FIREBASE` — if empty, the service account key is not configured on this server |
+| **"Push notifications ready" toast on app startup** | FCM token was received; check `docker compose logs backend \| grep push` for send errors |
+| **"Local test (10s)" works but pushes don't** | The `firebase-key.json` is missing or invalid on the backend |
+| **Push tokens: 0** | App hasn't registered the token yet; open the app and wait for "Push notifications ready" |
 
 ## License
 
