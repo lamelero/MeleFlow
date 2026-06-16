@@ -263,9 +263,10 @@ export default function PomodoroTimer() {
                       return (
                         <button key={opt.value}
                           onClick={() => setCustomType(opt.value)}
-                          className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-medium transition-colors ${selected ? "text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"}`}
+                          className={`flex flex-1 flex-col items-center gap-0.5 rounded-lg px-2 py-2 text-xs font-medium transition-colors ${selected ? "text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"}`}
                           style={selected ? { backgroundColor: c } : undefined}>
-                          {PHASE_LABELS[opt.value].icon} {opt.label}
+                          {PHASE_LABELS[opt.value].icon}
+                          <span>{opt.label}</span>
                         </button>
                       );
                     })}
