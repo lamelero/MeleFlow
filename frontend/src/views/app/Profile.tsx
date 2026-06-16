@@ -11,6 +11,7 @@ import { isNative, getFontSize, setFontSize, getBoldFont, setBoldFont } from "..
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { version as appVersion } from "../../../package.json";
 import { testBrowserNotification, getDiagnostics } from "../../lib/browserNotifications";
+import { reRegisterPushToken } from "../../capacitor/pushNotifications";
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -874,6 +875,7 @@ export default function Profile() {
             <button
               onClick={async () => {
                 try {
+                  await reRegisterPushToken();
                   await client.post("/notifications/test-push");
                   toast.success("Test push sent! Check your phone.", { duration: 5000 });
                 } catch (err) {

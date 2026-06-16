@@ -6,6 +6,7 @@ import AuthLayout from "./AuthLayout";
 import LanguageSwitcher from "../../components/LanguageSwitcher";
 import ThemeToggle from "../../components/ThemeToggle";
 import { translateAuthError } from "../../lib/translate-error";
+import { reRegisterPushToken } from "../../capacitor/pushNotifications";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -45,6 +46,7 @@ export default function Register() {
     setSubmitting(true);
     try {
       await register(email, username, password);
+      reRegisterPushToken();
       navigate("/app");
     } catch {
       // error is set in store

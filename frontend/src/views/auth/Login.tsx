@@ -81,6 +81,7 @@ export default function Login() {
           },
         });
       } else {
+        reRegisterPushToken();
         navigate("/app");
       }
     } catch {
