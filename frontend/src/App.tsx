@@ -102,11 +102,22 @@ export default function App() {
   if (needsConfig) {
     return (
       <ServerConfig
-        onConfigured={() => {
-          initClientBaseUrl().then(() => {
-            setNeedsConfig(false);
-            initialize();
-          });
+        onConfigured={async () => {
+          await initClientBaseUrl();
+          if (isNative()) {
+            try {
+              const granted = await requestNotificationPermission();
+              if (granted) {
+                await createNotificationChannel();
+                await requestExactAlarmPermission();
+              }
+              await registerPushNotifications();
+            } catch (err) {
+              console.error("[app] push registration failed:", err);
+            }
+          }
+          setNeedsConfig(false);
+          initialize();
         }}
       />
     );
