@@ -71,15 +71,17 @@ export async function requestExactAlarmPermission() {
 const SERVER_URL_KEY = "serverUrl";
 
 async function migrateOldServer() {
-  const { value: oldUrl } = await Preferences.get({ key: SERVER_URL_KEY });
-  const { value: serversJson } = await Preferences.get({ key: SERVERS_KEY });
-  if (oldUrl && !serversJson) {
-    const id = crypto.randomUUID();
-    const servers: ServerEntry[] = [{ id, label: "Servidor 1", url: oldUrl }];
-    await Preferences.set({ key: SERVERS_KEY, value: JSON.stringify(servers) });
-    activeServerId = id;
-    await Preferences.remove({ key: SERVER_URL_KEY });
-  }
+  try {
+    const { value: oldUrl } = await Preferences.get({ key: SERVER_URL_KEY });
+    const { value: serversJson } = await Preferences.get({ key: SERVERS_KEY });
+    if (oldUrl && !serversJson) {
+      const id = genId();
+      const servers: ServerEntry[] = [{ id, label: "Servidor 1", url: oldUrl }];
+      await Preferences.set({ key: SERVERS_KEY, value: JSON.stringify(servers) });
+      activeServerId = id;
+      await Preferences.remove({ key: SERVER_URL_KEY });
+    }
+  } catch {}
 }
 
 async function loadServers(): Promise<ServerEntry[]> {
