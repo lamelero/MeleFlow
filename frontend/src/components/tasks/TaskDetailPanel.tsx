@@ -656,13 +656,16 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
                 </p>
               ) : (
                 <div className="space-y-1">
-                  {checklistItems.map((item, index) => (
+                  {checklistItems
+                    .map((item, originalIndex) => ({ item, originalIndex }))
+                    .sort((a, b) => Number(a.item.isCompleted) - Number(b.item.isCompleted))
+                    .map(({ item, originalIndex }) => (
                     <div
-                      key={index}
+                      key={originalIndex}
                       className="group flex items-center gap-3 rounded-xl border border-gray-100 px-3 py-2.5 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800"
                     >
                       <button
-                        onClick={() => handleToggleChecklistItem(index)}
+                        onClick={() => handleToggleChecklistItem(originalIndex)}
                         className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-colors ${
                           item.isCompleted
                             ? "border-primary bg-primary text-white"
@@ -675,19 +678,19 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
                           </svg>
                         )}
                       </button>
-                      {editingIndex === index ? (
+                      {editingIndex === originalIndex ? (
                         <input
                           type="text"
                           value={editingText}
                           onChange={(e) => setEditingText(e.target.value)}
-                          onBlur={() => handleSaveEdit(index)}
-                          onKeyDown={(e) => handleEditKeyDown(e, index)}
+                          onBlur={() => handleSaveEdit(originalIndex)}
+                          onKeyDown={(e) => handleEditKeyDown(e, originalIndex)}
                           autoFocus
                           className="flex-1 rounded-lg border border-primary bg-white px-3 py-1.5 font-urbanist text-sm outline-none ring-2 ring-primary/20 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                         />
                       ) : (
                         <span
-                          onClick={() => handleStartEdit(index, item.text)}
+                          onClick={() => handleStartEdit(originalIndex, item.text)}
                           className={`flex-1 cursor-text font-urbanist text-sm ${
                             item.isCompleted ? "text-gray-400 line-through dark:text-gray-500" : "text-gray-700 dark:text-gray-300"
                           }`}
@@ -696,7 +699,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
                         </span>
                       )}
                       <button
-                        onClick={() => handleRemoveChecklistItem(index)}
+                        onClick={() => handleRemoveChecklistItem(originalIndex)}
                         className="shrink-0 rounded-lg p-1 text-gray-300 opacity-0 transition-all hover:bg-red-50 hover:text-red-500 group-hover:opacity-100 dark:hover:bg-red-900/20"
                       >
                         <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
