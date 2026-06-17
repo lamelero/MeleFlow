@@ -4,14 +4,6 @@ import { Preferences } from "@capacitor/preferences";
 import { LocalNotifications } from "@capacitor/local-notifications";
 
 const backHandlers: (() => boolean)[] = [];
-const SERVERS_KEY = "servers";
-let activeServerId: string | null = null;
-
-export interface ServerEntry {
-  id: string;
-  label: string;
-  url: string;
-}
 
 export function registerBackHandler(handler: () => boolean): () => void {
   backHandlers.unshift(handler);
@@ -68,106 +60,13 @@ export async function requestExactAlarmPermission() {
   }
 }
 
-const SERVER_URL_KEY = "serverUrl";
-
-async function migrateOldServer() {
-  try {
-    const { value: oldUrl } = await Preferences.get({ key: SERVER_URL_KEY });
-    const { value: serversJson } = await Preferences.get({ key: SERVERS_KEY });
-    if (oldUrl && !serversJson) {
-      const id = genId();
-      const servers: ServerEntry[] = [{ id, label: "Servidor 1", url: oldUrl }];
-      await Preferences.set({ key: SERVERS_KEY, value: JSON.stringify(servers) });
-      activeServerId = id;
-      await Preferences.remove({ key: SERVER_URL_KEY });
-    }
-  } catch {}
-}
-
-async function loadServers(): Promise<ServerEntry[]> {
-  await migrateOldServer();
-  const { value } = await Preferences.get({ key: SERVERS_KEY });
-  if (!value) return [];
-  try {
-    return JSON.parse(value) as ServerEntry[];
-  } catch {
-    return [];
-  }
-}
-
-async function saveServers(servers: ServerEntry[]) {
-  await Preferences.set({ key: SERVERS_KEY, value: JSON.stringify(servers) });
-}
-
-function genId(): string {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-}
-
-export async function getServers(): Promise<ServerEntry[]> {
-  const servers = await loadServers();
-  if (servers.length > 0 && !activeServerId) {
-    activeServerId = servers[0].id;
-  }
-  return servers;
-}
-
-export async function getActiveServer(): Promise<ServerEntry | null> {
-  const servers = await loadServers();
-  if (servers.length === 0) return null;
-  if (!activeServerId) {
-    activeServerId = servers[0].id;
-  }
-  return servers.find((s) => s.id === activeServerId) || servers[0];
-}
-
 export async function getServerUrl(): Promise<string | null> {
-  const server = await getActiveServer();
-  return server?.url || null;
+  const { value } = await Preferences.get({ key: "serverUrl" });
+  return value;
 }
 
-export async function setServerUrl(url: string, label?: string): Promise<void> {
-  const servers = await loadServers();
-  const existing = servers.find((s) => s.url === url);
-  if (existing) {
-    if (label) existing.label = label;
-    activeServerId = existing.id;
-  } else {
-    const id = genId();
-    servers.push({ id, label: label || `Servidor ${servers.length + 1}`, url });
-    activeServerId = id;
-  }
-  await saveServers(servers);
-}
-
-export async function addServer(label: string, url: string): Promise<string> {
-  const servers = await loadServers();
-  const id = genId();
-  servers.push({ id, label, url });
-  await saveServers(servers);
-  activeServerId = id;
-  return id;
-}
-
-export async function removeServer(id: string): Promise<void> {
-  let servers = await loadServers();
-  servers = servers.filter((s) => s.id !== id);
-  await saveServers(servers);
-  if (activeServerId === id) {
-    activeServerId = servers.length > 0 ? servers[0].id : null;
-  }
-}
-
-export async function setActiveServer(id: string): Promise<void> {
-  activeServerId = id;
-}
-
-export async function updateServer(id: string, data: Partial<Pick<ServerEntry, "label" | "url">>): Promise<void> {
-  const servers = await loadServers();
-  const server = servers.find((s) => s.id === id);
-  if (!server) return;
-  if (data.label !== undefined) server.label = data.label;
-  if (data.url !== undefined) server.url = data.url;
-  await saveServers(servers);
+export async function setServerUrl(url: string): Promise<void> {
+  await Preferences.set({ key: "serverUrl", value: url });
 }
 
 export async function setupStatusBar(isDark = true) {

@@ -16,6 +16,17 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    flavorDimensions "version"
+    productFlavors {
+        normal {
+            dimension "version"
+            applicationId "com.meleflow.app"
+        }
+        trabajo {
+            dimension "version"
+            applicationId "com.meleflow.app.trabajo"
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
@@ -24,7 +35,7 @@ android {
     }
     applicationVariants.all { variant ->
         variant.outputs.all {
-            outputFileName = "meleflow.apk"
+            outputFileName = "meleflow-${variant.flavorName}.apk"
         }
     }
 }
