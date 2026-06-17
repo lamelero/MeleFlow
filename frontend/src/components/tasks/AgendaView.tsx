@@ -85,7 +85,8 @@ export default function AgendaView({
   useEffect(() => {
     const el = document.getElementById("agenda-today");
     if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      const timer = setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 150);
+      return () => clearTimeout(timer);
     }
   }, [currentDate]);
 
