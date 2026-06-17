@@ -240,3 +240,75 @@ export async function clearAllNotifications() {
     console.log(`[localNotifications] cleared ${pending.notifications.length} notifications`);
   }
 }
+
+function eventNotifId(eventId: string): number {
+  let h = 0;
+  for (let i = 0; i < eventId.length; i++) h = ((h << 5) - h) + eventId.charCodeAt(i);
+  return (Math.abs(h) % 900000) + 90000;
+}
+
+export async function scheduleEventReminders(
+  events: { id: string; title: string; startTime: string; isAllDay: boolean; reminderBefore: number; allDayReminderTime: string; sourceName: string }[]
+) {
+  if (!isNative()) return;
+  if (!(await hasPermission())) return;
+
+  await ensureChannel();
+
+  // Cancel existing event notifications
+  const pending = await LocalNotifications.getPending();
+  const eventIds = new Set(events.map((e) => eventNotifId(e.id)));
+  const toCancel = pending.notifications.filter((n) => eventIds.has(n.id));
+  if (toCancel.length > 0) {
+    await LocalNotifications.cancel({ notifications: toCancel.map((n) => ({ id: n.id })) });
+  }
+
+  const notifs: LocalNotificationSchema[] = [];
+  const now = new Date();
+
+  for (const ev of events) {
+    const id = eventNotifId(ev.id);
+    const start = new Date(ev.startTime);
+    if (start.getTime() <= now.getTime()) continue;
+
+    if (ev.isAllDay && ev.allDayReminderTime) {
+      const [hour, minute] = ev.allDayReminderTime.split(":").map(Number);
+      const at = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate(), hour, minute, 0));
+      if (at.getTime() > now.getTime()) {
+        notifs.push({
+          title: ev.title,
+          body: `${ev.sourceName} — All day event`,
+          id,
+          schedule: { at, allowWhileIdle: true },
+          smallIcon: "ic_stat_icon",
+          iconColor: "#14B8A6",
+          channelId: "meleflow-default",
+          sound: "default",
+        });
+      }
+    } else if (ev.reminderBefore > 0) {
+      const at = new Date(start.getTime() - ev.reminderBefore * 60 * 1000);
+      if (at.getTime() > now.getTime()) {
+        notifs.push({
+          title: ev.title,
+          body: `${ev.sourceName} — ${ev.reminderBefore} min before`,
+          id,
+          schedule: { at, allowWhileIdle: true },
+          smallIcon: "ic_stat_icon",
+          iconColor: "#14B8A6",
+          channelId: "meleflow-default",
+          sound: "default",
+        });
+      }
+    }
+  }
+
+  if (notifs.length === 0) return;
+
+  try {
+    await LocalNotifications.schedule({ notifications: notifs });
+    console.log(`[localNotifications] scheduled ${notifs.length} event notifications`);
+  } catch (err) {
+    console.error("[localNotifications] event schedule error:", err);
+  }
+}

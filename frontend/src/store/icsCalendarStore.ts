@@ -2,6 +2,8 @@ import { create } from "zustand";
 import toast from "react-hot-toast";
 import { client } from "../api/client";
 import { updateIcsData } from "../lib/browserNotifications";
+import { scheduleEventReminders } from "../capacitor/localNotifications";
+import { isNative } from "../capacitor/register";
 
 export interface IcsCalendar {
   id: string;
@@ -11,6 +13,8 @@ export interface IcsCalendar {
   color: string;
   lastSyncedAt: string | null;
   isActive: boolean;
+  reminderBefore: number;
+  allDayReminderTime: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -26,6 +30,8 @@ export interface ExternalCalendarEvent {
   location: string | null;
   color: string;
   sourceName: string;
+  reminderBefore: number;
+  allDayReminderTime: string;
 }
 
 interface IcsCalendarState {
@@ -35,6 +41,7 @@ interface IcsCalendarState {
   syncing: Set<string>;
   fetchCalendars: () => Promise<void>;
   addCalendar: (name: string, url: string, color: string) => Promise<void>;
+  updateCalendar: (id: string, data: Partial<Pick<IcsCalendar, "name" | "color" | "reminderBefore" | "allDayReminderTime">>) => Promise<void>;
   removeCalendar: (id: string) => Promise<void>;
   syncCalendar: (id: string) => Promise<void>;
   fetchEvents: (from: string, to: string) => Promise<void>;
@@ -80,6 +87,18 @@ export const useIcsCalendarStore = create<IcsCalendarState>((set, get) => ({
     }
   },
 
+  updateCalendar: async (id, data) => {
+    try {
+      const { data: updated } = await client.patch(`/ics-calendars/${id}`, data);
+      set((s) => ({
+        calendars: s.calendars.map((c) => (c.id === id ? { ...c, ...updated } : c)),
+      }));
+      toast.success("Calendar updated");
+    } catch {
+      toast.error("Failed to update calendar");
+    }
+  },
+
   syncCalendar: async (id) => {
     const syncing = new Set(get().syncing);
     syncing.add(id);
@@ -108,32 +127,36 @@ export const useIcsCalendarStore = create<IcsCalendarState>((set, get) => ({
       const { data } = await client.get(
         `/ics-calendars/events?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
       );
-      set({
-        events: data.map(
-          (e: {
-            id: string;
-            icsCalendarId: string;
-            title: string;
-            description: string | null;
-            startTime: string;
-            endTime: string;
-            isAllDay: boolean;
-            location: string | null;
-            icsCalendar: { name: string; color: string };
-          }) => ({
-            id: e.id,
-            icsCalendarId: e.icsCalendarId,
-            title: e.title,
-            description: e.description,
-            startTime: e.startTime,
-            endTime: e.endTime,
-            isAllDay: e.isAllDay,
-            location: e.location,
-            color: e.icsCalendar.color,
-            sourceName: e.icsCalendar.name,
-          }),
-        ),
-      });
+      const events = data.map(
+        (e: {
+          id: string;
+          icsCalendarId: string;
+          title: string;
+          description: string | null;
+          startTime: string;
+          endTime: string;
+          isAllDay: boolean;
+          location: string | null;
+          icsCalendar: { name: string; color: string; reminderBefore: number; allDayReminderTime: string };
+        }) => ({
+          id: e.id,
+          icsCalendarId: e.icsCalendarId,
+          title: e.title,
+          description: e.description,
+          startTime: e.startTime,
+          endTime: e.endTime,
+          isAllDay: e.isAllDay,
+          location: e.location,
+          color: e.icsCalendar.color,
+          sourceName: e.icsCalendar.name,
+          reminderBefore: e.icsCalendar.reminderBefore,
+          allDayReminderTime: e.icsCalendar.allDayReminderTime,
+        }),
+      );
+      set({ events });
+      if (isNative()) {
+        scheduleEventReminders(events);
+      }
       updateIcsData(
         data.map((e: { id: string; title: string; startTime: string }) => ({
           id: e.id,

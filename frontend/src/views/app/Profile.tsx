@@ -38,9 +38,11 @@ export default function Profile() {
     addCalendar,
     removeCalendar,
     syncCalendar,
+    updateCalendar,
   } = useIcsCalendarStore();
 
   const [activeTab, setActiveTab] = useState<"general" | "security" | "calendars">("general");
+  const [expandedCalId, setExpandedCalId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
@@ -750,49 +752,99 @@ export default function Profile() {
                 </p>
               ) : (
                 <div className="space-y-3">
-                  {icsCalendars.map((cal) => (
-                    <div
-                      key={cal.id}
-                      className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-900"
-                    >
-                      <div
-                        className="h-3 w-3 shrink-0 rounded-full"
-                        style={{ backgroundColor: cal.color }}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate font-urbanist text-sm font-medium text-gray-900 dark:text-gray-100">
-                          {cal.name}
-                        </p>
-                        <p className="truncate font-urbanist text-xs text-gray-400 dark:text-gray-500">
-                          {cal.url}
-                        </p>
-                        <p className="font-urbanist text-xs text-gray-400 dark:text-gray-500">
-                          {t("profile.icsLastSync", { time: formatLastSync(cal.lastSyncedAt) })}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => syncCalendar(cal.id)}
-                        disabled={syncing.has(cal.id)}
-                        className="rounded-lg px-3 py-1.5 font-urbanist text-xs font-medium text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
-                      >
-                        {syncing.has(cal.id) ? (
-                          <span className="flex items-center gap-1">
-                            <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                            {t("profile.icsSyncing")}
-                          </span>
-                        ) : (
-                          t("profile.icsSyncNow")
-                        )}
-                      </button>
-                      <button
-                        onClick={() => handleDeleteIcs(cal.id)}
-                        className="rounded-lg px-3 py-1.5 font-urbanist text-xs font-medium text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20"
-                      >
-                        {t("profile.icsDelete")}
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                   {icsCalendars.map((cal) => (
+                     <div key={cal.id}>
+                       <div
+                         className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-900"
+                       >
+                         <div
+                           className="h-3 w-3 shrink-0 rounded-full"
+                           style={{ backgroundColor: cal.color }}
+                         />
+                         <div className="min-w-0 flex-1">
+                           <p className="truncate font-urbanist text-sm font-medium text-gray-900 dark:text-gray-100">
+                             {cal.name}
+                           </p>
+                           <p className="truncate font-urbanist text-xs text-gray-400 dark:text-gray-500">
+                             {cal.url}
+                           </p>
+                           <p className="font-urbanist text-xs text-gray-400 dark:text-gray-500">
+                             {t("profile.icsLastSync", { time: formatLastSync(cal.lastSyncedAt) })}
+                           </p>
+                         </div>
+                         <button
+                           onClick={() => setExpandedCalId(expandedCalId === cal.id ? null : cal.id)}
+                           className={`rounded-lg px-2 py-1 font-urbanist text-xs font-medium transition-colors ${
+                             expandedCalId === cal.id ? "bg-primary/10 text-primary" : "text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                           }`}
+                           title="Notification settings"
+                         >
+                           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                             <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                           </svg>
+                         </button>
+                         <button
+                           onClick={() => syncCalendar(cal.id)}
+                           disabled={syncing.has(cal.id)}
+                           className="rounded-lg px-3 py-1.5 font-urbanist text-xs font-medium text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
+                         >
+                           {syncing.has(cal.id) ? (
+                             <span className="flex items-center gap-1">
+                               <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                               {t("profile.icsSyncing")}
+                             </span>
+                           ) : (
+                             t("profile.icsSyncNow")
+                           )}
+                         </button>
+                         <button
+                           onClick={() => handleDeleteIcs(cal.id)}
+                           className="rounded-lg px-3 py-1.5 font-urbanist text-xs font-medium text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20"
+                         >
+                           {t("profile.icsDelete")}
+                         </button>
+                       </div>
+                       {expandedCalId === cal.id && (
+                         <div className="mt-1 ml-9 rounded-xl border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
+                           <div className="mb-3">
+                             <label className="mb-1 block font-urbanist text-xs font-medium text-gray-600 dark:text-gray-400">
+                               {t("profile.eventReminderBefore") || "Events with time: notify before"}
+                             </label>
+                             <select
+                               value={cal.reminderBefore}
+                               onChange={async (e) => {
+                                 const val = parseInt(e.target.value, 10);
+                                 await updateCalendar(cal.id, { reminderBefore: val });
+                               }}
+                               className="w-full rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-urbanist text-xs outline-none focus:border-primary dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                             >
+                               <option value={0}>{t("profile.noReminder") || "No reminder"}</option>
+                               <option value={5}>5 {t("profile.minutes") || "minutes"}</option>
+                               <option value={15}>15 {t("profile.minutes") || "minutes"}</option>
+                               <option value={30}>30 {t("profile.minutes") || "minutes"}</option>
+                               <option value={60}>1 {t("profile.hour") || "hour"}</option>
+                               <option value={120}>2 {t("profile.hours") || "hours"}</option>
+                               <option value={1440}>1 {t("profile.day") || "day"}</option>
+                             </select>
+                           </div>
+                           <div>
+                             <label className="mb-1 block font-urbanist text-xs font-medium text-gray-600 dark:text-gray-400">
+                               {t("profile.allDayReminderTime") || "All-day events: notify at"}
+                             </label>
+                             <input
+                               type="time"
+                               value={cal.allDayReminderTime}
+                               onChange={async (e) => {
+                                 await updateCalendar(cal.id, { allDayReminderTime: e.target.value });
+                               }}
+                               className="w-full rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-urbanist text-xs outline-none focus:border-primary dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                             />
+                           </div>
+                         </div>
+                       )}
+                     </div>
+                   ))}
+                 </div>
             )}
           </div>
         </div>

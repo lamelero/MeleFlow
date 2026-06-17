@@ -1,0 +1,2 @@
+ALTER TABLE "IcsCalendar" ADD COLUMN "reminderBefore" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "IcsCalendar" ADD COLUMN "allDayReminderTime" TEXT NOT NULL DEFAULT '09:00';

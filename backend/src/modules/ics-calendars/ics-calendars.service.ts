@@ -1,7 +1,7 @@
 import rrulePkg from "rrule";
 const { RRule } = rrulePkg;
 import { prisma } from "../../config/database";
-import type { CreateIcsCalendarInput } from "./ics-calendars.schema";
+import type { CreateIcsCalendarInput, UpdateIcsCalendarInput } from "./ics-calendars.schema";
 
 interface ParsedEvent {
   externalId: string;
@@ -28,9 +28,27 @@ export class IcsCalendarService {
         name: input.name,
         url: input.url,
         color: input.color,
+        reminderBefore: input.reminderBefore ?? 0,
+        allDayReminderTime: input.allDayReminderTime ?? "09:00",
       },
     });
     return calendar;
+  }
+
+  async update(userId: string, id: string, input: UpdateIcsCalendarInput) {
+    const cal = await prisma.icsCalendar.findFirst({
+      where: { id, userId },
+    });
+    if (!cal) throw new Error("Calendar not found");
+    return prisma.icsCalendar.update({
+      where: { id },
+      data: {
+        ...(input.name !== undefined && { name: input.name }),
+        ...(input.color !== undefined && { color: input.color }),
+        ...(input.reminderBefore !== undefined && { reminderBefore: input.reminderBefore }),
+        ...(input.allDayReminderTime !== undefined && { allDayReminderTime: input.allDayReminderTime }),
+      },
+    });
   }
 
   async remove(userId: string, id: string) {
@@ -91,7 +109,7 @@ export class IcsCalendarService {
       orderBy: { startTime: "asc" },
       include: {
         icsCalendar: {
-          select: { name: true, color: true },
+          select: { name: true, color: true, reminderBefore: true, allDayReminderTime: true },
         },
       },
     });

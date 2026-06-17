@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { IcsCalendarService } from "./ics-calendars.service";
 import {
   createIcsCalendarSchema,
+  updateIcsCalendarSchema,
   eventsQuerySchema,
 } from "./ics-calendars.schema";
 
@@ -37,6 +38,18 @@ export async function icsCalendarRoutes(app: FastifyInstance) {
       const { id } = req.params as { id: string };
       await service.remove(req.user!.sub, id);
       return reply.code(204).send();
+    },
+  );
+
+  // Update ICS calendar feed (notification prefs, name, color)
+  app.patch(
+    "/:id",
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      const { id } = req.params as { id: string };
+      const input = updateIcsCalendarSchema.parse(req.body);
+      const calendar = await service.update(req.user!.sub, id, input);
+      return reply.send(calendar);
     },
   );
 
