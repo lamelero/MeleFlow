@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { Task } from "../../store/taskStore";
 import type { ExternalCalendarEvent } from "../../store/icsCalendarStore";
@@ -82,6 +82,13 @@ export default function AgendaView({
     return result;
   }, [tasks, externalEvents, currentDate, dayHeaders]);
 
+  useEffect(() => {
+    const el = document.getElementById("agenda-today");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [currentDate]);
+
   return (
     <div className="rounded-2xl bg-white shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
       <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3 dark:border-gray-800">
@@ -108,7 +115,7 @@ export default function AgendaView({
         {days.map((day) => {
           const hasItems = day.tasks.length > 0 || day.events.length > 0;
           return (
-            <div key={day.dateStr} className={`px-4 py-3 ${day.isToday ? "bg-primary/[0.02]" : ""}`}>
+            <div key={day.dateStr} id={day.isToday ? "agenda-today" : undefined} className={`px-4 py-3 ${day.isToday ? "bg-primary/[0.02]" : ""}`}>
               <div className="mb-2 flex items-center gap-2">
                 <span className={`inline-flex h-7 w-7 items-center justify-center rounded-full font-urbanist text-xs font-medium ${
                   day.isToday ? "bg-primary text-white" : "text-gray-500 dark:text-gray-400"
