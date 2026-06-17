@@ -136,7 +136,7 @@
       "saveRecoveryCodes": "¡Guárdalos de forma segura! Cada código solo puede usarse una vez.",
       "generateNewCodes": "Generar nuevos códigos de recuperación"
     },
-    "notifications": "Preferencias de notificaciones",
+    "notifications": "Notificaciones",
     "notifEmail": "Correo electrónico",
     "notifPush": "Push (APK)",
     "notifBrowser": "Navegador (Web)"
