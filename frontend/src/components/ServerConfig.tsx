@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { setServerUrl } from "../capacitor/register";
+import { addServer } from "../capacitor/register";
 
 interface Props {
   onConfigured: () => void;
@@ -7,6 +7,7 @@ interface Props {
 
 export default function ServerConfig({ onConfigured }: Props) {
   const [url, setUrl] = useState("");
+  const [label, setLabel] = useState("");
   const [error, setError] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
@@ -27,7 +28,8 @@ export default function ServerConfig({ onConfigured }: Props) {
       return;
     }
     setError("");
-    await setServerUrl(finalUrl);
+    const serverLabel = label.trim() || "Servidor 1";
+    await addServer(serverLabel, finalUrl);
     onConfigured();
   }
 
@@ -46,11 +48,20 @@ export default function ServerConfig({ onConfigured }: Props) {
           <div>
             <input
               type="text"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="192.168.100.10:3001"
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+              placeholder="Label (e.g. Oficina, Casa)"
               className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none transition-colors focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-purple-500"
               autoFocus
+            />
+          </div>
+          <div>
+            <input
+              type="text"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="192.168.100.10:33800"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none transition-colors focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-purple-500"
             />
             {error && (
               <p className="mt-1 text-xs text-red-500">{error}</p>

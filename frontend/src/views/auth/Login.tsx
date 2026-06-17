@@ -6,7 +6,8 @@ import AuthLayout from "./AuthLayout";
 import LanguageSwitcher from "../../components/LanguageSwitcher";
 import ThemeToggle from "../../components/ThemeToggle";
 import { translateAuthError } from "../../lib/translate-error";
-import { isNative, getServerUrl, setServerUrl } from "../../capacitor/register";
+import { isNative, getServerUrl, setServerUrl, getServers, addServer, removeServer, setActiveServer, updateServer } from "../../capacitor/register";
+import type { ServerEntry } from "../../capacitor/register";
 import { reRegisterPushToken, registerPushNotifications } from "../../capacitor/pushNotifications";
 import { initClientBaseUrl } from "../../api/client";
 
@@ -23,13 +24,22 @@ export default function Login() {
   const [editingUrl, setEditingUrl] = useState(false);
   const [serverUrlInput, setServerUrlInput] = useState("");
   const [registrationAllowed, setRegistrationAllowed] = useState(true);
+  const [servers, setServers] = useState<ServerEntry[]>([]);
+  const [showAddServer, setShowAddServer] = useState(false);
+  const [newServerLabel, setNewServerLabel] = useState("");
+  const [newServerUrl, setNewServerUrl] = useState("");
+  const [editingServerId, setEditingServerId] = useState<string | null>(null);
+  const [editServerLabel, setEditServerLabel] = useState("");
+  const [editServerUrl, setEditServerUrl] = useState("");
 
   useEffect(() => {
     if (isNative()) {
-      getServerUrl().then((url) => {
-        if (url) {
-          setServerUrlState(url);
-          setServerUrlInput(url);
+      getServers().then((list) => {
+        setServers(list);
+        const active = list.find((s) => s.url === serverUrl) || list[0];
+        if (active) {
+          setServerUrlState(active.url);
+          setServerUrlInput(active.url);
         }
       });
     }
@@ -48,6 +58,15 @@ export default function Login() {
     }
   }
 
+  async function handleSelectServer(server: ServerEntry) {
+    await setActiveServer(server.id);
+    setServerUrlState(server.url);
+    setServerUrlInput(server.url);
+    setEditingUrl(false);
+    await initClientBaseUrl();
+    await reRegisterPushToken();
+  }
+
   async function handleSaveServerUrl() {
     const trimmed = serverUrlInput.trim().replace(/\/+$/, "");
     if (!trimmed) return;
@@ -60,11 +79,64 @@ export default function Login() {
     } catch {
       return;
     }
-    await setServerUrl(finalUrl);
+    if (editingServerId) {
+      await updateServer(editingServerId, { url: finalUrl, label: editServerLabel });
+      setEditingServerId(null);
+    } else {
+      await setServerUrl(finalUrl);
+    }
+    const list = await getServers();
+    setServers(list);
     setServerUrlState(finalUrl);
     setEditingUrl(false);
     await initClientBaseUrl();
     await reRegisterPushToken();
+  }
+
+  async function handleAddServer() {
+    const trimmed = newServerUrl.trim().replace(/\/+$/, "");
+    if (!trimmed || !newServerLabel.trim()) return;
+    let finalUrl = trimmed;
+    if (!/^https?:\/\//i.test(finalUrl)) {
+      finalUrl = `http://${finalUrl}`;
+    }
+    try {
+      new URL(finalUrl);
+    } catch {
+      return;
+    }
+    await addServer(newServerLabel.trim(), finalUrl);
+    setNewServerLabel("");
+    setNewServerUrl("");
+    setShowAddServer(false);
+    const list = await getServers();
+    setServers(list);
+    const active = list[list.length - 1];
+    setServerUrlState(active.url);
+    setServerUrlInput(active.url);
+    await initClientBaseUrl();
+    await reRegisterPushToken();
+  }
+
+  async function handleRemoveServer(id: string) {
+    await removeServer(id);
+    const list = await getServers();
+    setServers(list);
+    if (list.length > 0) {
+      setServerUrlState(list[0].url);
+      setServerUrlInput(list[0].url);
+      await initClientBaseUrl();
+    } else {
+      setServerUrlState("");
+      setServerUrlInput("");
+    }
+  }
+
+  function handleEditServer(server: ServerEntry) {
+    setEditingServerId(server.id);
+    setEditServerLabel(server.label);
+    setEditServerUrl(server.url);
+    setEditingUrl(true);
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -105,6 +177,102 @@ export default function Login() {
       <p className="mt-1 font-urbanist text-sm text-gray-500 dark:text-gray-400">
         {t("auth.signInToAccount")}
       </p>
+
+      {isNative() && servers.length > 0 && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {servers.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => handleSelectServer(s)}
+              onContextMenu={(e) => { e.preventDefault(); handleEditServer(s); }}
+              className={`group flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all ${
+                s.url === serverUrl
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-gray-200 bg-white text-gray-500 hover:border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-gray-600"
+              }`}
+            >
+              {s.url === serverUrl && (
+                <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                </svg>
+              )}
+              <span className="truncate max-w-24">{s.label}</span>
+              <span className="truncate max-w-20 opacity-60">{formatServerUrl(s.url)}</span>
+              <span
+                onClick={(e) => { e.stopPropagation(); handleEditServer(s); }}
+                className="ml-0.5 hidden rounded p-0.5 text-gray-400 hover:text-gray-600 group-hover:inline-flex dark:hover:text-gray-300"
+                title={t("common.edit") || "Edit"}
+              >
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                  <path d="M11.5 1.5l3 3L7 12H4v-3z" />
+                </svg>
+              </span>
+              <span
+                onClick={(e) => { e.stopPropagation(); handleRemoveServer(s.id); }}
+                className="ml-0.5 hidden rounded p-0.5 text-gray-400 hover:text-red-500 group-hover:inline-flex"
+                title={t("common.delete") || "Delete"}
+              >
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                  <line x1="3" y1="3" x2="13" y2="13" />
+                  <line x1="13" y1="3" x2="3" y2="13" />
+                </svg>
+              </span>
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => setShowAddServer(true)}
+            className="flex items-center gap-1 rounded-lg border border-dashed border-gray-300 px-2.5 py-1.5 text-xs font-medium text-gray-400 transition-colors hover:border-gray-400 hover:text-gray-500 dark:border-gray-600 dark:text-gray-500 dark:hover:border-gray-500"
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+              <line x1="8" y1="3" x2="8" y2="13" />
+              <line x1="3" y1="8" x2="13" y2="8" />
+            </svg>
+            {t("auth.addServer") || "Add server"}
+          </button>
+        </div>
+      )}
+
+      {isNative() && showAddServer && (
+        <div className="mt-3 rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800/60">
+          <div className="mb-2">
+            <input
+              type="text"
+              value={newServerLabel}
+              onChange={(e) => setNewServerLabel(e.target.value)}
+              placeholder={t("auth.serverLabel") || "Label (e.g. Oficina, Casa)"}
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-urbanist text-xs outline-none focus:border-primary dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+              autoFocus
+            />
+          </div>
+          <div className="mb-2">
+            <input
+              type="text"
+              value={newServerUrl}
+              onChange={(e) => setNewServerUrl(e.target.value)}
+              placeholder="192.168.100.10:33800"
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-urbanist text-xs outline-none focus:border-primary dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+            />
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleAddServer}
+              className="flex-1 rounded-lg bg-primary px-3 py-1.5 font-urbanist text-xs font-medium text-white transition-colors hover:bg-teal-600"
+            >
+              {t("common.add") || "Add"}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setShowAddServer(false); setNewServerLabel(""); setNewServerUrl(""); }}
+              className="flex-1 rounded-lg bg-gray-200 px-3 py-1.5 font-urbanist text-xs font-medium text-gray-600 transition-colors hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+            >
+              {t("common.cancel") || "Cancel"}
+            </button>
+          </div>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         {error && (
@@ -185,49 +353,40 @@ export default function Login() {
           <span className="font-urbanist text-sm text-gray-600 dark:text-gray-400">{t("auth.rememberMe")}</span>
         </label>
 
-        {isNative() && (
+        {isNative() && editingUrl && (
           <div className="border-t border-gray-100 pt-3 dark:border-gray-800">
-            <div className="flex items-center justify-between">
-              <span className="font-urbanist text-xs text-gray-400">
-                {t("auth.serverUrl")}
-              </span>
-              {!editingUrl ? (
-                <button
-                  type="button"
-                  onClick={() => { setServerUrlInput(serverUrl); setEditingUrl(true); }}
-                  className="flex items-center gap-1 rounded-lg px-2 py-1 font-urbanist text-xs text-gray-500 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
-                >
-                  <span>{serverUrl ? formatServerUrl(serverUrl) : "—"}</span>
-                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                    <path d="M11.5 1.5l3 3L7 12H4v-3z" />
-                  </svg>
-                </button>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={serverUrlInput}
-                    onChange={(e) => setServerUrlInput(e.target.value)}
-                    placeholder="192.168.100.210:3001"
-                    className="w-40 rounded-lg border border-gray-200 bg-white px-2 py-1 font-urbanist text-xs outline-none focus:border-primary dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                    autoFocus
-                  />
-                  <button
-                    type="button"
-                    onClick={handleSaveServerUrl}
-                    className="rounded-lg bg-primary px-2 py-1 font-urbanist text-xs font-medium text-white transition-colors hover:bg-teal-600"
-                  >
-                    Save
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setEditingUrl(false)}
-                    className="rounded-lg px-2 py-1 font-urbanist text-xs text-gray-500 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              )}
+            <div className="mb-2">
+              <input
+                type="text"
+                value={editServerLabel}
+                onChange={(e) => setEditServerLabel(e.target.value)}
+                placeholder={t("auth.serverLabel") || "Label"}
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-urbanist text-xs outline-none focus:border-primary dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+              />
+            </div>
+            <input
+              type="text"
+              value={serverUrlInput}
+              onChange={(e) => setServerUrlInput(e.target.value)}
+              placeholder="192.168.100.210:3001"
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-urbanist text-xs outline-none focus:border-primary dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+              autoFocus
+            />
+            <div className="mt-2 flex gap-2">
+              <button
+                type="button"
+                onClick={handleSaveServerUrl}
+                className="rounded-lg bg-primary px-3 py-1.5 font-urbanist text-xs font-medium text-white transition-colors hover:bg-teal-600"
+              >
+                {t("common.save") || "Save"}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setEditingUrl(false); setEditingServerId(null); }}
+                className="rounded-lg px-3 py-1.5 font-urbanist text-xs text-gray-500 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                {t("common.cancel") || "Cancel"}
+              </button>
             </div>
           </div>
         )}
