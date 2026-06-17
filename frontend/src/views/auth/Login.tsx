@@ -6,10 +6,11 @@ import AuthLayout from "./AuthLayout";
 import LanguageSwitcher from "../../components/LanguageSwitcher";
 import ThemeToggle from "../../components/ThemeToggle";
 import { translateAuthError } from "../../lib/translate-error";
-import { isNative, getServerUrl, setServerUrl, getServers, addServer, removeServer, setActiveServer, updateServer } from "../../capacitor/register";
+import { isNative, getServerUrl, getServers, addServer, removeServer, setActiveServer, updateServer } from "../../capacitor/register";
+import { setPersistedRefreshToken } from "../../capacitor/register";
 import type { ServerEntry } from "../../capacitor/register";
-import { reRegisterPushToken, registerPushNotifications } from "../../capacitor/pushNotifications";
-import { initClientBaseUrl } from "../../api/client";
+import { registerPushNotifications } from "../../capacitor/pushNotifications";
+import { initClientBaseUrl, setAccessToken, setRefreshToken } from "../../api/client";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -60,11 +61,14 @@ export default function Login() {
 
   async function handleSelectServer(server: ServerEntry) {
     await setActiveServer(server.id);
+    setAccessToken(null);
+    setRefreshToken(null);
+    setPersistedRefreshToken(null);
+    useAuthStore.setState({ user: null, isAuthenticated: false, error: null });
     setServerUrlState(server.url);
     setServerUrlInput(server.url);
     setEditingUrl(false);
     await initClientBaseUrl();
-    await reRegisterPushToken();
   }
 
   async function handleSaveServerUrl() {
@@ -79,18 +83,25 @@ export default function Login() {
     } catch {
       return;
     }
+    const all = await getServers();
     if (editingServerId) {
       await updateServer(editingServerId, { url: finalUrl, label: editServerLabel });
       setEditingServerId(null);
+    } else if (serverUrl) {
+      const cur = all.find((s) => s.url === serverUrl);
+      if (cur) await updateServer(cur.id, { url: finalUrl });
     } else {
-      await setServerUrl(finalUrl);
+      await addServer("Servidor", finalUrl);
     }
-    const list = await getServers();
-    setServers(list);
+    setAccessToken(null);
+    setRefreshToken(null);
+    setPersistedRefreshToken(null);
+    useAuthStore.setState({ user: null, isAuthenticated: false, error: null });
+    setServers(await getServers());
     setServerUrlState(finalUrl);
+    setServerUrlInput(finalUrl);
     setEditingUrl(false);
     await initClientBaseUrl();
-    await reRegisterPushToken();
   }
 
   async function handleAddServer() {
@@ -106,6 +117,10 @@ export default function Login() {
       return;
     }
     await addServer(newServerLabel.trim(), finalUrl);
+    setAccessToken(null);
+    setRefreshToken(null);
+    setPersistedRefreshToken(null);
+    useAuthStore.setState({ user: null, isAuthenticated: false, error: null });
     setNewServerLabel("");
     setNewServerUrl("");
     setShowAddServer(false);
@@ -115,7 +130,6 @@ export default function Login() {
     setServerUrlState(active.url);
     setServerUrlInput(active.url);
     await initClientBaseUrl();
-    await reRegisterPushToken();
   }
 
   async function handleRemoveServer(id: string) {

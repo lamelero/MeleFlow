@@ -118,7 +118,7 @@ client.interceptors.response.use(
         setAccessToken(null);
         setRefreshToken(null);
         setPersistedRefreshToken(null);
-        if (!isNative() || !error.config?.url?.startsWith("/tasks")) {
+        if (!isNative() || (!error.config?.url?.startsWith("/tasks") && !error.config?.url?.startsWith("/notifications"))) {
           window.location.href = "/login";
         }
         return Promise.reject(err);
