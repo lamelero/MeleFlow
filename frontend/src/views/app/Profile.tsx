@@ -754,55 +754,63 @@ export default function Profile() {
                 <div className="space-y-3">
                    {icsCalendars.map((cal) => (
                      <div key={cal.id}>
-                       <div
-                         className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-900"
-                       >
-                         <div
-                           className="h-3 w-3 shrink-0 rounded-full"
-                           style={{ backgroundColor: cal.color }}
-                         />
-                         <div className="min-w-0 flex-1">
-                           <p className="truncate font-urbanist text-sm font-medium text-gray-900 dark:text-gray-100">
-                             {cal.name}
-                           </p>
-                           <p className="truncate font-urbanist text-xs text-gray-400 dark:text-gray-500">
-                             {cal.url}
-                           </p>
-                           <p className="font-urbanist text-xs text-gray-400 dark:text-gray-500">
-                             {t("profile.icsLastSync", { time: formatLastSync(cal.lastSyncedAt) })}
-                           </p>
+                       <div className="rounded-xl border border-gray-100 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+                         <div className="flex items-start gap-3">
+                           <div
+                             className="mt-0.5 h-3 w-3 shrink-0 rounded-full"
+                             style={{ backgroundColor: cal.color }}
+                           />
+                           <div className="min-w-0 flex-1">
+                             <p className="truncate font-urbanist text-sm font-medium text-gray-900 dark:text-gray-100">
+                               {cal.name}
+                             </p>
+                             <p className="truncate font-urbanist text-xs text-gray-400 dark:text-gray-500">
+                               {cal.url}
+                             </p>
+                             <p className="font-urbanist text-xs text-gray-400 dark:text-gray-500">
+                               {t("profile.icsLastSync", { time: formatLastSync(cal.lastSyncedAt) })}
+                             </p>
+                           </div>
                          </div>
-                         <button
-                           onClick={() => setExpandedCalId(expandedCalId === cal.id ? null : cal.id)}
-                           className={`rounded-lg px-2 py-1 font-urbanist text-xs font-medium transition-colors ${
-                             expandedCalId === cal.id ? "bg-primary/10 text-primary" : "text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-                           }`}
-                           title="Notification settings"
-                         >
-                           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                             <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
-                           </svg>
-                         </button>
-                         <button
-                           onClick={() => syncCalendar(cal.id)}
-                           disabled={syncing.has(cal.id)}
-                           className="rounded-lg px-3 py-1.5 font-urbanist text-xs font-medium text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
-                         >
-                           {syncing.has(cal.id) ? (
-                             <span className="flex items-center gap-1">
-                               <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                               {t("profile.icsSyncing")}
-                             </span>
-                           ) : (
-                             t("profile.icsSyncNow")
-                           )}
-                         </button>
-                         <button
-                           onClick={() => handleDeleteIcs(cal.id)}
-                           className="rounded-lg px-3 py-1.5 font-urbanist text-xs font-medium text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20"
-                         >
-                           {t("profile.icsDelete")}
-                         </button>
+                         <div className="mt-3 flex items-center gap-2 border-t border-gray-100 pt-3 dark:border-gray-800">
+                           <button
+                             onClick={() => setExpandedCalId(expandedCalId === cal.id ? null : cal.id)}
+                             className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-urbanist text-xs font-medium transition-colors ${
+                               expandedCalId === cal.id
+                                 ? "bg-primary/10 text-primary"
+                                 : "bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+                             }`}
+                             title="Notification settings"
+                           >
+                             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                               <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                             </svg>
+                             {t("profile.notifications")}
+                           </button>
+                           <button
+                             onClick={() => syncCalendar(cal.id)}
+                             disabled={syncing.has(cal.id)}
+                             className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-urbanist text-xs font-medium text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
+                           >
+                             {syncing.has(cal.id) ? (
+                               <span className="flex items-center gap-1">
+                                 <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                                 {t("profile.icsSyncing")}
+                               </span>
+                             ) : (
+                               t("profile.icsSyncNow")
+                             )}
+                           </button>
+                           <button
+                             onClick={() => handleDeleteIcs(cal.id)}
+                             className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-urbanist text-xs font-medium text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20"
+                           >
+                             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                               <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                             </svg>
+                             {t("profile.icsDelete")}
+                           </button>
+                         </div>
                        </div>
                        {expandedCalId === cal.id && (
                          <div className="mt-1 ml-9 rounded-xl border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
