@@ -194,28 +194,7 @@ export default function CalendarContent({ standalone = true }: CalendarContentPr
 
   const content = (
     <>
-      <div className="mb-3 flex items-center justify-end gap-2">
-        <button
-          onClick={() => setViewMode("agenda")}
-          className={`rounded-lg px-3 py-1.5 font-urbanist text-xs font-medium transition-colors ${
-            viewMode === "agenda"
-              ? "bg-primary text-white"
-              : "bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
-          }`}
-        >
-          {t("calendar.agenda")}
-        </button>
-        <button
-          onClick={() => setViewMode("grid")}
-          className={`rounded-lg px-3 py-1.5 font-urbanist text-xs font-medium transition-colors ${
-            viewMode === "grid"
-              ? "bg-primary text-white"
-              : "bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
-          }`}
-        >
-          {t("calendar.grid")}
-        </button>
-
+      <div className="mb-3 flex items-center gap-2">
         <div className="relative flex-1 max-w-xs" ref={searchRef}>
           <div className="relative">
             <svg className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -348,6 +327,29 @@ export default function CalendarContent({ standalone = true }: CalendarContentPr
             </AnimatePresence>
           </div>
         )}
+
+        <div className="flex items-center gap-2 ml-auto">
+          <button
+            onClick={() => setViewMode("agenda")}
+            className={`rounded-lg px-3 py-1.5 font-urbanist text-xs font-medium transition-colors ${
+              viewMode === "agenda"
+                ? "bg-primary text-white"
+                : "bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+            }`}
+          >
+            {t("calendar.agenda")}
+          </button>
+          <button
+            onClick={() => setViewMode("grid")}
+            className={`rounded-lg px-3 py-1.5 font-urbanist text-xs font-medium transition-colors ${
+              viewMode === "grid"
+                ? "bg-primary text-white"
+                : "bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+            }`}
+          >
+            {t("calendar.grid")}
+          </button>
+        </div>
       </div>
 
       {viewMode === "grid" ? (
