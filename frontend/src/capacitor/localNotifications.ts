@@ -113,11 +113,11 @@ export async function scheduleTaskReminders(
           let dayOffset = 0;
           while (cursor.getTime() <= dueEnd.getTime()) {
             const at = new Date(cursor);
-            notifs.push({
-              title: task.title,
-              body: "Task reminder",
-              id: makeId(task.id, ri, dayOffset),
-              schedule: { at, allowWhileIdle: true },
+              notifs.push({
+                title: task.title,
+                body: `⏰ ${at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
+                id: makeId(task.id, ri, dayOffset),
+                schedule: { at, allowWhileIdle: true },
               smallIcon: "ic_stat_icon",
               iconColor: "#14B8A6",
               channelId: "meleflow-default",
@@ -133,11 +133,11 @@ export async function scheduleTaskReminders(
             at.setUTCDate(at.getUTCDate() + d);
             at.setUTCHours(hour, minute, 0, 0);
             if (at.getTime() <= nowMs) continue;
-            notifs.push({
-              title: task.title,
-              body: "Daily reminder",
-              id: makeId(task.id, ri, d),
-              schedule: { at, allowWhileIdle: true },
+              notifs.push({
+                title: task.title,
+                body: `📅 ${at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
+                id: makeId(task.id, ri, d),
+                schedule: { at, allowWhileIdle: true },
               smallIcon: "ic_stat_icon",
               iconColor: "#14B8A6",
               channelId: "meleflow-default",
@@ -163,7 +163,7 @@ export async function scheduleTaskReminders(
               at.setUTCHours(hour, minute, 0, 0);
               notifs.push({
                 title: task.title,
-                body: "Weekly reminder",
+                body: `📅 ${at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
                 id: makeId(task.id, ri, dayOffset),
                 schedule: { at, allowWhileIdle: true },
                 smallIcon: "ic_stat_icon",
@@ -186,7 +186,7 @@ export async function scheduleTaskReminders(
             if (rem.days.includes(uiIdx)) {
               notifs.push({
                 title: task.title,
-                body: "Weekly reminder",
+                body: `📅 ${at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
                 id: makeId(task.id, ri, d),
                 schedule: { at, allowWhileIdle: true },
                 smallIcon: "ic_stat_icon",
@@ -204,7 +204,7 @@ export async function scheduleTaskReminders(
         if (at.getTime() > nowMs) {
           notifs.push({
             title: task.title,
-            body: "Upcoming due date",
+              body: `📅 ${due.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" })}`,
             id: makeId(task.id, ri, 0),
             schedule: { at },
             smallIcon: "ic_stat_icon",
@@ -271,36 +271,36 @@ export async function scheduleEventReminders(
     const start = new Date(ev.startTime);
     if (start.getTime() <= now.getTime()) continue;
 
-    if (ev.isAllDay && ev.allDayReminderTime) {
-      const [hour, minute] = ev.allDayReminderTime.split(":").map(Number);
-      const at = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate(), hour, minute, 0));
-      if (at.getTime() > now.getTime()) {
-        notifs.push({
-          title: ev.title,
-          body: `${ev.sourceName} — All day event`,
-          id,
-          schedule: { at, allowWhileIdle: true },
-          smallIcon: "ic_stat_icon",
-          iconColor: "#14B8A6",
-          channelId: "meleflow-default",
-          sound: "default",
-        });
+      if (ev.isAllDay && ev.allDayReminderTime) {
+        const [hour, minute] = ev.allDayReminderTime.split(":").map(Number);
+        const at = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate(), hour, minute, 0));
+        if (at.getTime() > now.getTime()) {
+          notifs.push({
+            title: ev.title,
+            body: `${ev.sourceName} — ${start.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" })}`,
+            id,
+            schedule: { at, allowWhileIdle: true },
+            smallIcon: "ic_stat_icon",
+            iconColor: "#14B8A6",
+            channelId: "meleflow-default",
+            sound: "default",
+          });
+        }
+      } else if (ev.reminderBefore > 0) {
+        const at = new Date(start.getTime() - ev.reminderBefore * 60 * 1000);
+        if (at.getTime() > now.getTime()) {
+          notifs.push({
+            title: ev.title,
+            body: `${ev.sourceName} — ${start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
+            id,
+            schedule: { at, allowWhileIdle: true },
+            smallIcon: "ic_stat_icon",
+            iconColor: "#14B8A6",
+            channelId: "meleflow-default",
+            sound: "default",
+          });
+        }
       }
-    } else if (ev.reminderBefore > 0) {
-      const at = new Date(start.getTime() - ev.reminderBefore * 60 * 1000);
-      if (at.getTime() > now.getTime()) {
-        notifs.push({
-          title: ev.title,
-          body: `${ev.sourceName} — ${ev.reminderBefore} min before`,
-          id,
-          schedule: { at, allowWhileIdle: true },
-          smallIcon: "ic_stat_icon",
-          iconColor: "#14B8A6",
-          channelId: "meleflow-default",
-          sound: "default",
-        });
-      }
-    }
   }
 
   if (notifs.length === 0) return;
