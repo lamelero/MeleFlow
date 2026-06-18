@@ -182,7 +182,7 @@ export default function Dashboard() {
         transition={{ duration: 0.2 }}
       >
         <div className="mx-auto flex h-full w-full max-w-6xl gap-6 p-4">
-        <aside className={`relative hidden shrink-0 space-y-4 transition-all duration-200 md:block ${sidebarOpen ? "w-56" : "w-16"}`}>
+        <aside className={`relative shrink-0 space-y-4 transition-all duration-200 ${isNative() ? "hidden" : "hidden lg:block"} ${sidebarOpen ? "w-56" : "w-16"}`}>
           <button
             onClick={() => { setSidebarOpen(!sidebarOpen); localStorage.setItem("sidebarOpen", String(!sidebarOpen)); }}
             className={`absolute -right-3 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400 shadow-sm transition-colors hover:bg-gray-50 hover:text-gray-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-300 ${sidebarOpen ? "" : "rotate-180"}`}
