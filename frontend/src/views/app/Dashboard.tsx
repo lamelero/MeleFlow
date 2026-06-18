@@ -318,13 +318,13 @@ export default function Dashboard() {
                               setActiveListId(activeListId === list.id ? undefined : list.id);
                               setActiveTagId(undefined);
                             }}
-                            className={`flex flex-1 items-center rounded-lg font-urbanist text-[15px] transition-colors ${sidebarOpen ? "px-3 py-2 text-left" : "justify-center px-0 h-8"} ${
+                            className={`flex items-center rounded-lg font-urbanist text-[15px] transition-colors ${sidebarOpen ? "flex-1 px-3 py-2 text-left" : "justify-center px-0 w-full h-8"} ${
                               activeListId === list.id
                                 ? "bg-primary/10 font-medium text-primary"
                                 : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
                             }`}
                           >
-                            <span className="shrink-0">{list.icon ? <span style={{ color: list.color }}><ListIcon name={list.icon} className="h-4 w-4" /></span> : <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: list.color }} />}</span>
+                            <span className="flex items-center justify-center shrink-0">{list.icon ? <span className="flex items-center justify-center" style={{ color: list.color }}><ListIcon name={list.icon} className="h-4 w-4" /></span> : <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: list.color }} />}</span>
                             {sidebarOpen && <span className="ml-2 truncate">{list.name}</span>}
                             {sidebarOpen && <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">{list._count.tasks}</span>}
                           </button>
@@ -468,7 +468,7 @@ export default function Dashboard() {
                   <button
                     key={tag.id}
                     onClick={() => handleTagClick(tag.id)}
-                  className={`flex items-center w-full rounded-lg px-3 py-2 text-left font-urbanist text-[15px] transition-colors ${sidebarOpen ? "" : "justify-center"} ${
+                  className={`flex items-center w-full rounded-lg font-urbanist text-[15px] transition-colors ${sidebarOpen ? "px-3 py-2 text-left" : "justify-center px-0 h-8"} ${
                       activeTagId === tag.id
                         ? "bg-primary/10 font-medium text-primary"
                         : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
