@@ -144,6 +144,20 @@ export default function CalendarContent({ standalone = true }: CalendarContentPr
     loadMonth(currentDate);
   }, [currentDate, loadMonth, viewMode]);
 
+  // Retry load on mount for WebView timing
+  const loadRef = useRef(loadMonth);
+  loadRef.current = loadMonth;
+  const dateRef = useRef(currentDate);
+  dateRef.current = currentDate;
+  useEffect(() => {
+    const delays = [200, 500];
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    for (const d of delays) {
+      timers.push(setTimeout(() => loadRef.current(dateRef.current), d));
+    }
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
   function handlePrevMonth() {
     setCurrentDate((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1));
   }
