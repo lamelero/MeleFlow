@@ -115,6 +115,37 @@ export class IcsCalendarService {
     });
   }
 
+  async searchEvents(userId: string, query: string) {
+    const results = await prisma.icsEvent.findMany({
+      where: {
+        userId,
+        OR: [
+          { title: { contains: query, mode: "insensitive" } },
+          { description: { contains: query, mode: "insensitive" } },
+        ],
+      },
+      orderBy: { startTime: "desc" },
+      take: 20,
+      include: {
+        icsCalendar: {
+          select: { name: true, color: true },
+        },
+      },
+    });
+    return results.map((e) => ({
+      id: e.id,
+      icsCalendarId: e.icsCalendarId,
+      title: e.title,
+      description: e.description,
+      startTime: e.startTime,
+      endTime: e.endTime,
+      isAllDay: e.isAllDay,
+      location: e.location,
+      sourceName: e.icsCalendar.name,
+      color: e.icsCalendar.color,
+    }));
+  }
+
   private async fetchAndParse(
     url: string,
     icsCalendarId: string,

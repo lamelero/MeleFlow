@@ -9,6 +9,7 @@ import EventDetailModal from "../tasks/EventDetailModal";
 import { useTaskStore, type Task } from "../../store/taskStore";
 import { useListStore } from "../../store/listStore";
 import { useIcsCalendarStore, type ExternalCalendarEvent } from "../../store/icsCalendarStore";
+import { client } from "../../api/client";
 
 const HIDDEN_CALENDARS_KEY = "hiddenCalendarIds";
 
@@ -47,6 +48,11 @@ export default function CalendarContent({ standalone = true }: CalendarContentPr
   });
   const [calPickerOpen, setCalPickerOpen] = useState(false);
   const calPickerRef = useRef<HTMLDivElement>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<({ type: "task"; data: Task } | { type: "event"; data: ExternalCalendarEvent })[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setViewMode(isDesktop ? "grid" : "agenda");
@@ -61,12 +67,43 @@ export default function CalendarContent({ standalone = true }: CalendarContentPr
       if (calPickerRef.current && !calPickerRef.current.contains(e.target as Node)) {
         setCalPickerOpen(false);
       }
+      if (searchRef.current && !searchRef.current.contains(e.target as Node) && searchInputRef.current && !searchInputRef.current.contains(e.target as Node)) {
+        setSearchResults([]);
+      }
     }
-    if (calPickerOpen) {
+    if (calPickerOpen || searchResults.length > 0) {
       document.addEventListener("mousedown", handleClick);
       return () => document.removeEventListener("mousedown", handleClick);
     }
-  }, [calPickerOpen]);
+  }, [calPickerOpen, searchResults.length]);
+
+  useEffect(() => {
+    if (searchQuery.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    const q = searchQuery.toLowerCase();
+    const taskResults = tasks
+      .filter((t) => t.title.toLowerCase().includes(q))
+      .slice(0, 5)
+      .map((t) => ({ type: "task" as const, data: t }));
+    setSearchLoading(true);
+    setSearchResults(taskResults);
+    const timer = setTimeout(async () => {
+      try {
+        const { data } = await client.get(`/ics-calendars/search?q=${encodeURIComponent(searchQuery)}`);
+        setSearchResults([
+          ...taskResults,
+          ...(data as ExternalCalendarEvent[]).map((e) => ({ type: "event" as const, data: e })),
+        ]);
+      } catch {
+        // silent
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery, tasks]);
 
   const [isCreating, setIsCreating] = useState(false);
   const [newTaskDate, setNewTaskDate] = useState<Date | null>(null);
@@ -171,8 +208,84 @@ export default function CalendarContent({ standalone = true }: CalendarContentPr
           {t("calendar.grid")}
         </button>
 
+        <div className="relative flex-1 max-w-xs" ref={searchRef}>
+          <div className="relative">
+            <svg className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+            </svg>
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Escape") { setSearchQuery(""); setSearchResults([]); } }}
+              placeholder={t("calendar.search") || "Search tasks and events..."}
+              className="w-full rounded-lg border border-gray-200 bg-white py-1.5 pl-8 pr-8 font-urbanist text-xs outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => { setSearchQuery(""); setSearchResults([]); searchInputRef.current?.focus(); }}
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+
+          <AnimatePresence>
+            {searchResults.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                className="absolute left-0 top-full z-30 mt-1 w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
+              >
+                <div className="max-h-64 overflow-y-auto p-1.5">
+                  {searchResults.map((r, i) => (
+                    <button
+                      key={`${r.type}-${r.type === "task" ? r.data.id : r.data.id}`}
+                      onClick={() => {
+                        if (r.type === "task") setSelectedTask(r.data);
+                        else setSelectedEvent(r.data);
+                        setSearchResults([]);
+                        setSearchQuery("");
+                      }}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
+                    >
+                      <span className="shrink-0">
+                        {r.type === "task" ? (
+                          <svg className="h-3.5 w-3.5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                          </svg>
+                        ) : (
+                          <div className="h-3 w-3 rounded-full" style={{ backgroundColor: (r.data as ExternalCalendarEvent).color }} />
+                        )}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-urbanist text-xs font-medium text-gray-700 dark:text-gray-300">{r.data.title}</p>
+                        <p className="font-urbanist text-[10px] text-gray-400 dark:text-gray-500">
+                          {r.type === "event"
+                            ? new Date((r.data as ExternalCalendarEvent).startTime).toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" })
+                            : (r.data as Task).dueDate
+                              ? new Date((r.data as Task).dueDate!).toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" })
+                              : t("calendar.noDate") || "No date"}
+                        </p>
+                      </div>
+                      <span className="shrink-0 font-urbanist text-[10px] text-gray-400">
+                        {r.type === "event" ? (r.data as ExternalCalendarEvent).sourceName : t("dashboard.todo")}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
         {icsCalendars.length > 0 && (
-          <div className="relative ml-auto" ref={calPickerRef}>
+          <div className="relative" ref={calPickerRef}>
             <button
               onClick={() => setCalPickerOpen(!calPickerOpen)}
               className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-urbanist text-xs font-medium text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"

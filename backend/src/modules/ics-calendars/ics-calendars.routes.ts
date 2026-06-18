@@ -78,4 +78,16 @@ export async function icsCalendarRoutes(app: FastifyInstance) {
       return reply.send(events);
     },
   );
+
+  // Search events across all calendars
+  app.get(
+    "/search",
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      const { q } = req.query as { q: string };
+      if (!q || q.length < 2) return reply.send([]);
+      const results = await service.searchEvents(req.user!.sub, q);
+      return reply.send(results);
+    },
+  );
 }
