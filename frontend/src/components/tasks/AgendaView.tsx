@@ -168,7 +168,11 @@ export default function AgendaView({
                   </button>
                 ))}
 
-                {day.tasks.map((tk) => (
+                {[...day.tasks].sort((a, b) => {
+                  const aTime = a.dueDate && !a.dueDate.endsWith("T00:00:00.000Z") ? new Date(a.dueDate).getTime() : 9999999999999;
+                  const bTime = b.dueDate && !b.dueDate.endsWith("T00:00:00.000Z") ? new Date(b.dueDate).getTime() : 9999999999999;
+                  return aTime - bTime;
+                }).map((tk) => (
                   <button
                     key={tk.id}
                     onClick={() => onTaskClick(tk)}

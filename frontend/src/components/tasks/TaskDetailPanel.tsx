@@ -16,7 +16,7 @@ function formatBytes(bytes: number): string {
 }
 import { useTaskStore } from "../../store/taskStore";
 import { useAuthStore } from "../../store/authStore";
-import { toUtcDateString } from "../../lib/date";
+import { toUtcDateString, toUtcDateTimeString } from "../../lib/date";
 import { useListStore } from "../../store/listStore";
 import { useTagStore, type Tag, randomTagColor } from "../../store/tagStore";
 import { client } from "../../api/client";
@@ -41,6 +41,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
   const [tagInput, setTagInput] = useState("");
   const [tagDropdownOpen, setTagDropdownOpen] = useState(false);
   const [dueDate, setDueDate] = useState<Date | null>(null);
+  const [taskTime, setTaskTime] = useState("");
   const [uploading, setUploading] = useState(false);
   const [taskType, setTaskType] = useState<"TEXT" | "CHECKLIST">("TEXT");
   const [checklistItems, setChecklistItems] = useState<{ id?: string; text: string; isCompleted: boolean; position: number }[]>([]);
@@ -73,6 +74,12 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
       setTitle(t.title);
       setDescription(t.description || "");
       setDueDate(t.dueDate ? new Date(t.dueDate) : null);
+      if (t.dueDate && !t.dueDate.endsWith("T00:00:00.000Z")) {
+        const d = new Date(t.dueDate);
+        setTaskTime(`${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`);
+      } else {
+        setTaskTime("");
+      }
       setPriority(t.priority ?? 4);
       setStatus(t.status || "todo");
       setTaskType(t.type || "TEXT");
@@ -211,8 +218,24 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
 
   async function handleDateChange(date: Date | null) {
     setDueDate(date);
-    await updateTask(t.id, { dueDate: date ? toUtcDateString(date) : null });
+    if (date && taskTime) {
+      const [h, m] = taskTime.split(":").map(Number);
+      date.setHours(h, m, 0, 0);
+      await updateTask(t.id, { dueDate: toUtcDateTimeString(date) });
+    } else {
+      await updateTask(t.id, { dueDate: date ? toUtcDateString(date) : null });
+    }
     toast.success(date ? trans("common.toasts.dueDateSet") : trans("common.toasts.dueDateRemoved"));
+  }
+
+  async function handleTimeChange(time: string) {
+    setTaskTime(time);
+    if (dueDate && time) {
+      const [h, m] = time.split(":").map(Number);
+      const d = new Date(dueDate);
+      d.setHours(h, m, 0, 0);
+      await updateTask(t.id, { dueDate: toUtcDateTimeString(d) });
+    }
   }
 
   async function handlePriorityChange(p: number) {
@@ -751,26 +774,47 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
             <label className="mb-2 block font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
               {trans("common.dueDate")}
             </label>
-            <div className="relative">
-              <DatePicker
-                selected={dueDate}
-                onChange={handleDateChange}
-                dateFormat="MMM d, yyyy"
-                placeholderText={trans("common.setDueDate")}
-                isClearable
-                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
-              />
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <DatePicker
+                  selected={dueDate}
+                  onChange={handleDateChange}
+                  dateFormat="MMM d, yyyy"
+                  placeholderText={trans("common.setDueDate")}
+                  isClearable
+                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+                />
+                {dueDate && (
+                  <button
+                    onClick={() => handleDateChange(null)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
               {dueDate && (
-                <button
-                  onClick={() => handleDateChange(null)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
-                >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                <div className="relative flex items-center gap-1 rounded-xl border border-gray-200 bg-white px-3 py-2.5 dark:border-gray-700 dark:bg-gray-800">
+                  <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 7v5l3 3" />
                   </svg>
-                </button>
+                  <input
+                    type="time"
+                    value={taskTime}
+                    onChange={(e) => handleTimeChange(e.target.value)}
+                    className="w-20 border-none bg-transparent font-urbanist text-sm text-gray-700 outline-none dark:text-gray-300"
+                  />
+                </div>
               )}
             </div>
+            {dueDate && taskTime && (
+              <p className="mt-1 font-urbanist text-[11px] text-gray-400 dark:text-gray-500">
+                {new Date(new Date(dueDate).setHours(parseInt(taskTime.split(":")[0], 10), parseInt(taskTime.split(":")[1], 10), 0, 0)).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              </p>
+            )}
           </div>
 
           <div className="mb-4">
