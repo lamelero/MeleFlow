@@ -284,16 +284,42 @@ export class IcsCalendarService {
     // Local time: YYYYMMDDTHHMMSS (no timezone) or with TZID
     let dateStr = value;
     if (dateStr.length >= 15) {
-      const year = dateStr.slice(0, 4);
-      const month = dateStr.slice(4, 6);
-      const day = dateStr.slice(6, 8);
-      const hour = dateStr.slice(9, 11);
-      const min = dateStr.slice(11, 13);
-      const sec = dateStr.slice(13, 15);
-      return new Date(`${year}-${month}-${day}T${hour}:${min}:${sec}Z`);
+      const year = parseInt(dateStr.slice(0, 4));
+      const month = parseInt(dateStr.slice(4, 6)) - 1;
+      const day = parseInt(dateStr.slice(6, 8));
+      const hour = parseInt(dateStr.slice(9, 11));
+      const min = parseInt(dateStr.slice(11, 13));
+      const sec = parseInt(dateStr.slice(13, 15));
+
+      // Create a Date from local components (server local time = UTC in Docker)
+      const localDate = new Date(Date.UTC(year, month, day, hour, min, sec));
+
+      // If TZID is specified, adjust to UTC
+      if (params) {
+        const tzMatch = params.match(/TZID=([^;]+)/);
+        if (tzMatch) {
+          const tz = tzMatch[1];
+          try {
+            const offsetMinutes = this.getTzOffset(tz, localDate);
+            return new Date(localDate.getTime() - offsetMinutes * 60 * 1000);
+          } catch {
+            // fall through to return localDate as-is
+          }
+        }
+      }
+
+      return localDate;
     }
 
     return new Date(value);
+  }
+
+  private getTzOffset(tz: string, date: Date): number {
+    const utcStr = date.toLocaleString("en-US", { timeZone: "UTC" });
+    const tzStr = date.toLocaleString("en-US", { timeZone: tz });
+    const utcDate = new Date(utcStr);
+    const tzDate = new Date(tzStr);
+    return (tzDate.getTime() - utcDate.getTime()) / 60000;
   }
 
   private expandRrule(

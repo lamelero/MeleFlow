@@ -21,6 +21,7 @@ import { requestBrowserPermission } from "./lib/browserNotifications";
 import { registerPushNotifications } from "./capacitor/pushNotifications";
 import { useThemeStore } from "./store/themeStore";
 import { initClientBaseUrl } from "./api/client";
+import { startEventAutoRefresh } from "./store/icsCalendarStore";
 import "./i18n";
 
 export default function App() {
@@ -68,6 +69,7 @@ export default function App() {
         } catch (err) {
           console.error("[app] push registration failed:", err);
         }
+        startEventAutoRefresh();
       } else {
         const granted = await requestBrowserPermission();
         if (!granted) {

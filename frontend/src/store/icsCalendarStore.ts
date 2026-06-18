@@ -58,9 +58,7 @@ export const useIcsCalendarStore = create<IcsCalendarState>((set, get) => ({
       const { data } = await client.get("/ics-calendars");
       set({ calendars: data });
       if (isNative() && data.some((c: IcsCalendar) => c.reminderBefore > 0)) {
-        const now = new Date();
-        const to = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-        get().fetchEvents(now.toISOString(), to.toISOString());
+        refreshEventNotifications();
       }
     } catch {
       // silent
@@ -99,9 +97,7 @@ export const useIcsCalendarStore = create<IcsCalendarState>((set, get) => ({
         calendars: s.calendars.map((c) => (c.id === id ? { ...c, ...updated } : c)),
       }));
       if (isNative() && ("reminderBefore" in data || "allDayReminderTime" in data)) {
-        const now = new Date();
-        const to = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-        get().fetchEvents(now.toISOString(), to.toISOString());
+        refreshEventNotifications();
       }
       toast.success("Calendar updated");
     } catch {
@@ -179,3 +175,29 @@ export const useIcsCalendarStore = create<IcsCalendarState>((set, get) => ({
     }
   },
 }));
+
+let refreshInterval: ReturnType<typeof setInterval> | null = null;
+
+async function refreshEventNotifications() {
+  const now = new Date();
+  const to = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+  await useIcsCalendarStore.getState().fetchEvents(now.toISOString(), to.toISOString());
+}
+
+export function startEventAutoRefresh() {
+  if (!isNative()) return;
+  if (refreshInterval) return;
+  refreshInterval = setInterval(() => {
+    const state = useIcsCalendarStore.getState();
+    if (state.calendars.some((c) => c.reminderBefore > 0)) {
+      refreshEventNotifications();
+    }
+  }, 15 * 60 * 1000);
+}
+
+export function stopEventAutoRefresh() {
+  if (refreshInterval) {
+    clearInterval(refreshInterval);
+    refreshInterval = null;
+  }
+}
