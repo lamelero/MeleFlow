@@ -142,7 +142,7 @@ export default function CalendarContent({ standalone = true }: CalendarContentPr
 
   useEffect(() => {
     loadMonth(currentDate);
-  }, [currentDate, loadMonth]);
+  }, [currentDate, loadMonth, viewMode]);
 
   function handlePrevMonth() {
     setCurrentDate((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1));
