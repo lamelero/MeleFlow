@@ -5,6 +5,9 @@ const CACHED_VERSION_KEY = "update_cached_version";
 const CACHED_URL_KEY = "update_cached_url";
 const ONE_DAY = 24 * 60 * 60 * 1000;
 
+// Change this to "0.0.1" to test the update checker
+const CURRENT_VERSION = "1.0.0";
+
 export interface UpdateInfo {
   available: boolean;
   version: string;
@@ -70,7 +73,7 @@ export async function checkForUpdate(): Promise<UpdateInfo> {
     const cachedVersion = getCachedVersion();
     const cachedUrl = getCachedUrl();
     if (cachedVersion && cachedUrl) {
-      return { available: cachedVersion !== "1.0.0", version: cachedVersion, url: cachedUrl };
+      return { available: cachedVersion !== CURRENT_VERSION, version: cachedVersion, url: cachedUrl };
     }
   }
 
@@ -79,11 +82,10 @@ export async function checkForUpdate(): Promise<UpdateInfo> {
       headers: { Accept: "application/vnd.github.v3+json" },
     });
     if (!res.ok) {
-      // Fallback to cache on error
       const cachedVersion = getCachedVersion();
       const cachedUrl = getCachedUrl();
       if (cachedVersion && cachedUrl) {
-        return { available: cachedVersion !== "1.0.0", version: cachedVersion, url: cachedUrl };
+        return { available: cachedVersion !== CURRENT_VERSION, version: cachedVersion, url: cachedUrl };
       }
       return { available: false, version: "", url: "" };
     }
@@ -91,12 +93,12 @@ export async function checkForUpdate(): Promise<UpdateInfo> {
     const version = (data.tag_name || "").replace(/^v/, "");
     const url = data.html_url || "";
     setCache(version, url);
-    return { available: version !== "1.0.0" && version !== "", version, url };
+    return { available: version !== CURRENT_VERSION && version !== "", version, url };
   } catch {
     const cachedVersion = getCachedVersion();
     const cachedUrl = getCachedUrl();
     if (cachedVersion && cachedUrl) {
-      return { available: cachedVersion !== "1.0.0", version: cachedVersion, url: cachedUrl };
+      return { available: cachedVersion !== CURRENT_VERSION, version: cachedVersion, url: cachedUrl };
     }
     return { available: false, version: "", url: "" };
   }
