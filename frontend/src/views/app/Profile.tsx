@@ -889,8 +889,29 @@ export default function Profile() {
               {t("profile.systemTime") || "System time"}
             </span>
             <span className="font-urbanist text-xs text-gray-900 dark:text-gray-100">
-              {new Date().toLocaleTimeString()} {Intl.DateTimeFormat().resolvedOptions().timeZone}
+              {new Date().toLocaleTimeString()}
             </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="font-urbanist text-xs text-gray-500 dark:text-gray-400">
+              {t("profile.updateCheck") || "Update"}
+            </span>
+            <button
+              onClick={async () => {
+                const { checkForUpdate, getSkippedVersion, clearSkippedVersion } = await import("../../lib/updateChecker");
+                clearSkippedVersion();
+                const info = await checkForUpdate();
+                if (info.available) {
+                  toast.success(t("profile.updateAvailable", { version: info.version }) || `v${info.version} available!`, { duration: 5000 });
+                  setTimeout(() => window.open(info.url, "_blank"), 1500);
+                } else {
+                  toast.success(t("profile.updateUpToDate") || "Up to date");
+                }
+              }}
+              className="rounded-lg px-2 py-1 font-urbanist text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+            >
+              {t("profile.checkForUpdates") || "Check"}
+            </button>
           </div>
           <div className="flex items-center justify-between">
             <span className="font-urbanist text-xs text-gray-500 dark:text-gray-400">

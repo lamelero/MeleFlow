@@ -1,16 +1,18 @@
 import type { ReactNode } from "react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import PomodoroTimer from "./pomodoro/PomodoroTimer";
 import UserMenu from "./UserMenu";
 import BottomTabBar from "./navigation/BottomTabBar";
 import RightNavBar from "./navigation/RightNavBar";
+import UpdateBanner from "./UpdateBanner";
 import { useBrandingStore } from "../store/brandingStore";
 import { useThemeStore } from "../store/themeStore";
 import { isNative } from "../capacitor/register";
 import { resolveImageUrl } from "../api/client";
 import { useOrientation } from "../lib/useOrientation";
+import { checkForUpdate, getSkippedVersion } from "../lib/updateChecker";
 
 export default function AppLayout({ title, children }: { title: string; children: ReactNode }) {
   const { t } = useTranslation();
@@ -19,10 +21,19 @@ export default function AppLayout({ title, children }: { title: string; children
   const activeLogo = theme === "dark" && logoUrlDark ? resolveImageUrl(logoUrlDark) : resolveImageUrl(logoUrl);
   const orientation = useOrientation();
   const isLandscape = isNative() && orientation === "landscape";
+  const [updateInfo, setUpdateInfo] = useState<{ version: string; url: string } | null>(null);
 
   useEffect(() => {
     fetchLogo();
   }, [fetchLogo]);
+
+  useEffect(() => {
+    checkForUpdate().then((info) => {
+      if (info.available && info.version !== getSkippedVersion()) {
+        setUpdateInfo({ version: info.version, url: info.url });
+      }
+    });
+  }, []);
 
   const navStyle = isNative()
     ? isLandscape
@@ -65,6 +76,13 @@ export default function AppLayout({ title, children }: { title: string; children
           </div>
         </div>
       </header>
+      {updateInfo && (
+        <UpdateBanner
+          version={updateInfo.version}
+          url={updateInfo.url}
+          onDismiss={() => setUpdateInfo(null)}
+        />
+      )}
       <div className="flex-1 overflow-y-auto">
         {children}
       </div>
