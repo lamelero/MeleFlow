@@ -540,5 +540,13 @@
     "habitRate": "Habit rate",
     "focusTime": "Focus time",
     "tasksPerDay": "Tasks per day"
+  },
+  "update": {
+    "available": "MeleFlow v{{version}} available",
+    "download": "Download",
+    "skip": "Skip this version",
+    "checkForUpdates": "Check for updates",
+    "upToDate": "Up to date",
+    "updateAvailable": "v{{version}} available!"
   }
 }

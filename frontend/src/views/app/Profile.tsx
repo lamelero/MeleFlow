@@ -894,18 +894,18 @@ export default function Profile() {
           </div>
           <div className="flex items-center justify-between">
             <span className="font-urbanist text-xs text-gray-500 dark:text-gray-400">
-              {t("profile.updateCheck") || "Update"}
+              {t("update.checkForUpdates") || "Update"}
             </span>
             <button
               onClick={async () => {
-                const { checkForUpdate, getSkippedVersion, clearSkippedVersion } = await import("../../lib/updateChecker");
+                const { checkForUpdate, clearSkippedVersion } = await import("../../lib/updateChecker");
                 clearSkippedVersion();
                 const info = await checkForUpdate();
                 if (info.available) {
-                  toast.success(t("profile.updateAvailable", { version: info.version }) || `v${info.version} available!`, { duration: 5000 });
+                  toast.success(t("update.updateAvailable", { version: info.version }) || `v${info.version} available!`, { duration: 5000 });
                   setTimeout(() => window.open(info.url, "_blank"), 1500);
                 } else {
-                  toast.success(t("profile.updateUpToDate") || "Up to date");
+                  toast.success(t("update.upToDate") || "Up to date");
                 }
               }}
               className="rounded-lg px-2 py-1 font-urbanist text-xs font-medium text-primary transition-colors hover:bg-primary/10"
