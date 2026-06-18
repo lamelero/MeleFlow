@@ -299,8 +299,9 @@ export class IcsCalendarService {
         const tzMatch = params.match(/TZID=([^;]+)/);
         if (tzMatch) {
           const tz = tzMatch[1];
+          const ianaTz = this.WINDOWS_TZ_MAP[tz] || tz;
           try {
-            const offsetMinutes = this.getTzOffset(tz, localDate);
+            const offsetMinutes = this.getTzOffset(ianaTz, localDate);
             return new Date(localDate.getTime() - offsetMinutes * 60 * 1000);
           } catch {
             // fall through to return localDate as-is
@@ -313,6 +314,24 @@ export class IcsCalendarService {
 
     return new Date(value);
   }
+
+  private readonly WINDOWS_TZ_MAP: Record<string, string> = {
+    "Romance Standard Time": "Europe/Paris",
+    "GMT Standard Time": "Europe/London",
+    "Central Europe Standard Time": "Europe/Berlin",
+    "Central European Standard Time": "Europe/Berlin",
+    "W. Europe Standard Time": "Europe/Berlin",
+    "E. Europe Standard Time": "Europe/Bucharest",
+    "Eastern Standard Time": "America/New_York",
+    "Pacific Standard Time": "America/Los_Angeles",
+    "Central Standard Time": "America/Chicago",
+    "Mountain Standard Time": "America/Denver",
+    "India Standard Time": "Asia/Kolkata",
+    "Japan Standard Time": "Asia/Tokyo",
+    "China Standard Time": "Asia/Shanghai",
+    "Brazil Standard Time": "America/Sao_Paulo",
+    "Australian Eastern Standard Time": "Australia/Sydney",
+  };
 
   private getTzOffset(tz: string, date: Date): number {
     const utcStr = date.toLocaleString("en-US", { timeZone: "UTC" });
