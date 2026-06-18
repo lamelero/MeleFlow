@@ -1,7 +1,8 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import type { ReactNode } from "react";
 
-const tabs = [
+const tabs: { path: string; labelKey: string; icon: ReactNode; activeIcon: ReactNode }[] = [
   {
     path: "/app?view=tasks",
     labelKey: "bottomNav.tasks",
@@ -17,14 +18,14 @@ const tabs = [
   {
     path: "/app?view=calendar",
     labelKey: "bottomNav.calendar",
-    icon: <path d="M16 2v4M8 2v4M3 10h18" />,
-    activeIcon: <path d="M16 2v4M8 2v4M3 10h18" />,
+    icon: <><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></>,
+    activeIcon: <><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></>,
   },
   {
     path: "/app/timer",
     labelKey: "bottomNav.timer",
-    icon: <path d="M12 7v5l3 3" />,
-    activeIcon: <path d="M12 7v5l3 3" />,
+    icon: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" /></>,
+    activeIcon: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" /></>,
   },
 ];
 

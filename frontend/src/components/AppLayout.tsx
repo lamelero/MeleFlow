@@ -68,7 +68,7 @@ export default function AppLayout({ title, children }: { title: string; children
       <div className="flex-1 overflow-y-auto">
         {children}
       </div>
-      <div className="flex items-center justify-center gap-1 py-2 opacity-40">
+      <div className={`flex items-center justify-center gap-1 opacity-40 ${isLandscape ? "py-1" : "py-2"}`}>
         <img src="/meleflow-logo.svg" alt="" className="h-3 w-3" />
         <span className="text-xs text-gray-400 dark:text-gray-400">MeleFlow</span>
       </div>
