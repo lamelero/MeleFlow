@@ -16,6 +16,7 @@ function formatBytes(bytes: number): string {
 }
 import { useTaskStore } from "../../store/taskStore";
 import { useAuthStore } from "../../store/authStore";
+import { toUtcDateString } from "../../lib/date";
 import { useListStore } from "../../store/listStore";
 import { useTagStore, type Tag, randomTagColor } from "../../store/tagStore";
 import { client } from "../../api/client";
@@ -210,7 +211,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
 
   async function handleDateChange(date: Date | null) {
     setDueDate(date);
-    await updateTask(t.id, { dueDate: date ? date.toISOString() : null });
+    await updateTask(t.id, { dueDate: date ? toUtcDateString(date) : null });
     toast.success(date ? trans("common.toasts.dueDateSet") : trans("common.toasts.dueDateRemoved"));
   }
 

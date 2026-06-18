@@ -10,6 +10,7 @@ import { useTaskStore, type Task } from "../../store/taskStore";
 import { useListStore } from "../../store/listStore";
 import { useIcsCalendarStore, type ExternalCalendarEvent } from "../../store/icsCalendarStore";
 import { client } from "../../api/client";
+import { toUtcDateString } from "../../lib/date";
 
 const HIDDEN_CALENDARS_KEY = "hiddenCalendarIds";
 
@@ -194,7 +195,7 @@ export default function CalendarContent({ standalone = true }: CalendarContentPr
     try {
       await createTask({
         title: newTaskTitle.trim(),
-        dueDate: newTaskDate.toISOString(),
+        dueDate: toUtcDateString(newTaskDate),
       });
       toast.success(t("calendar.createSuccess") || "Task created");
       setIsCreating(false);

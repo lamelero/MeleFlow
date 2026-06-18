@@ -4,6 +4,8 @@ export interface ParsedTask {
   tags?: string[];
 }
 
+import { toUtcDateString } from "./date";
+
 const DAY_NAMES: Record<string, number> = {
   sunday: 0, domingo: 0,
   monday: 1, lunes: 1,
@@ -106,7 +108,7 @@ export function parseTaskInput(text: string): ParsedTask {
     if (match) {
       const date = handler(match);
       if (date) {
-        dueDate = date.toISOString();
+        dueDate = toUtcDateString(date);
         title = title.replace(match[0], "").replace(/\s+/g, " ").trim();
         break;
       }
@@ -138,7 +140,7 @@ export function parseTaskInput(text: string): ParsedTask {
   if (hoyMatch && !dueDate) {
     const d = new Date();
     d.setHours(23, 59, 0, 0);
-    dueDate = d.toISOString();
+    dueDate = toUtcDateString(d);
     title = title.replace(hoyMatch[0], "").replace(/\s+/g, " ").trim();
   }
 
