@@ -179,7 +179,9 @@ export default function AgendaView({
                       style={{ backgroundColor: tk.listId ? (listColors.get(tk.listId) ?? "#6B7280") : "#6B7280" }}
                     />
                     <span className="min-w-[48px] font-urbanist text-xs text-gray-400 dark:text-gray-500">
-                      {tk.dueDate ? new Date(tk.dueDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}
+                      {tk.dueDate && !tk.dueDate.endsWith("T00:00:00.000Z")
+                        ? new Date(tk.dueDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                        : tk.dueDate ? "📅" : ""}
                     </span>
                     <span className="flex-1 truncate font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
                       {tk.title}
