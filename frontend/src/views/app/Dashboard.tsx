@@ -328,16 +328,18 @@ export default function Dashboard() {
                             {sidebarOpen && <span className="ml-2 truncate">{list.name}</span>}
                             {sidebarOpen && <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">{list._count.tasks}</span>}
                           </button>
-                        <button
-                          onClick={() => setMenuOpenListId(menuOpenListId === list.id ? null : list.id)}
-                          className="flex shrink-0 items-center justify-center rounded-lg px-1.5 py-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
-                        >
-                          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                            <circle cx="8" cy="3" r="1.5" />
-                            <circle cx="8" cy="8" r="1.5" />
-                            <circle cx="8" cy="13" r="1.5" />
-                          </svg>
-                        </button>
+                        {sidebarOpen && <>
+                          <button
+                            onClick={() => setMenuOpenListId(menuOpenListId === list.id ? null : list.id)}
+                            className="flex shrink-0 items-center justify-center rounded-lg px-1.5 py-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                              <circle cx="8" cy="3" r="1.5" />
+                              <circle cx="8" cy="8" r="1.5" />
+                              <circle cx="8" cy="13" r="1.5" />
+                            </svg>
+                          </button>
+                        </>}
                       </>
                     )}
                   </div>
