@@ -278,7 +278,7 @@ export default function CalendarContent({ standalone = true }: CalendarContentPr
                             ? new Date((r.data as ExternalCalendarEvent).startTime).toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" })
                             : (r.data as Task).dueDate
                               ? new Date((r.data as Task).dueDate!).toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" })
-                              : t("calendar.noDate") || "No date"}
+                              : "—"}
                         </p>
                       </div>
                       <span className="shrink-0 font-urbanist text-[10px] text-gray-400">
