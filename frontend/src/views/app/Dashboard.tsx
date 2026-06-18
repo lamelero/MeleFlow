@@ -318,7 +318,7 @@ export default function Dashboard() {
                               setActiveListId(activeListId === list.id ? undefined : list.id);
                               setActiveTagId(undefined);
                             }}
-                            className={`flex flex-1 items-center rounded-lg py-2 font-urbanist text-[15px] transition-colors ${sidebarOpen ? "px-3 text-left" : "justify-center px-0"} ${
+                            className={`flex flex-1 items-center rounded-lg font-urbanist text-[15px] transition-colors ${sidebarOpen ? "px-3 py-2 text-left" : "justify-center px-0 h-8"} ${
                               activeListId === list.id
                                 ? "bg-primary/10 font-medium text-primary"
                                 : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
