@@ -57,6 +57,11 @@ export const useIcsCalendarStore = create<IcsCalendarState>((set, get) => ({
     try {
       const { data } = await client.get("/ics-calendars");
       set({ calendars: data });
+      if (isNative() && data.some((c: IcsCalendar) => c.reminderBefore > 0)) {
+        const now = new Date();
+        const to = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+        get().fetchEvents(now.toISOString(), to.toISOString());
+      }
     } catch {
       // silent
     }
@@ -93,6 +98,11 @@ export const useIcsCalendarStore = create<IcsCalendarState>((set, get) => ({
       set((s) => ({
         calendars: s.calendars.map((c) => (c.id === id ? { ...c, ...updated } : c)),
       }));
+      if (isNative() && ("reminderBefore" in data || "allDayReminderTime" in data)) {
+        const now = new Date();
+        const to = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+        get().fetchEvents(now.toISOString(), to.toISOString());
+      }
       toast.success("Calendar updated");
     } catch {
       toast.error("Failed to update calendar");
