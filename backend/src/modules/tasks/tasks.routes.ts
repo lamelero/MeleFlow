@@ -26,6 +26,13 @@ export async function taskRoutes(app: FastifyInstance) {
     return reply.send(tasks);
   });
 
+  app.get("/search", async (req, reply) => {
+    const { q } = req.query as { q: string };
+    if (!q || q.length < 2) return reply.send([]);
+    const tasks = await service.search(req.user.sub, q);
+    return reply.send(tasks);
+  });
+
   app.get("/:id", async (req, reply) => {
     const { id } = req.params as { id: string };
     const task = await service.findById(req.user.sub, id);

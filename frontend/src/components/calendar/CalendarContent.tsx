@@ -83,18 +83,26 @@ export default function CalendarContent({ standalone = true }: CalendarContentPr
       return;
     }
     const q = searchQuery.toLowerCase();
-    const taskResults = tasks
+    const localTaskResults = tasks
       .filter((t) => t.title.toLowerCase().includes(q))
       .slice(0, 5)
       .map((t) => ({ type: "task" as const, data: t }));
     setSearchLoading(true);
-    setSearchResults(taskResults);
+    setSearchResults(localTaskResults);
     const timer = setTimeout(async () => {
       try {
-        const { data } = await client.get(`/ics-calendars/search?q=${encodeURIComponent(searchQuery)}`);
+        const [icsRes, tasksRes] = await Promise.all([
+          client.get(`/ics-calendars/search?q=${encodeURIComponent(searchQuery)}`),
+          client.get(`/tasks/search?q=${encodeURIComponent(searchQuery)}`),
+        ]);
+        const seenIds = new Set(localTaskResults.map((r) => r.data.id));
+        const apiTaskResults = (tasksRes.data as Task[])
+          .filter((t: Task) => !seenIds.has(t.id))
+          .map((t: Task) => ({ type: "task" as const, data: t }));
         setSearchResults([
-          ...taskResults,
-          ...(data as ExternalCalendarEvent[]).map((e) => ({ type: "event" as const, data: e })),
+          ...localTaskResults,
+          ...apiTaskResults,
+          ...(icsRes.data as ExternalCalendarEvent[]).map((e) => ({ type: "event" as const, data: e })),
         ]);
       } catch {
         // silent

@@ -117,6 +117,19 @@ export class TaskService {
     return tasks.map(formatTask);
   }
 
+  async search(userId: string, query: string) {
+    const tasks = await prisma.task.findMany({
+      where: {
+        userId,
+        title: { contains: query, mode: "insensitive" },
+      },
+      include: taskInclude,
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    });
+    return tasks.map(formatTask);
+  }
+
   async findById(userId: string, taskId: string) {
     const { task } = await this.canAccessTask(userId, taskId);
     return formatTask(task as RawTask);
