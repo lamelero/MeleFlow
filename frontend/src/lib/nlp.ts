@@ -124,14 +124,14 @@ export function parseTaskInput(text: string): ParsedTask {
       if (dueDate) {
         const d = new Date(dueDate);
         d.setHours(hours, minutes, 0, 0);
-        dueDate = d.toISOString();
+        dueDate = toUtcDateString(d);
       } else {
         const d = new Date();
         d.setHours(hours, minutes, 0, 0);
         if (d <= new Date()) d.setDate(d.getDate() + 1);
-        dueDate = d.toISOString();
+        dueDate = toUtcDateString(d);
+        title = title.replace(timeMatch[0], "").replace(/\s+/g, " ").trim();
       }
-      title = title.replace(timeMatch[0], "").replace(/\s+/g, " ").trim();
     }
   }
 
@@ -139,7 +139,6 @@ export function parseTaskInput(text: string): ParsedTask {
   const hoyMatch = title.match(/\bhoy\b/i);
   if (hoyMatch && !dueDate) {
     const d = new Date();
-    d.setHours(23, 59, 0, 0);
     dueDate = toUtcDateString(d);
     title = title.replace(hoyMatch[0], "").replace(/\s+/g, " ").trim();
   }
