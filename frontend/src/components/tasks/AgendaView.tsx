@@ -84,10 +84,17 @@ export default function AgendaView({
 
   useEffect(() => {
     const el = document.getElementById("agenda-today");
-    if (el) {
-      const timer = setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 150);
-      return () => clearTimeout(timer);
+    if (!el) return;
+    const delays = [100, 200, 400, 800, 1000];
+    let timer: ReturnType<typeof setTimeout>;
+    function tryScroll(i: number) {
+      el!.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (i < delays.length - 1) {
+        timer = setTimeout(() => tryScroll(i + 1), delays[i + 1]);
+      }
     }
+    timer = setTimeout(() => tryScroll(0), delays[0]);
+    return () => clearTimeout(timer);
   }, [currentDate]);
 
   return (
