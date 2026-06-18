@@ -199,7 +199,7 @@ export default function Dashboard() {
             <nav className="space-y-0.5">
               <button
                 onClick={() => { navigate("/app"); setActiveListId(undefined); setActiveTagId(undefined); }}
-                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-[15px] transition-colors justify-center md:${sidebarOpen ? "justify-start" : "justify-center"} ${
+                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-[15px] transition-colors ${sidebarOpen ? "" : "justify-center"} ${
                   view === "all"
                     ? "bg-primary/10 font-medium text-primary"
                     : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
@@ -210,7 +210,7 @@ export default function Dashboard() {
               </button>
               <button
                 onClick={() => { navigate("/app?view=tasks"); setActiveListId(undefined); setActiveTagId(undefined); }}
-                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-[15px] transition-colors justify-center md:${sidebarOpen ? "justify-start" : "justify-center"} ${
+                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-[15px] transition-colors ${sidebarOpen ? "" : "justify-center"} ${
                   view === "tasks"
                     ? "bg-primary/10 font-medium text-primary"
                     : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
@@ -221,7 +221,7 @@ export default function Dashboard() {
               </button>
               <button
                 onClick={() => navigate("/app?view=habits")}
-                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-[15px] transition-colors justify-center md:${sidebarOpen ? "justify-start" : "justify-center"} ${
+                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-[15px] transition-colors ${sidebarOpen ? "" : "justify-center"} ${
                   view === "habits"
                     ? "bg-primary/10 font-medium text-primary"
                     : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
@@ -232,7 +232,7 @@ export default function Dashboard() {
               </button>
               <button
                 onClick={() => navigate("/app?view=calendar")}
-                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-[15px] transition-colors justify-center md:${sidebarOpen ? "justify-start" : "justify-center"} ${
+                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-[15px] transition-colors ${sidebarOpen ? "" : "justify-center"} ${
                   view === "calendar"
                     ? "bg-primary/10 font-medium text-primary"
                     : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
@@ -318,7 +318,7 @@ export default function Dashboard() {
                               setActiveListId(activeListId === list.id ? undefined : list.id);
                               setActiveTagId(undefined);
                             }}
-                            className={`flex flex-1 items-center rounded-lg px-3 py-2 text-left font-urbanist text-[15px] transition-colors justify-center ${sidebarOpen ? "justify-start" : "justify-center"} ${
+                            className={`flex flex-1 items-center rounded-lg px-3 py-2 text-left font-urbanist text-[15px] transition-colors ${sidebarOpen ? "" : "justify-center"} ${
                               activeListId === list.id
                                 ? "bg-primary/10 font-medium text-primary"
                                 : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
@@ -466,7 +466,7 @@ export default function Dashboard() {
                   <button
                     key={tag.id}
                     onClick={() => handleTagClick(tag.id)}
-                  className={`flex items-center w-full rounded-lg px-3 py-2 text-left font-urbanist text-[15px] transition-colors justify-center ${sidebarOpen ? "justify-start" : "justify-center"} ${
+                  className={`flex items-center w-full rounded-lg px-3 py-2 text-left font-urbanist text-[15px] transition-colors ${sidebarOpen ? "" : "justify-center"} ${
                       activeTagId === tag.id
                         ? "bg-primary/10 font-medium text-primary"
                         : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
