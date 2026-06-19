@@ -76,6 +76,7 @@ services:
       - ./backend/vitest.config.ts:/usr/src/app/vitest.config.ts
       - ./backend/vitest.global.ts:/usr/src/app/vitest.global.ts
       - ./backend/uploads:/usr/src/app/uploads
+      - ./backend/backups:/usr/src/app/backups
       - meleflow_backend_node_modules:/usr/src/app/node_modules
       - meleflow_backend_node_modules:/usr/src/app/node_modules
     env_file:

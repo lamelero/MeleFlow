@@ -156,6 +156,27 @@ See `.env.example` for defaults:
 | `LOGIN_LOCKOUT_MINUTES` | `15`                                         |
 | `CORS_ORIGIN`          | (vacío = permite cualquier origen)            |
 
+## Backups
+
+Backups are stored inside the container at `/usr/src/app/backups`. For persistence across container restarts, the `docker-compose.yml` mounts this directory:
+
+```yaml
+volumes:
+  - ./backend/backups:/usr/src/app/backups
+```
+
+To download a backup from the admin panel, go to **Settings → Backup** and click the backup file name. If the download doesn't work, make sure you have the latest version (the `isAdmin` hook bug was fixed in `c3314c1`).
+
+To create and retrieve a backup manually:
+
+```bash
+# From the admin panel: Settings → Backup → Create Backup
+# Then list available backups:
+docker compose exec backend ls /usr/src/app/backups/
+# Copy to host:
+docker compose cp backend:/usr/src/app/backups/NOMBRE.tar.gz ./
+```
+
 ## Features
 
 - **Tasks** — Full CRUD with subtasks, due dates, attachments, tags, checklists, Markdown descriptions
