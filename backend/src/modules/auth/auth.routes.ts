@@ -1,7 +1,9 @@
-import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+import type { FastifyInstance, FastifyReply } from "fastify";
+import type { ZodTypeProvider } from "@fastify/type-provider-zod";
 import path from "path";
 import fs from "fs/promises";
 import { prisma } from "../../config/database";
+import { AuthService } from "./auth.service";
 import {
   registerSchema,
   loginSchema,
@@ -9,13 +11,11 @@ import {
   refreshSchema,
   updateLanguageSchema,
   updateProfileSchema,
-  setup2FASchema,
   enable2FASchema,
   disable2FASchema,
-  getRecoveryCodesSchema,
   sendOTPSchema,
+  getRecoveryCodesSchema,
 } from "./auth.schema";
-import { AuthService } from "./auth.service";
 
 const service = new AuthService();
 
@@ -30,7 +30,7 @@ function setRefreshCookie(
   expiresAt: string,
   rememberMe: boolean,
 ) {
-  const maxAge = rememberMe ? 30 * 24 * 60 * 60 : undefined; // 30 days or session
+  const maxAge = rememberMe ? 30 * 24 * 60 * 60 : undefined;
   reply.setCookie(REFRESH_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -45,286 +45,242 @@ function clearRefreshCookie(reply: FastifyReply) {
   reply.clearCookie(REFRESH_COOKIE, { path: COOKIE_PATH });
 }
 
+function setDeviceCookie(reply: FastifyReply, token: string) {
+  reply.setCookie(DEVICE_COOKIE, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: SAME_SITE,
+    path: COOKIE_PATH,
+    maxAge: 30 * 24 * 60 * 60,
+    expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+  });
+}
+
 export async function authRoutes(app: FastifyInstance) {
-  app.post("/register", {
-    config: {
-      rateLimit: {
-        max: 10,
-        timeWindow: "1 minute",
-      },
-    },
+  const s = app.withTypeProvider<ZodTypeProvider>();
+
+  // ── Register (public) ──────────────────────
+  s.post("/register", {
+    schema: { body: registerSchema },
+    config: { rateLimit: { max: 10, timeWindow: "1 minute" } },
   }, async (req, reply) => {
-    const input = registerSchema.parse(req.body);
-    const result = await service.register(input);
+    const result = await service.register(req.body);
     setRefreshCookie(reply, result.refreshToken, result.refreshTokenExpiresAt, false);
-    return reply.code(201).send({
+    reply.code(201).send({
       accessToken: result.accessToken,
       refreshToken: result.refreshToken,
       user: result.user,
     });
   });
 
-  app.post("/login", {
-    config: {
-      rateLimit: {
-        max: 10,
-        timeWindow: "1 minute",
-      },
-    },
+  // ── Login (public) ─────────────────────────
+  s.post("/login", {
+    schema: { body: loginSchema },
+    config: { rateLimit: { max: 10, timeWindow: "1 minute" } },
   }, async (req, reply) => {
-    const input = loginSchema.parse(req.body);
-    const ip = req.ip;
-    const userAgent = req.headers["user-agent"];
-    const deviceToken = req.cookies?.[DEVICE_COOKIE];
-    const result = await service.login(input, ip, userAgent, deviceToken);
+    const { email, password, rememberMe } = req.body;
+    const result = await service.login(
+      { email, password, rememberMe },
+      req.ip,
+      req.headers["user-agent"],
+      req.cookies?.[DEVICE_COOKIE],
+    );
 
     if ("requiresTwoFactor" in result) {
-      return reply.send({
+      reply.send({
         requiresTwoFactor: true,
         twoFactorToken: result.twoFactorToken,
         twoFactorMethod: result.twoFactorMethod,
         user: result.user,
       });
+      return;
     }
 
-    setRefreshCookie(reply, result.refreshToken, result.refreshTokenExpiresAt, input.rememberMe);
-    return reply.send({
+    setRefreshCookie(reply, result.refreshToken, result.refreshTokenExpiresAt, rememberMe);
+    reply.send({
       accessToken: result.accessToken,
       refreshToken: result.refreshToken,
       user: result.user,
     });
   });
 
-  app.post("/verify-2fa", {
-    config: {
-      rateLimit: {
-        max: 10,
-        timeWindow: "1 minute",
-      },
-    },
+  // ── Verify 2FA (public) ────────────────────
+  s.post("/verify-2fa", {
+    schema: { body: verify2FASchema },
+    config: { rateLimit: { max: 10, timeWindow: "1 minute" } },
   }, async (req, reply) => {
-    const input = verify2FASchema.parse(req.body);
-    const ip = req.ip;
-    const userAgent = req.headers["user-agent"];
-    const result = await service.verify2FA(input, ip, userAgent);
+    const result = await service.verify2FA(req.body, req.ip, req.headers["user-agent"]);
     setRefreshCookie(reply, result.refreshToken, result.refreshTokenExpiresAt, false);
 
     if ("deviceToken" in result && result.deviceToken) {
-      reply.setCookie(DEVICE_COOKIE, result.deviceToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: SAME_SITE,
-        path: COOKIE_PATH,
-        maxAge: 30 * 24 * 60 * 60,
-        expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      });
+      setDeviceCookie(reply, result.deviceToken);
     }
 
-    return reply.send({
+    reply.send({
       accessToken: result.accessToken,
       refreshToken: result.refreshToken,
       user: result.user,
     });
   });
 
-  app.post("/2fa/send-otp", {
-    config: {
-      rateLimit: {
-        max: 5,
-        timeWindow: "1 minute",
-      },
-    },
+  // ── Send OTP (public) ──────────────────────
+  s.post("/2fa/send-otp", {
+    schema: { body: sendOTPSchema },
+    config: { rateLimit: { max: 5, timeWindow: "1 minute" } },
   }, async (req, reply) => {
-    const { twoFactorToken } = sendOTPSchema.parse(req.body);
-    await service.sendOTPCode(twoFactorToken);
-    return reply.send({ sent: true });
+    await service.sendOTPCode(req.body.twoFactorToken);
+    reply.send({ sent: true });
   });
 
-  app.post("/refresh", {
-    config: {
-      rateLimit: {
-        max: 10,
-        timeWindow: "1 minute",
-      },
-    },
+  // ── Refresh token (public) ─────────────────
+  s.post("/refresh", {
+    schema: { body: refreshSchema },
+    config: { rateLimit: { max: 10, timeWindow: "1 minute" } },
   }, async (req, reply) => {
-    const { rememberMe, refreshToken } = refreshSchema.parse(req.body);
-    const token = refreshToken || req.cookies?.[REFRESH_COOKIE];
+    const token = req.body.refreshToken || req.cookies?.[REFRESH_COOKIE];
     if (!token) {
-      return reply.code(401).send({ error: "No refresh token" });
+      reply.code(401).send({ error: "No refresh token" });
+      return;
     }
-    const result = await service.refreshToken(token, rememberMe);
-    setRefreshCookie(reply, result.refreshToken, result.refreshTokenExpiresAt, rememberMe);
-    return reply.send({
+    const result = await service.refreshToken(token, req.body.rememberMe);
+    setRefreshCookie(reply, result.refreshToken, result.refreshTokenExpiresAt, req.body.rememberMe);
+    reply.send({
       accessToken: result.accessToken,
       refreshToken: result.refreshToken,
       user: result.user,
     });
   });
 
-  app.post("/logout", async (req, reply) => {
+  // ── Logout (public) ────────────────────────
+  s.post("/logout", async (req, reply) => {
     const token = req.cookies?.[REFRESH_COOKIE];
-    if (token) {
-      await service.logout(token);
-    }
+    if (token) await service.logout(token);
     clearRefreshCookie(reply);
-    return reply.code(204).send();
+    reply.code(204).send();
   });
 
-  app.get(
-    "/me",
-    { onRequest: [app.authenticate] },
-    async (req, reply) => {
-      const { sub } = req.user;
-      const user = await service.getMe(sub);
-      return reply.send(user);
-    },
-  );
+  // ── Get current user (authenticated) ───────
+  s.get("/me", { onRequest: [app.authenticate] }, async (req, reply) => {
+    reply.send(await service.getMe(req.user.sub));
+  });
 
-  app.patch(
-    "/language",
-    { onRequest: [app.authenticate] },
-    async (req, reply) => {
-      const { sub } = req.user;
-      const { language } = updateLanguageSchema.parse(req.body);
-      await service.updateLanguage(sub, language);
-      return reply.code(204).send();
-    },
-  );
+  // ── Update language (authenticated) ────────
+  s.patch("/language", {
+    onRequest: [app.authenticate],
+    schema: { body: updateLanguageSchema },
+  }, async (req, reply) => {
+    await service.updateLanguage(req.user.sub, req.body.language);
+    reply.code(204).send();
+  });
 
-  app.patch(
-    "/profile",
-    { onRequest: [app.authenticate] },
-    async (req, reply) => {
-      const { sub } = req.user;
-      const input = updateProfileSchema.parse(req.body);
-      const user = await service.updateProfile(sub, input);
-      return reply.send(user);
-    },
-  );
+  // ── Update profile (authenticated) ─────────
+  s.patch("/profile", {
+    onRequest: [app.authenticate],
+    schema: { body: updateProfileSchema },
+  }, async (req, reply) => {
+    reply.send(await service.updateProfile(req.user.sub, req.body));
+  });
 
-  app.post(
-    "/avatar",
-    { onRequest: [app.authenticate] },
-    async (req, reply) => {
-      const { sub } = req.user;
-      const data = await req.file();
-      if (!data) {
-        return reply.code(400).send({ error: "No file uploaded" });
-      }
+  // ── Upload avatar (authenticated) ──────────
+  s.post("/avatar", { onRequest: [app.authenticate] }, async (req, reply) => {
+    const { sub } = req.user;
+    const data = await req.file();
+    if (!data) {
+      reply.code(400).send({ error: "No file uploaded" });
+      return;
+    }
 
-      const ext = path.extname(data.filename) || ".png";
-      const filename = `avatar-${sub}${ext}`;
-      const uploadDir = path.resolve("uploads");
-      await fs.mkdir(uploadDir, { recursive: true });
-      const filePath = path.join(uploadDir, filename);
+    const ext = path.extname(data.filename) || ".png";
+    const filename = `avatar-${sub}${ext}`;
+    const uploadDir = path.resolve("uploads");
+    await fs.mkdir(uploadDir, { recursive: true });
+    const filePath = path.join(uploadDir, filename);
 
-      const chunks: Buffer[] = [];
-      for await (const chunk of data.file) {
-        chunks.push(chunk);
-      }
-      await fs.writeFile(filePath, Buffer.concat(chunks));
+    const chunks: Buffer[] = [];
+    for await (const chunk of data.file) {
+      chunks.push(chunk);
+    }
+    await fs.writeFile(filePath, Buffer.concat(chunks));
 
-      const avatarUrl = `/uploads/${filename}`;
+    const avatarUrl = `/uploads/${filename}`;
 
-      await prisma.user.update({
-        where: { id: sub },
-        data: { avatarUrl },
-      });
+    await prisma.user.update({
+      where: { id: sub },
+      data: { avatarUrl },
+    });
 
-      return reply.send({ avatarUrl });
-    },
-  );
+    reply.send({ avatarUrl });
+  });
 
-  app.get(
-    "/notification-prefs",
-    { onRequest: [app.authenticate] },
-    async (req, reply) => {
-      const { sub } = req.user;
-      const user = await prisma.user.findUnique({ where: { id: sub }, select: { notificationPrefs: true } });
-      const prefs = user?.notificationPrefs ? JSON.parse(user.notificationPrefs) : { email: true, push: true, browser: true };
-      return reply.send(prefs);
-    },
-  );
+  // ── Get notification prefs (authenticated) ─
+  s.get("/notification-prefs", { onRequest: [app.authenticate] }, async (req, reply) => {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.sub },
+      select: { notificationPrefs: true },
+    });
+    const prefs = user?.notificationPrefs
+      ? JSON.parse(user.notificationPrefs)
+      : { email: true, push: true, browser: true };
+    reply.send(prefs);
+  });
 
-  app.patch(
-    "/notification-prefs",
-    { onRequest: [app.authenticate] },
-    async (req, reply) => {
-      const { sub } = req.user;
-      const body = req.body as { email?: boolean; push?: boolean; browser?: boolean };
-      const existing = await prisma.user.findUnique({ where: { id: sub }, select: { notificationPrefs: true } });
-      const current = existing?.notificationPrefs ? JSON.parse(existing.notificationPrefs) : { email: true, push: true, browser: true };
-      const merged = { ...current, ...body };
-      await prisma.user.update({ where: { id: sub }, data: { notificationPrefs: JSON.stringify(merged) } });
-      return reply.send(merged);
-    },
-  );
+  // ── Update notification prefs (authenticated)
+  s.patch("/notification-prefs", { onRequest: [app.authenticate] }, async (req, reply) => {
+    const { sub } = req.user;
+    const body = req.body as { email?: boolean; push?: boolean; browser?: boolean };
+    const existing = await prisma.user.findUnique({
+      where: { id: sub },
+      select: { notificationPrefs: true },
+    });
+    const current = existing?.notificationPrefs
+      ? JSON.parse(existing.notificationPrefs)
+      : { email: true, push: true, browser: true };
+    const merged = { ...current, ...body };
+    await prisma.user.update({
+      where: { id: sub },
+      data: { notificationPrefs: JSON.stringify(merged) },
+    });
+    reply.send(merged);
+  });
 
-  // ── 2FA Management (authenticated) ──────────────
+  // ── Search users (authenticated) ───────────
+  s.get("/users/search", { onRequest: [app.authenticate] }, async (req, reply) => {
+    const { q } = req.query as { q: string };
+    if (!q || q.length < 1) {
+      reply.send([]);
+      return;
+    }
+    reply.send(await service.searchUsers(q, req.user.sub));
+  });
 
-  app.get(
-    "/users/search",
-    { onRequest: [app.authenticate] },
-    async (req, reply) => {
-      const { sub } = req.user;
-      const { q } = req.query as { q: string };
-      if (!q || q.length < 1) return reply.send([]);
-      const users = await service.searchUsers(q, sub);
-      return reply.send(users);
-    },
-  );
+  // ── 2FA Management (authenticated) ─────────
 
-  app.get(
-    "/2fa/status",
-    { onRequest: [app.authenticate] },
-    async (req, reply) => {
-      const { sub } = req.user;
-      const status = await service.get2FAStatus(sub);
-      return reply.send(status);
-    },
-  );
+  s.get("/2fa/status", { onRequest: [app.authenticate] }, async (req, reply) => {
+    reply.send(await service.get2FAStatus(req.user.sub));
+  });
 
-  app.post(
-    "/2fa/setup",
-    { onRequest: [app.authenticate] },
-    async (req, reply) => {
-      const { sub } = req.user;
-      const result = await service.setup2FA(sub);
-      return reply.send(result);
-    },
-  );
+  s.post("/2fa/setup", { onRequest: [app.authenticate] }, async (req, reply) => {
+    reply.send(await service.setup2FA(req.user.sub));
+  });
 
-  app.post(
-    "/2fa/enable",
-    { onRequest: [app.authenticate] },
-    async (req, reply) => {
-      const { sub } = req.user;
-      const { code } = enable2FASchema.parse(req.body);
-      const result = await service.enable2FA(sub, code);
-      return reply.send(result);
-    },
-  );
+  s.post("/2fa/enable", {
+    onRequest: [app.authenticate],
+    schema: { body: enable2FASchema },
+  }, async (req, reply) => {
+    reply.send(await service.enable2FA(req.user.sub, req.body.code));
+  });
 
-  app.post(
-    "/2fa/disable",
-    { onRequest: [app.authenticate] },
-    async (req, reply) => {
-      const { sub } = req.user;
-      const { password } = disable2FASchema.parse(req.body);
-      const result = await service.disable2FA(sub, password);
-      return reply.send(result);
-    },
-  );
+  s.post("/2fa/disable", {
+    onRequest: [app.authenticate],
+    schema: { body: disable2FASchema },
+  }, async (req, reply) => {
+    reply.send(await service.disable2FA(req.user.sub, req.body.password));
+  });
 
-  app.post(
-    "/2fa/recovery-codes",
-    { onRequest: [app.authenticate] },
-    async (req, reply) => {
-      const { sub } = req.user;
-      const { password } = getRecoveryCodesSchema.parse(req.body);
-      const result = await service.getRecoveryCodes(sub, password);
-      return reply.send(result);
-    },
-  );
+  s.post("/2fa/recovery-codes", {
+    onRequest: [app.authenticate],
+    schema: { body: getRecoveryCodesSchema },
+  }, async (req, reply) => {
+    reply.send(await service.getRecoveryCodes(req.user.sub, req.body.password));
+  });
 }
