@@ -11,7 +11,7 @@ Self-hosted task management web app with tasks, lists, tags, habits, Pomodoro ti
 
 ## Stack
 
-- **Backend**: Node.js 20, Fastify 5, TypeScript, Prisma ORM (PostgreSQL 16), Redis 7, JWT auth
+- **Backend**: Node.js 20, Fastify 5 (ZodTypeProvider + http-errors), TypeScript, Prisma ORM (PostgreSQL 16), Redis 7, JWT auth
 - **Frontend**: React 19, Vite, Tailwind CSS v4, Zustand, react-router-dom, i18next
 - **Infra**: Docker Compose (PostgreSQL, Redis, Backend, Frontend, Worker, Nginx)
 
@@ -257,7 +257,6 @@ cd backend
 npm install
 cp ../.env .env
 npx prisma db push
-npx vitest
 npm run dev
 
 # Frontend (separate terminal)
@@ -266,15 +265,16 @@ npm install
 npm run dev
 ```
 
+> Note: The backend starts on port 3000. The Vite dev server proxies `/api` requests to it.
 ### Running Tests
 
 ```bash
 cd backend
-DATABASE_URL=postgresql://taskflow:taskflow@localhost:5432/taskflow \
-REDIS_URL=redis://localhost:6379 \
-JWT_SECRET=test-secret JWT_REFRESH_SECRET=test-refresh \
-npx vitest run
+npx vitest run          # runs all tests (uses isolated taskflow_test DB)
+npx vitest              # watch mode
 ```
+
+Tests run in an isolated `taskflow_test` PostgreSQL database and Redis DB 1, created automatically by `vitest.global.ts`. Your development data is never touched.
 
 ## Project Structure
 
@@ -283,12 +283,13 @@ npx vitest run
 ├── backend/
 │   └── src/
 │       ├── config/          # Env, Prisma, Redis singletons
-│       ├── lib/             # AppError, format helper, email service
+│       ├── lib/             # http-errors, format helper, email service
 │       ├── modules/         # auth, tasks, lists, tags, habits, pomodoro, admin
 │       ├── prisma/          # schema.prisma + migrations
-│       ├── app.ts           # Fastify factory
-│       ├── server.ts        # Entry point
-│       └── worker.ts        # Cron reminder worker (task + habit reminders)
+│   ├── app.ts           # Fastify factory (ZodTypeProvider, http-errors)
+│   ├── server.ts        # Entry point
+│   ├── worker.ts        # Cron reminder worker (task + habit reminders)
+│   └── vitest.global.ts # Test setup (isolated DB, migrations)
 ├── frontend/
 │   └── src/
 │       ├── api/             # Axios client with 401 interceptor
