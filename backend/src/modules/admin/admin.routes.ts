@@ -25,6 +25,7 @@ async function isAdmin(req: FastifyRequest, reply: FastifyReply) {
     }
   } catch {
     reply.code(401).send({ error: "Unauthorized" });
+    return;
   }
 }
 
