@@ -89,6 +89,14 @@ export const progressQuerySchema = z.object({
   status: z.enum(["completed", "skipped", "failed"]).optional(),
 });
 
+export const habitIdParams = z.object({
+  id: z.string(),
+});
+
+export const habitQuerySchema = z.object({
+  archived: z.enum(["true"]).optional(),
+});
+
 export type CreateHabitInput = z.infer<typeof createHabitSchema>;
 export type UpdateHabitInput = z.infer<typeof updateHabitSchema>;
 export type ProgressQuery = z.infer<typeof progressQuerySchema>;

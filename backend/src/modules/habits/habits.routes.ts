@@ -1,67 +1,56 @@
 import type { FastifyInstance } from "fastify";
+import type { ZodTypeProvider } from "@fastify/type-provider-zod";
 import {
   createHabitSchema,
   updateHabitSchema,
   progressQuerySchema,
+  habitIdParams,
+  habitQuerySchema,
 } from "./habits.schema";
 import { HabitService } from "./habits.service";
 
 const service = new HabitService();
 
 export async function habitRoutes(app: FastifyInstance) {
-  app.addHook("onRequest", app.authenticate);
+  const s = app.withTypeProvider<ZodTypeProvider>();
+  s.addHook("onRequest", app.authenticate);
 
-  app.get("/", async (req, reply) => {
-    const query = req.query as { archived?: string };
-    const habits = await service.findAll(
-      req.user.sub,
-      query.archived === "true",
-    );
-    return reply.send(habits);
+  s.get("/", { schema: { querystring: habitQuerySchema } }, async (req, reply) => {
+    reply.send(await service.findAll(req.user.sub, req.query.archived === "true"));
   });
 
-  app.get("/:id", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const habit = await service.findById(req.user.sub, id);
-    return reply.send(habit);
+  s.get("/:id", { schema: { params: habitIdParams } }, async (req, reply) => {
+    reply.send(await service.findById(req.user.sub, req.params.id));
   });
 
-  app.post("/", async (req, reply) => {
-    const input = createHabitSchema.parse(req.body);
-    const habit = await service.create(req.user.sub, input);
-    return reply.code(201).send(habit);
+  s.post("/", { schema: { body: createHabitSchema } }, async (req, reply) => {
+    reply.code(201).send(await service.create(req.user.sub, req.body));
   });
 
-  app.patch("/:id", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const input = updateHabitSchema.parse(req.body);
-    const habit = await service.update(req.user.sub, id, input);
-    return reply.send(habit);
+  s.patch("/:id", {
+    schema: { body: updateHabitSchema, params: habitIdParams },
+  }, async (req, reply) => {
+    reply.send(await service.update(req.user.sub, req.params.id, req.body));
   });
 
-  app.delete("/:id", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    await service.delete(req.user.sub, id);
-    return reply.code(204).send();
+  s.delete("/:id", { schema: { params: habitIdParams } }, async (req, reply) => {
+    await service.delete(req.user.sub, req.params.id);
+    reply.code(204).send();
   });
 
-  app.post("/:id/progress", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const query = progressQuerySchema.parse(req.query);
-    const result = await service.checkIn(req.user.sub, id, query.date, query.status);
-    return reply.send(result);
+  s.post("/:id/progress", {
+    schema: { params: habitIdParams, querystring: progressQuerySchema },
+  }, async (req, reply) => {
+    reply.send(await service.checkIn(req.user.sub, req.params.id, req.query.date, req.query.status));
   });
 
-  app.delete("/:id/progress", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const query = progressQuerySchema.parse(req.query);
-    const result = await service.undoCheckIn(req.user.sub, id, query.date);
-    return reply.send(result);
+  s.delete("/:id/progress", {
+    schema: { params: habitIdParams, querystring: progressQuerySchema },
+  }, async (req, reply) => {
+    reply.send(await service.undoCheckIn(req.user.sub, req.params.id, req.query.date));
   });
 
-  app.post("/:id/reset", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const result = await service.resetProgress(req.user.sub, id);
-    return reply.send(result);
+  s.post("/:id/reset", { schema: { params: habitIdParams } }, async (req, reply) => {
+    reply.send(await service.resetProgress(req.user.sub, req.params.id));
   });
 }
