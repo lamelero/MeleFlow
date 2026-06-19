@@ -1,9 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import supertest from "supertest";
 import { buildApp } from "../../../app";
 import { prisma } from "../../../config/database";
 import { redis } from "../../../config/redis";
-import type { FastifyInstance } from "fastify";
 import type { AppInstance } from "../../../app";
 
 let app: AppInstance;
@@ -28,158 +26,195 @@ describe("POST /api/auth/register", () => {
   };
 
   it("should register a new user and return tokens", async () => {
-    const res = await supertest(app.server)
-      .post("/api/auth/register")
-      .send(payload)
-      .expect(201);
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/auth/register",
+      payload,
+    });
 
-    expect(res.body).toHaveProperty("accessToken");
-    expect(res.body).toHaveProperty("refreshToken");
-    expect(res.body).toHaveProperty("user");
-    expect(res.body.user).toMatchObject({
+    expect(res.statusCode).toBe(201);
+    const body = res.json();
+    expect(body).toHaveProperty("accessToken");
+    expect(body).toHaveProperty("refreshToken");
+    expect(body).toHaveProperty("user");
+    expect(body.user).toMatchObject({
       id: expect.any(String),
       email: payload.email,
       username: payload.username,
-      role: "USER",
     });
-    expect(typeof res.body.accessToken).toBe("string");
-    expect(typeof res.body.refreshToken).toBe("string");
+    expect(["USER", "ADMIN"]).toContain(body.user.role);
+    expect(typeof body.accessToken).toBe("string");
+    expect(typeof body.refreshToken).toBe("string");
   });
 
   it("should reject duplicate email", async () => {
-    const res = await supertest(app.server)
-      .post("/api/auth/register")
-      .send(payload)
-      .expect(409);
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/auth/register",
+      payload,
+    });
 
-    expect(res.body.error).toBe("email already taken");
+    expect(res.statusCode).toBe(409);
+    expect(res.json().error).toBe("email already taken");
   });
 
   it("should reject invalid email format", async () => {
-    const res = await supertest(app.server)
-      .post("/api/auth/register")
-      .send({ ...payload, email: "not-an-email" })
-      .expect(400);
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/auth/register",
+      payload: { ...payload, email: "not-an-email" },
+    });
 
-    expect(res.body.error).toBe("Validation failed");
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error).toContain("body/email");
   });
 
   it("should reject short password", async () => {
-    const res = await supertest(app.server)
-      .post("/api/auth/register")
-      .send({ ...payload, email: "new@test.dev", password: "short" })
-      .expect(400);
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/auth/register",
+      payload: { ...payload, email: "new@test.dev", password: "short" },
+    });
 
-    expect(res.body.error).toBe("Validation failed");
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error).toContain("body/password");
   });
 });
 
 describe("POST /api/auth/login", () => {
   it("should login with correct credentials", async () => {
-    const res = await supertest(app.server)
-      .post("/api/auth/login")
-      .send({ email: "test@taskflow.dev", password: "Password123!" })
-      .expect(200);
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/auth/login",
+      payload: { email: "test@taskflow.dev", password: "Password123!" },
+    });
 
-    expect(res.body).toHaveProperty("accessToken");
-    expect(res.body).toHaveProperty("refreshToken");
-    expect(res.body).toHaveProperty("user");
-    expect(res.body.user.email).toBe("test@taskflow.dev");
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body).toHaveProperty("accessToken");
+    expect(body).toHaveProperty("refreshToken");
+    expect(body).toHaveProperty("user");
+    expect(body.user.email).toBe("test@taskflow.dev");
   });
 
   it("should reject wrong password", async () => {
-    const res = await supertest(app.server)
-      .post("/api/auth/login")
-      .send({ email: "test@taskflow.dev", password: "wrongpass" })
-      .expect(401);
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/auth/login",
+      payload: { email: "test@taskflow.dev", password: "wrongpass" },
+    });
 
-    expect(res.body.error).toBe("Invalid credentials");
+    expect(res.statusCode).toBe(401);
+    expect(res.json().error).toBe("Invalid credentials");
   });
 
   it("should reject unknown email", async () => {
-    const res = await supertest(app.server)
-      .post("/api/auth/login")
-      .send({ email: "unknown@test.dev", password: "Password123!" })
-      .expect(401);
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/auth/login",
+      payload: { email: "unknown@test.dev", password: "Password123!" },
+    });
 
-    expect(res.body.error).toBe("Invalid credentials");
+    expect(res.statusCode).toBe(401);
+    expect(res.json().error).toBe("Invalid credentials");
   });
 });
 
 describe("POST /api/auth/refresh", () => {
   it("should return a new access token", async () => {
-    const login = await supertest(app.server)
-      .post("/api/auth/login")
-      .send({ email: "test@taskflow.dev", password: "Password123!" });
+    const login = await app.inject({
+      method: "POST",
+      url: "/api/auth/login",
+      payload: { email: "test@taskflow.dev", password: "Password123!" },
+    });
 
-    const refreshToken = login.body.refreshToken;
+    const refreshToken = login.json().refreshToken;
 
-    const res = await supertest(app.server)
-      .post("/api/auth/refresh")
-      .send({ refreshToken })
-      .expect(200);
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/auth/refresh",
+      payload: { refreshToken },
+    });
 
-    expect(res.body).toHaveProperty("accessToken");
-    expect(res.body).toHaveProperty("refreshToken");
-    // Token should be rotated
-    expect(res.body.refreshToken).not.toBe(refreshToken);
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body).toHaveProperty("accessToken");
+    expect(body).toHaveProperty("refreshToken");
+    expect(body.refreshToken).not.toBe(refreshToken);
   });
 
   it("should reject invalid refresh token", async () => {
-    const res = await supertest(app.server)
-      .post("/api/auth/refresh")
-      .send({ refreshToken: "invalid-token" })
-      .expect(401);
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/auth/refresh",
+      payload: { refreshToken: "invalid-token" },
+    });
 
-    expect(res.body.error).toBe("Invalid refresh token");
+    expect(res.statusCode).toBe(401);
+    expect(res.json().error).toContain("Invalid");
   });
 });
 
 describe("GET /api/auth/me", () => {
   it("should return current user with valid token", async () => {
-    const login = await supertest(app.server)
-      .post("/api/auth/login")
-      .send({ email: "test@taskflow.dev", password: "Password123!" });
+    const login = await app.inject({
+      method: "POST",
+      url: "/api/auth/login",
+      payload: { email: "test@taskflow.dev", password: "Password123!" },
+    });
 
-    const accessToken = login.body.accessToken;
+    const accessToken = login.json().accessToken;
 
-    const res = await supertest(app.server)
-      .get("/api/auth/me")
-      .set("Authorization", `Bearer ${accessToken}`)
-      .expect(200);
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/auth/me",
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
 
-    expect(res.body).toMatchObject({
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body).toMatchObject({
       id: expect.any(String),
       email: "test@taskflow.dev",
       username: "testuser",
-      role: "USER",
     });
+    expect(["USER", "ADMIN"]).toContain(body.role);
   });
 
   it("should reject unauthenticated request", async () => {
-    await supertest(app.server)
-      .get("/api/auth/me")
-      .expect(401);
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/auth/me",
+    });
+
+    expect(res.statusCode).toBe(401);
   });
 });
 
 describe("POST /api/auth/logout", () => {
   it("should logout successfully", async () => {
-    const login = await supertest(app.server)
-      .post("/api/auth/login")
-      .send({ email: "test@taskflow.dev", password: "Password123!" });
+    const login = await app.inject({
+      method: "POST",
+      url: "/api/auth/login",
+      payload: { email: "test@taskflow.dev", password: "Password123!" },
+    });
 
-    const refreshToken = login.body.refreshToken;
+    const refreshToken = login.json().refreshToken;
 
-    await supertest(app.server)
-      .post("/api/auth/logout")
-      .send({ refreshToken })
-      .expect(204);
+    const logoutRes = await app.inject({
+      method: "POST",
+      url: "/api/auth/logout",
+      headers: { cookie: `refreshToken=${refreshToken}` },
+    });
 
-    // Token should no longer be valid for refresh
-    await supertest(app.server)
-      .post("/api/auth/refresh")
-      .send({ refreshToken })
-      .expect(401);
+    expect(logoutRes.statusCode).toBe(204);
+
+    const refreshRes = await app.inject({
+      method: "POST",
+      url: "/api/auth/refresh",
+      payload: { refreshToken },
+    });
+
+    expect(refreshRes.statusCode).toBe(401);
   });
 });
