@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "../../config/database";
 import { redis } from "../../config/redis";
 import { env } from "../../config/env";
-import { AppError } from "../../lib/app-error";
+import createError from "http-errors";
 import type { UpdateUserInput, UpdateSettingsInput } from "./admin.schema";
 
 export class AdminService {
@@ -30,24 +30,24 @@ export class AdminService {
 
   async updateUser(currentUserId: string, targetUserId: string, input: UpdateUserInput) {
     if (currentUserId === targetUserId && input.role !== undefined) {
-      throw new AppError(400, "Cannot change your own role");
+      throw createError.BadRequest( "Cannot change your own role");
     }
     if (currentUserId === targetUserId && input.isActive === false) {
-      throw new AppError(400, "Cannot deactivate yourself");
+      throw createError.BadRequest( "Cannot deactivate yourself");
     }
 
     const user = await prisma.user.findUnique({ where: { id: targetUserId } });
     if (!user) {
-      throw new AppError(404, "User not found");
+      throw createError.NotFound( "User not found");
     }
 
     if (input.email && input.email !== user.email) {
       const existing = await prisma.user.findUnique({ where: { email: input.email } });
-      if (existing) throw new AppError(409, "Email already taken");
+      if (existing) throw createError.Conflict( "Email already taken");
     }
     if (input.username && input.username !== user.username) {
       const existing = await prisma.user.findUnique({ where: { username: input.username } });
-      if (existing) throw new AppError(409, "Username already taken");
+      if (existing) throw createError.Conflict( "Username already taken");
     }
 
     return prisma.user.update({
@@ -74,12 +74,12 @@ export class AdminService {
 
   async deleteUser(currentUserId: string, targetUserId: string) {
     if (currentUserId === targetUserId) {
-      throw new AppError(400, "Cannot delete yourself");
+      throw createError.BadRequest( "Cannot delete yourself");
     }
 
     const user = await prisma.user.findUnique({ where: { id: targetUserId } });
     if (!user) {
-      throw new AppError(404, "User not found");
+      throw createError.NotFound( "User not found");
     }
 
     await prisma.user.delete({ where: { id: targetUserId } });
@@ -263,10 +263,10 @@ export class AdminService {
 
   async wipeAllData(adminId: string, password: string) {
     const admin = await prisma.user.findUnique({ where: { id: adminId } });
-    if (!admin) throw new AppError(404, "Admin not found");
+    if (!admin) throw createError.NotFound( "Admin not found");
 
     const valid = await bcrypt.compare(password, admin.passwordHash);
-    if (!valid) throw new AppError(403, "Invalid password");
+    if (!valid) throw createError.Forbidden( "Invalid password");
 
     const uploadDir = path.resolve("uploads");
 

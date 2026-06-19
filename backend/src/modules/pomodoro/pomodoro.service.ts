@@ -1,5 +1,5 @@
 import { prisma } from "../../config/database";
-import { AppError } from "../../lib/app-error";
+import createError from "http-errors";
 import type { StartSessionInput, UpdateSettingsInput } from "./pomodoro.schema";
 
 export class PomodoroService {
@@ -23,7 +23,7 @@ export class PomodoroService {
         pomodoroCycles: true,
       },
     });
-    if (!user) throw new AppError(404, "User not found");
+    if (!user) throw createError.NotFound( "User not found");
 
     const type = input.type ?? "FOCUS";
     let duration = input.duration;
@@ -63,7 +63,7 @@ export class PomodoroService {
     });
 
     if (!session) {
-      throw new AppError(404, "No running session found");
+      throw createError.NotFound( "No running session found");
     }
 
     return prisma.pomodoroSession.update({
@@ -78,7 +78,7 @@ export class PomodoroService {
     });
 
     if (!session) {
-      throw new AppError(404, "No paused session found");
+      throw createError.NotFound( "No paused session found");
     }
 
     return prisma.pomodoroSession.update({
@@ -93,7 +93,7 @@ export class PomodoroService {
     });
 
     if (!session) {
-      throw new AppError(404, "No active session found");
+      throw createError.NotFound( "No active session found");
     }
 
     const completed = await prisma.pomodoroSession.update({
@@ -110,7 +110,7 @@ export class PomodoroService {
     });
 
     if (!session) {
-      throw new AppError(404, "No active session found");
+      throw createError.NotFound( "No active session found");
     }
 
     return prisma.pomodoroSession.update({
@@ -129,7 +129,7 @@ export class PomodoroService {
         pomodoroCycles: true,
       },
     });
-    if (!user) throw new AppError(404, "User not found");
+    if (!user) throw createError.NotFound( "User not found");
 
     return {
       work: user.pomodoroWork,
@@ -156,7 +156,7 @@ export class PomodoroService {
       where: { id: userId },
       select: { pomodoroCycles: true },
     });
-    if (!user) throw new AppError(404, "User not found");
+    if (!user) throw createError.NotFound( "User not found");
 
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);

@@ -1,5 +1,5 @@
 import { prisma } from "../../config/database";
-import { AppError } from "../../lib/app-error";
+import createError from "http-errors";
 import type { CreateHabitInput, UpdateHabitInput } from "./habits.schema";
 
 function normalizeDate(d: Date): Date {
@@ -154,7 +154,7 @@ export class HabitService {
         _count: { select: { logs: true } },
       },
     });
-    if (!habit) throw new AppError(404, "Habit not found");
+    if (!habit) throw createError.NotFound( "Habit not found");
     return {
       ...habit,
       logs: habit.logs.map((l) => ({ date: l.date.toISOString().split("T")[0], status: l.status })),
@@ -185,7 +185,7 @@ export class HabitService {
 
   async update(userId: string, id: string, input: UpdateHabitInput) {
     const existing = await prisma.habit.findFirst({ where: { id, userId } });
-    if (!existing) throw new AppError(404, "Habit not found");
+    if (!existing) throw createError.NotFound( "Habit not found");
 
     const data: Record<string, unknown> = {};
     if (input.name !== undefined) data.name = input.name;
@@ -210,10 +210,10 @@ export class HabitService {
     const habit = await prisma.habit.findFirst({
       where: { id: habitId, userId },
     });
-    if (!habit) throw new AppError(404, "Habit not found");
+    if (!habit) throw createError.NotFound( "Habit not found");
 
     const date = dateStr ? normalizeDate(new Date(dateStr + "T00:00:00Z")) : normalizeDate(new Date());
-    if (isNaN(date.getTime())) throw new AppError(400, "Invalid date");
+    if (isNaN(date.getTime())) throw createError.BadRequest( "Invalid date");
 
     const status = statusVal === "skipped" || statusVal === "failed" ? statusVal : "completed";
 
@@ -260,10 +260,10 @@ export class HabitService {
     const habit = await prisma.habit.findFirst({
       where: { id: habitId, userId },
     });
-    if (!habit) throw new AppError(404, "Habit not found");
+    if (!habit) throw createError.NotFound( "Habit not found");
 
     const date = dateStr ? normalizeDate(new Date(dateStr + "T00:00:00Z")) : normalizeDate(new Date());
-    if (isNaN(date.getTime())) throw new AppError(400, "Invalid date");
+    if (isNaN(date.getTime())) throw createError.BadRequest( "Invalid date");
 
     await prisma.habitLog.deleteMany({
       where: { habitId, date },
@@ -290,7 +290,7 @@ export class HabitService {
     const habit = await prisma.habit.findFirst({
       where: { id: habitId, userId },
     });
-    if (!habit) throw new AppError(404, "Habit not found");
+    if (!habit) throw createError.NotFound( "Habit not found");
 
     await prisma.habitLog.deleteMany({ where: { habitId } });
     await prisma.habit.update({
@@ -305,7 +305,7 @@ export class HabitService {
     const habit = await prisma.habit.findFirst({
       where: { id: habitId, userId },
     });
-    if (!habit) throw new AppError(404, "Habit not found");
+    if (!habit) throw createError.NotFound( "Habit not found");
     await prisma.habit.delete({ where: { id: habitId } });
   }
 

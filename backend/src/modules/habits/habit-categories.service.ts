@@ -1,5 +1,5 @@
 import { prisma } from "../../config/database";
-import { AppError } from "../../lib/app-error";
+import createError from "http-errors";
 import type { CreateCategoryInput, UpdateCategoryInput } from "./habit-categories.schema";
 
 export class HabitCategoryService {
@@ -15,7 +15,7 @@ export class HabitCategoryService {
     const existing = await prisma.habitCategoryModel.findUnique({
       where: { userId_name: { userId, name: input.name } },
     });
-    if (existing) throw new AppError(409, "Category with this name already exists");
+    if (existing) throw createError.Conflict( "Category with this name already exists");
 
     return prisma.habitCategoryModel.create({
       data: { ...input, userId },
@@ -24,13 +24,13 @@ export class HabitCategoryService {
 
   async update(userId: string, id: string, input: UpdateCategoryInput) {
     const cat = await prisma.habitCategoryModel.findFirst({ where: { id, userId } });
-    if (!cat) throw new AppError(404, "Category not found");
+    if (!cat) throw createError.NotFound( "Category not found");
 
     if (input.name && input.name !== cat.name) {
       const existing = await prisma.habitCategoryModel.findUnique({
         where: { userId_name: { userId, name: input.name } },
       });
-      if (existing) throw new AppError(409, "Category with this name already exists");
+      if (existing) throw createError.Conflict( "Category with this name already exists");
     }
 
     return prisma.habitCategoryModel.update({ where: { id }, data: input });
@@ -38,7 +38,7 @@ export class HabitCategoryService {
 
   async delete(userId: string, id: string) {
     const cat = await prisma.habitCategoryModel.findFirst({ where: { id, userId } });
-    if (!cat) throw new AppError(404, "Category not found");
+    if (!cat) throw createError.NotFound( "Category not found");
 
     await prisma.habitCategoryModel.delete({ where: { id } });
   }

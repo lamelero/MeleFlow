@@ -6,7 +6,7 @@ import { createGzip, createGunzip } from "zlib";
 import { randomBytes, createCipheriv, createDecipheriv } from "crypto";
 import { prisma } from "../../config/database";
 import { env } from "../../config/env";
-import { AppError } from "../../lib/app-error";
+import createError from "http-errors";
 
 const BACKUP_DIR = path.resolve("backups");
 const UPLOAD_DIR = path.resolve("uploads");
@@ -26,7 +26,7 @@ async function ensureBackupDir() {
 function getEncryptionKey(): Buffer {
   const key = env.ENCRYPTION_KEY;
   if (!key || key.length < 32) {
-    throw new AppError(500, "Encryption key not configured or too short (needs 32+ chars)");
+    throw createError.InternalServerError( "Encryption key not configured or too short (needs 32+ chars)");
   }
   return Buffer.from(key.slice(0, 32).padEnd(32, "x"));
 }
@@ -344,7 +344,7 @@ export class BackupService {
   private async assertBackupExists(name: string) {
     const filePath = path.join(BACKUP_DIR, name);
     const exists = await fs.stat(filePath).then(() => true).catch(() => false);
-    if (!exists) throw new AppError(404, "Backup not found");
+    if (!exists) throw createError.NotFound( "Backup not found");
   }
 
   private async enforceRetention() {

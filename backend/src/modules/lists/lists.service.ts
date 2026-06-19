@@ -1,5 +1,5 @@
 import { prisma } from "../../config/database";
-import { AppError } from "../../lib/app-error";
+import createError from "http-errors";
 import type { CreateListInput, UpdateListInput } from "./lists.schema";
 
 export class ListService {
@@ -17,7 +17,7 @@ export class ListService {
     });
 
     if (existing) {
-      throw new AppError(409, "A list with this name already exists");
+      throw createError.Conflict( "A list with this name already exists");
     }
 
     return prisma.list.create({
@@ -32,7 +32,7 @@ export class ListService {
     });
 
     if (!list) {
-      throw new AppError(404, "List not found");
+      throw createError.NotFound( "List not found");
     }
 
     if (input.name && input.name !== list.name) {
@@ -40,7 +40,7 @@ export class ListService {
         where: { userId_name: { userId, name: input.name } },
       });
       if (existing) {
-        throw new AppError(409, "A list with this name already exists");
+        throw createError.Conflict( "A list with this name already exists");
       }
     }
 
@@ -57,7 +57,7 @@ export class ListService {
     });
 
     if (!list) {
-      throw new AppError(404, "List not found");
+      throw createError.NotFound( "List not found");
     }
 
     await prisma.list.delete({
