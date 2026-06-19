@@ -1,7 +1,10 @@
 import { config } from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 import { z } from "zod";
 
-config();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+config({ path: path.resolve(__dirname, "../../../.env") });
 
 export const env = z
   .object({
@@ -20,8 +23,8 @@ export const env = z
     ENCRYPTION_KEY: z.string().min(32).default("dev-encryption-key-32chars!default00"),
     ALLOW_REGISTRATION: z
       .string()
-      .transform((v) => v === "true")
-      .default("true"),
+      .default("true")
+      .transform((v) => v === "true"),
     MAX_UPLOAD_SIZE: z.coerce.number().default(50),
     MAX_LOGIN_ATTEMPTS: z.coerce.number().default(5),
     LOGIN_LOCKOUT_MINUTES: z.coerce.number().default(15),

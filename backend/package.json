@@ -19,7 +19,9 @@
     "@fastify/jwt": "^9.0.1",
     "@fastify/multipart": "^10.0.0",
     "@fastify/rate-limit": "^10.3.0",
+    "@fastify/sensible": "^6.0.4",
     "@fastify/static": "^9.1.3",
+    "@fastify/type-provider-zod": "^1.0.0",
     "@prisma/client": "^6.2.1",
     "@types/cookie": "^0.6.0",
     "bcryptjs": "^2.4.3",
@@ -33,7 +35,7 @@
     "nodemailer": "^8.0.10",
     "otplib": "^13.4.1",
     "rrule": "^2.8.1",
-    "zod": "^3.24.1"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

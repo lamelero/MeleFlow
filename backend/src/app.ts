@@ -1,20 +1,16 @@
 import Fastify, { type FastifyRequest, type FastifyReply } from "fastify";
+import { ZodTypeProvider } from "@fastify/type-provider-zod";
 import cors from "@fastify/cors";
-
-// BigInt serialization for JSON responses (Prisma uses BigInt for storage counts)
-(BigInt.prototype as unknown as Record<string, unknown>).toJSON = function () {
-  return Number(this);
-};
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
 import fjwt from "@fastify/jwt";
 import cookie from "@fastify/cookie";
 import multipart from "@fastify/multipart";
 import fastifyStatic from "@fastify/static";
+import sensible from "@fastify/sensible";
 import path from "path";
 import { ZodError } from "zod";
 import { env } from "./config/env";
-import { AppError } from "./lib/app-error";
 import { authRoutes } from "./modules/auth/auth.routes";
 import { taskRoutes } from "./modules/tasks/tasks.routes";
 import { listRoutes } from "./modules/lists/lists.routes";
@@ -27,12 +23,17 @@ import { adminRoutes } from "./modules/admin/admin.routes";
 import { settingsRoutes } from "./modules/settings/settings.routes";
 import { icsCalendarRoutes } from "./modules/ics-calendars/ics-calendars.routes";
 
+// BigInt serialization for JSON responses (Prisma uses BigInt for storage counts)
+(BigInt.prototype as unknown as Record<string, unknown>).toJSON = function () {
+  return Number(this);
+};
+
 export async function buildApp(opts: Record<string, unknown> = {}) {
   const app = Fastify({
     logger: env.NODE_ENV !== "test",
     trustProxy: true,
     ...opts,
-  });
+  }).withTypeProvider<ZodTypeProvider>();
 
   // ── Plugins ──────────────────────────────────
   await app.register(helmet, {
@@ -82,7 +83,7 @@ export async function buildApp(opts: Record<string, unknown> = {}) {
   });
 
   await app.register(multipart, {
-    limits: { fileSize: 200 * 1024 * 1024 }, // 200MB cap (dynamic check inside service)
+    limits: { fileSize: 200 * 1024 * 1024 },
   });
 
   await app.register(fastifyStatic, {
@@ -90,6 +91,8 @@ export async function buildApp(opts: Record<string, unknown> = {}) {
     prefix: "/uploads/",
     decorateReply: false,
   });
+
+  await app.register(sensible);
 
   // ── Auth decorator ───────────────────────────
   app.decorate(
@@ -105,20 +108,23 @@ export async function buildApp(opts: Record<string, unknown> = {}) {
 
   // ── Error handler ────────────────────────────
   app.setErrorHandler((error: Error & { statusCode?: number }, _req, reply) => {
-    if (error instanceof AppError) {
+    // FastifyError from @fastify/sensible (includes httpErrors)
+    if (error.statusCode && error.statusCode < 500 && error.statusCode !== 429) {
       return reply.code(error.statusCode).send({ error: error.message });
     }
 
+    // ZodError from native Fastify schema validation
     if (error instanceof ZodError) {
       return reply.code(400).send({
         error: "Validation failed",
-        details: error.errors.map((e) => ({
+        details: error.issues.map((e) => ({
           path: e.path.join("."),
           message: e.message,
         })),
       });
     }
 
+    // Rate limit exceeded
     if (error.statusCode === 429) {
       return reply.code(429).send({ error: "Too many requests" });
     }

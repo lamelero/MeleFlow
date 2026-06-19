@@ -1,5 +1,8 @@
 import { config } from "dotenv";
-config();
+import path from "path";
+import { fileURLToPath } from "url";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+config({ path: path.resolve(__dirname, "../../.env") });
 
 import cron from "node-cron";
 import { prisma } from "./config/database";
