@@ -1,10 +1,15 @@
 import type { FastifyInstance } from "fastify";
+import type { ZodTypeProvider } from "@fastify/type-provider-zod";
 import {
   createTaskSchema,
   updateTaskSchema,
   taskQuerySchema,
   taskTagSchema,
   addCollaboratorSchema,
+  taskIdParams,
+  taskIdTagIdParams,
+  taskIdCollabIdParams,
+  searchQuerySchema,
 } from "./tasks.schema";
 import { TaskService } from "./tasks.service";
 import { AttachmentService } from "./attachment.service";
@@ -13,114 +18,98 @@ const service = new TaskService();
 const attachmentService = new AttachmentService();
 
 export async function taskRoutes(app: FastifyInstance) {
-  app.addHook("onRequest", app.authenticate);
+  const s = app.withTypeProvider<ZodTypeProvider>();
+  s.addHook("onRequest", app.authenticate);
 
-  app.get("/", async (req, reply) => {
-    const query = taskQuerySchema.parse(req.query);
-    const tasks = await service.findAll(req.user.sub, query);
-    return reply.send(tasks);
+  s.get("/", { schema: { querystring: taskQuerySchema } }, async (req, reply) => {
+    reply.send(await service.findAll(req.user.sub, req.query));
   });
 
-  app.get("/shared", async (req, reply) => {
-    const tasks = await service.findShared(req.user.sub);
-    return reply.send(tasks);
+  s.get("/shared", async (req, reply) => {
+    reply.send(await service.findShared(req.user.sub));
   });
 
-  app.get("/search", async (req, reply) => {
-    const { q } = req.query as { q: string };
-    if (!q || q.length < 2) return reply.send([]);
-    const tasks = await service.search(req.user.sub, q);
-    return reply.send(tasks);
+  s.get("/search", { schema: { querystring: searchQuerySchema } }, async (req, reply) => {
+    if (!req.query.q || req.query.q.length < 2) {
+      reply.send([]);
+      return;
+    }
+    reply.send(await service.search(req.user.sub, req.query.q));
   });
 
-  app.get("/:id", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const task = await service.findById(req.user.sub, id);
-    return reply.send(task);
+  s.get("/:id", { schema: { params: taskIdParams } }, async (req, reply) => {
+    reply.send(await service.findById(req.user.sub, req.params.id));
   });
 
-  app.post("/", async (req, reply) => {
-    const input = createTaskSchema.parse(req.body);
-    const task = await service.create(req.user.sub, input);
-    return reply.code(201).send(task);
+  s.post("/", { schema: { body: createTaskSchema } }, async (req, reply) => {
+    reply.code(201).send(await service.create(req.user.sub, req.body));
   });
 
-  app.patch("/:id", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const input = updateTaskSchema.parse(req.body);
-    const task = await service.update(req.user.sub, id, input);
-    return reply.send(task);
+  s.patch("/:id", {
+    schema: { body: updateTaskSchema, params: taskIdParams },
+  }, async (req, reply) => {
+    reply.send(await service.update(req.user.sub, req.params.id, req.body));
   });
 
-  app.delete("/:id", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    await service.delete(req.user.sub, id);
-    return reply.code(204).send();
+  s.delete("/:id", { schema: { params: taskIdParams } }, async (req, reply) => {
+    await service.delete(req.user.sub, req.params.id);
+    reply.code(204).send();
   });
 
-  app.post("/:id/tags", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const { tagId } = taskTagSchema.parse(req.body);
-    const task = await service.addTag(req.user.sub, id, tagId);
-    return reply.send(task);
+  s.post("/:id/tags", {
+    schema: { body: taskTagSchema, params: taskIdParams },
+  }, async (req, reply) => {
+    reply.send(await service.addTag(req.user.sub, req.params.id, req.body.tagId));
   });
 
-  app.delete("/:id/tags/:tagId", async (req, reply) => {
-    const { id, tagId } = req.params as { id: string; tagId: string };
-    const task = await service.removeTag(req.user.sub, id, tagId);
-    return reply.send(task);
+  s.delete("/:id/tags/:tagId", {
+    schema: { params: taskIdTagIdParams },
+  }, async (req, reply) => {
+    reply.send(await service.removeTag(req.user.sub, req.params.id, req.params.tagId));
   });
 
   // ── Collaborator routes ──────────────────────
 
-  app.get("/:id/collaborators", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const collaborators = await service.getCollaborators(req.user.sub, id);
-    return reply.send(collaborators);
+  s.get("/:id/collaborators", { schema: { params: taskIdParams } }, async (req, reply) => {
+    reply.send(await service.getCollaborators(req.user.sub, req.params.id));
   });
 
-  app.post("/:id/collaborators", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const input = addCollaboratorSchema.parse(req.body);
-    const task = await service.addCollaborator(req.user.sub, id, input);
-    return reply.send(task);
+  s.post("/:id/collaborators", {
+    schema: { body: addCollaboratorSchema, params: taskIdParams },
+  }, async (req, reply) => {
+    reply.send(await service.addCollaborator(req.user.sub, req.params.id, req.body));
   });
 
-  app.delete("/:id/collaborators/:collaboratorId", async (req, reply) => {
-    const { id, collaboratorId } = req.params as { id: string; collaboratorId: string };
-    const task = await service.removeCollaborator(req.user.sub, id, collaboratorId);
-    return reply.send(task);
+  s.delete("/:id/collaborators/:collaboratorId", {
+    schema: { params: taskIdCollabIdParams },
+  }, async (req, reply) => {
+    reply.send(await service.removeCollaborator(req.user.sub, req.params.id, req.params.collaboratorId));
   });
 
   // ── Attachment routes ────────────────────────
 
-  app.get("/:id/attachments", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const attachments = await attachmentService.findByTask(req.user.sub, id);
-    return reply.send(attachments);
+  s.get("/:id/attachments", { schema: { params: taskIdParams } }, async (req, reply) => {
+    reply.send(await attachmentService.findByTask(req.user.sub, req.params.id));
   });
 
-  app.post("/:id/attachments", async (req, reply) => {
-    const { id } = req.params as { id: string };
+  s.post("/:id/attachments", { schema: { params: taskIdParams } }, async (req, reply) => {
     const data = await req.file();
-
     if (!data) {
-      return reply.code(400).send({ error: "No file uploaded" });
+      reply.code(400).send({ error: "No file uploaded" });
+      return;
     }
-
     const buffer = await data.toBuffer();
-    const attachment = await attachmentService.upload(req.user.sub, id, {
+    reply.code(201).send(await attachmentService.upload(req.user.sub, req.params.id, {
       filename: data.filename,
       buffer,
       mimetype: data.mimetype,
-    });
-
-    return reply.code(201).send(attachment);
+    }));
   });
 
-  app.delete("/:id/attachments/:attachmentId", async (req, reply) => {
-    const { id, attachmentId } = req.params as { id: string; attachmentId: string };
-    await attachmentService.delete(req.user.sub, id, attachmentId);
-    return reply.code(204).send();
+  s.delete("/:id/attachments/:attachmentId", {
+    schema: { params: taskIdCollabIdParams },
+  }, async (req, reply) => {
+    await attachmentService.delete(req.user.sub, req.params.id, req.params.collaboratorId);
+    reply.code(204).send();
   });
 }
