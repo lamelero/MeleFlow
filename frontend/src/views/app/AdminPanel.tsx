@@ -9,6 +9,7 @@ import { useBrandingStore } from "../../store/brandingStore";
 import StatsCards from "../../components/admin/StatsCards";
 import UsersTable from "../../components/admin/UsersTable";
 import AppLayout from "../../components/AppLayout";
+import { getAccessToken } from "../../api/client";
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -774,15 +775,31 @@ export default function AdminPanel() {
                     </p>
                   </div>
                   <div className="flex shrink-0 gap-1.5 opacity-0 transition-opacity group-hover:opacity-100">
-                    <a
-                      href={`/api/admin/backups/${encodeURIComponent(backup.name)}/download`}
+                    <button
+                      onClick={async () => {
+                        try {
+                          const res = await fetch(`/api/admin/backups/${encodeURIComponent(backup.name)}/download`, {
+                            headers: { authorization: `Bearer ${getAccessToken()}` },
+                          });
+                          if (!res.ok) { toast.error("Download failed"); return; }
+                          const blob = await res.blob();
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement("a");
+                          a.href = url;
+                          a.download = backup.name;
+                          a.click();
+                          URL.revokeObjectURL(url);
+                        } catch {
+                          toast.error("Download failed");
+                        }
+                      }}
                       className="rounded-lg p-2 text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-gray-700"
                       title={t("admin.download")}
                     >
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V3" />
                       </svg>
-                    </a>
+                    </button>
                     <button
                       onClick={() => restoreBackup(backup.name)}
                       className="rounded-lg p-2 text-gray-400 hover:bg-orange-100 hover:text-orange-600 dark:hover:bg-orange-900/30"
