@@ -1,9 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import supertest from "supertest";
 import { buildApp } from "../../../app";
 import { prisma } from "../../../config/database";
 import { redis } from "../../../config/redis";
-import type { FastifyInstance } from "fastify";
 import type { AppInstance } from "../../../app";
 
 let app: AppInstance;
@@ -20,11 +18,12 @@ beforeAll(async () => {
   app = await buildApp();
   await app.ready();
 
-  const reg = await supertest(app.server)
-    .post("/api/auth/register")
-    .send(user)
-    .expect(201);
-  accessToken = reg.body.accessToken;
+  const reg = await app.inject({
+    method: "POST",
+    url: "/api/auth/register",
+    payload: user,
+  });
+  accessToken = reg.json().accessToken;
 });
 
 afterAll(async () => {
@@ -34,49 +33,60 @@ afterAll(async () => {
   await app.close();
 });
 
+const auth = () => ({ headers: { authorization: `Bearer ${accessToken}` } });
+
 describe("POST /api/habits", () => {
   it("should create a habit", async () => {
-    const res = await supertest(app.server)
-      .post("/api/habits")
-      .set("Authorization", `Bearer ${accessToken}`)
-      .send({ name: "Read daily", color: "#3B82F6" })
-      .expect(201);
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/habits",
+      ...auth(),
+      payload: { name: "Read daily" },
+    });
 
-    expect(res.body).toMatchObject({ name: "Read daily", color: "#3B82F6" });
-    habitId = res.body.id;
+    expect(res.statusCode).toBe(201);
+    expect(res.json()).toMatchObject({ name: "Read daily" });
+    habitId = res.json().id;
   });
 });
 
 describe("GET /api/habits", () => {
   it("should return habits with log dates", async () => {
-    const res = await supertest(app.server)
-      .get("/api/habits")
-      .set("Authorization", `Bearer ${accessToken}`)
-      .expect(200);
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/habits",
+      ...auth(),
+    });
 
-    expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body.length).toBe(1);
-    expect(res.body[0]).toHaveProperty("logs");
-    expect(res.body[0]).toHaveProperty("streakCount");
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(Array.isArray(body)).toBe(true);
+    expect(body.length).toBe(1);
+    expect(body[0]).toHaveProperty("logs");
+    expect(body[0]).toHaveProperty("streakCount");
   });
 });
 
-describe("POST /api/habits/:id/check", () => {
+describe("POST /api/habits/:id/progress", () => {
   it("should check in today", async () => {
-    const res = await supertest(app.server)
-      .post(`/api/habits/${habitId}/check`)
-      .set("Authorization", `Bearer ${accessToken}`)
-      .expect(200);
+    const res = await app.inject({
+      method: "POST",
+      url: `/api/habits/${habitId}/progress`,
+      ...auth(),
+    });
 
-    expect(res.body).toHaveProperty("streak");
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toHaveProperty("streak");
   });
 
   it("should return alreadyCheckedIn on duplicate", async () => {
-    const res = await supertest(app.server)
-      .post(`/api/habits/${habitId}/check`)
-      .set("Authorization", `Bearer ${accessToken}`)
-      .expect(200);
+    const res = await app.inject({
+      method: "POST",
+      url: `/api/habits/${habitId}/progress`,
+      ...auth(),
+    });
 
-    expect(res.body.alreadyCheckedIn).toBe(true);
+    expect(res.statusCode).toBe(200);
+    expect(res.json().alreadyCheckedIn).toBe(true);
   });
 });

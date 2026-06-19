@@ -1,9 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import supertest from "supertest";
 import { buildApp } from "../../../app";
 import { prisma } from "../../../config/database";
 import { redis } from "../../../config/redis";
-import type { FastifyInstance } from "fastify";
 import type { AppInstance } from "../../../app";
 
 let app: AppInstance;
@@ -19,12 +17,12 @@ beforeAll(async () => {
   app = await buildApp();
   await app.ready();
 
-  const reg = await supertest(app.server)
-    .post("/api/auth/register")
-    .send(user)
-    .expect(201);
-
-  accessToken = reg.body.accessToken;
+  const reg = await app.inject({
+    method: "POST",
+    url: "/api/auth/register",
+    payload: user,
+  });
+  accessToken = reg.json().accessToken;
 });
 
 afterAll(async () => {
@@ -34,66 +32,87 @@ afterAll(async () => {
   await app.close();
 });
 
+const auth = () => ({ headers: { authorization: `Bearer ${accessToken}` } });
+
 describe("POST /api/tags", () => {
   it("should create a tag", async () => {
-    const res = await supertest(app.server)
-      .post("/api/tags")
-      .set("Authorization", `Bearer ${accessToken}`)
-      .send({ name: "urgent", color: "#EF4444" })
-      .expect(201);
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/tags",
+      ...auth(),
+      payload: { name: "urgent", color: "#EF4444" },
+    });
 
-    expect(res.body).toMatchObject({ name: "urgent", color: "#EF4444" });
+    expect(res.statusCode).toBe(201);
+    expect(res.json()).toMatchObject({ name: "urgent", color: "#EF4444" });
   });
 
   it("should reject duplicate name", async () => {
-    await supertest(app.server)
-      .post("/api/tags")
-      .set("Authorization", `Bearer ${accessToken}`)
-      .send({ name: "urgent" })
-      .expect(409);
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/tags",
+      ...auth(),
+      payload: { name: "urgent" },
+    });
+
+    expect(res.statusCode).toBe(409);
   });
 });
 
 describe("GET /api/tags", () => {
   it("should return all tags", async () => {
-    const res = await supertest(app.server)
-      .get("/api/tags")
-      .set("Authorization", `Bearer ${accessToken}`)
-      .expect(200);
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/tags",
+      ...auth(),
+    });
 
-    expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body.length).toBeGreaterThanOrEqual(1);
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(Array.isArray(body)).toBe(true);
+    expect(body.length).toBeGreaterThanOrEqual(1);
   });
 });
 
 describe("PATCH /api/tags/:id", () => {
   it("should update a tag", async () => {
-    const tags = await supertest(app.server)
-      .get("/api/tags")
-      .set("Authorization", `Bearer ${accessToken}`);
-    const tagId = tags.body[0].id;
+    const tags = await app.inject({
+      method: "GET",
+      url: "/api/tags",
+      ...auth(),
+    });
 
-    const res = await supertest(app.server)
-      .patch(`/api/tags/${tagId}`)
-      .set("Authorization", `Bearer ${accessToken}`)
-      .send({ name: "critical" })
-      .expect(200);
+    const tagId = tags.json()[0].id;
 
-    expect(res.body.name).toBe("critical");
+    const res = await app.inject({
+      method: "PATCH",
+      url: `/api/tags/${tagId}`,
+      ...auth(),
+      payload: { name: "critical" },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json().name).toBe("critical");
   });
 });
 
 describe("DELETE /api/tags/:id", () => {
   it("should delete a tag", async () => {
-    const res = await supertest(app.server)
-      .post("/api/tags")
-      .set("Authorization", `Bearer ${accessToken}`)
-      .send({ name: "temp", color: "#9CA3AF" })
-      .expect(201);
+    const created = await app.inject({
+      method: "POST",
+      url: "/api/tags",
+      ...auth(),
+      payload: { name: "temp", color: "#9CA3AF" },
+    });
 
-    await supertest(app.server)
-      .delete(`/api/tags/${res.body.id}`)
-      .set("Authorization", `Bearer ${accessToken}`)
-      .expect(204);
+    expect(created.statusCode).toBe(201);
+
+    const del = await app.inject({
+      method: "DELETE",
+      url: `/api/tags/${created.json().id}`,
+      ...auth(),
+    });
+
+    expect(del.statusCode).toBe(204);
   });
 });

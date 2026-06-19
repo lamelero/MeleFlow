@@ -1,9 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import supertest from "supertest";
 import { buildApp } from "../../../app";
 import { prisma } from "../../../config/database";
 import { redis } from "../../../config/redis";
-import type { FastifyInstance } from "fastify";
 import type { AppInstance } from "../../../app";
 
 let app: AppInstance;
@@ -19,11 +17,12 @@ beforeAll(async () => {
   app = await buildApp();
   await app.ready();
 
-  const reg = await supertest(app.server)
-    .post("/api/auth/register")
-    .send(user)
-    .expect(201);
-  accessToken = reg.body.accessToken;
+  const reg = await app.inject({
+    method: "POST",
+    url: "/api/auth/register",
+    payload: user,
+  });
+  accessToken = reg.json().accessToken;
 });
 
 afterAll(async () => {
@@ -33,59 +32,73 @@ afterAll(async () => {
   await app.close();
 });
 
+const auth = () => ({ headers: { authorization: `Bearer ${accessToken}` } });
+
 describe("POST /api/pomodoro/start", () => {
   it("should start a new session", async () => {
-    const res = await supertest(app.server)
-      .post("/api/pomodoro/start")
-      .set("Authorization", `Bearer ${accessToken}`)
-      .send({ duration: 25 })
-      .expect(201);
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/pomodoro/start",
+      ...auth(),
+      payload: { duration: 25 },
+    });
 
-    expect(res.body).toMatchObject({
+    expect(res.statusCode).toBe(201);
+    expect(res.json()).toMatchObject({
       state: "RUNNING",
       duration: 25,
     });
-    expect(res.body.id).toBeDefined();
+    expect(res.json().id).toBeDefined();
   });
 });
 
 describe("GET /api/pomodoro/current", () => {
   it("should return the current session", async () => {
-    const res = await supertest(app.server)
-      .get("/api/pomodoro/current")
-      .set("Authorization", `Bearer ${accessToken}`)
-      .expect(200);
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/pomodoro/current",
+      ...auth(),
+    });
 
-    expect(res.body.state).toBe("RUNNING");
+    expect(res.statusCode).toBe(200);
+    expect(res.json().state).toBe("RUNNING");
   });
 });
 
 describe("POST /api/pomodoro/:id/pause", () => {
   it("should pause the session", async () => {
-    const current = await supertest(app.server)
-      .get("/api/pomodoro/current")
-      .set("Authorization", `Bearer ${accessToken}`);
+    const current = await app.inject({
+      method: "GET",
+      url: "/api/pomodoro/current",
+      ...auth(),
+    });
 
-    const res = await supertest(app.server)
-      .post(`/api/pomodoro/${current.body.id}/pause`)
-      .set("Authorization", `Bearer ${accessToken}`)
-      .expect(200);
+    const res = await app.inject({
+      method: "POST",
+      url: `/api/pomodoro/${current.json().id}/pause`,
+      ...auth(),
+    });
 
-    expect(res.body.state).toBe("PAUSED");
+    expect(res.statusCode).toBe(200);
+    expect(res.json().state).toBe("PAUSED");
   });
 });
 
 describe("POST /api/pomodoro/:id/complete", () => {
   it("should complete the session", async () => {
-    const current = await supertest(app.server)
-      .get("/api/pomodoro/current")
-      .set("Authorization", `Bearer ${accessToken}`);
+    const current = await app.inject({
+      method: "GET",
+      url: "/api/pomodoro/current",
+      ...auth(),
+    });
 
-    const res = await supertest(app.server)
-      .post(`/api/pomodoro/${current.body.id}/complete`)
-      .set("Authorization", `Bearer ${accessToken}`)
-      .expect(200);
+    const res = await app.inject({
+      method: "POST",
+      url: `/api/pomodoro/${current.json().id}/complete`,
+      ...auth(),
+    });
 
-    expect(res.body.state).toBe("COMPLETED");
+    expect(res.statusCode).toBe(200);
+    expect(res.json().state).toBe("COMPLETED");
   });
 });

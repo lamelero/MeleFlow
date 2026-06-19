@@ -1,14 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import supertest from "supertest";
 import { buildApp } from "../../../app";
 import { prisma } from "../../../config/database";
 import { redis } from "../../../config/redis";
-import type { FastifyInstance } from "fastify";
 import type { AppInstance } from "../../../app";
 
 let app: AppInstance;
 let adminToken: string;
-let userToken: string;
 
 const adminUser = {
   email: "admin-test@taskflow.dev",
@@ -27,16 +24,22 @@ beforeAll(async () => {
   await app.ready();
 
   // Register regular user
-  await supertest(app.server).post("/api/auth/register").send(regularUser);
+  await app.inject({
+    method: "POST",
+    url: "/api/auth/register",
+    payload: regularUser,
+  });
 
-  // Register and promote admin
-  const reg = await supertest(app.server)
-    .post("/api/auth/register")
-    .send(adminUser);
+  // Register admin user (first user gets ADMIN role automatically)
+  const reg = await app.inject({
+    method: "POST",
+    url: "/api/auth/register",
+    payload: adminUser,
+  });
+  adminToken = reg.json().accessToken;
 
-  adminToken = reg.body.accessToken;
-
-  // Find admin user and promote
+  // Promote to ADMIN (the first registered user gets ADMIN automatically,
+  // but since regularUser registered first, adminUser is USER. We need to promote)
   const adminDb = await prisma.user.findUnique({
     where: { email: adminUser.email },
   });
@@ -46,10 +49,12 @@ beforeAll(async () => {
   });
 
   // Re-login to get token with ADMIN role
-  const login = await supertest(app.server)
-    .post("/api/auth/login")
-    .send({ email: adminUser.email, password: adminUser.password });
-  adminToken = login.body.accessToken;
+  const login = await app.inject({
+    method: "POST",
+    url: "/api/auth/login",
+    payload: { email: adminUser.email, password: adminUser.password },
+  });
+  adminToken = login.json().accessToken;
 });
 
 afterAll(async () => {
@@ -61,40 +66,52 @@ afterAll(async () => {
   await app.close();
 });
 
+const auth = (token: string) => ({ headers: { authorization: `Bearer ${token}` } });
+
 describe("GET /api/admin/stats", () => {
   it("should return stats for admin", async () => {
-    const res = await supertest(app.server)
-      .get("/api/admin/stats")
-      .set("Authorization", `Bearer ${adminToken}`)
-      .expect(200);
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/admin/stats",
+      ...auth(adminToken),
+    });
 
-    expect(res.body).toHaveProperty("totalUsers");
-    expect(res.body).toHaveProperty("totalTasks");
-    expect(res.body).toHaveProperty("completionRate");
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toHaveProperty("totalUsers");
+    expect(res.json()).toHaveProperty("totalTasks");
+    expect(res.json()).toHaveProperty("completionRate");
   });
 
   it("should reject non-admin users", async () => {
-    const login = await supertest(app.server)
-      .post("/api/auth/login")
-      .send({ email: regularUser.email, password: regularUser.password });
+    const login = await app.inject({
+      method: "POST",
+      url: "/api/auth/login",
+      payload: { email: regularUser.email, password: regularUser.password },
+    });
 
-    await supertest(app.server)
-      .get("/api/admin/stats")
-      .set("Authorization", `Bearer ${login.body.accessToken}`)
-      .expect(403);
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/admin/stats",
+      ...auth(login.json().accessToken),
+    });
+
+    expect(res.statusCode).toBe(403);
   });
 });
 
 describe("GET /api/admin/users", () => {
   it("should return user list for admin", async () => {
-    const res = await supertest(app.server)
-      .get("/api/admin/users")
-      .set("Authorization", `Bearer ${adminToken}`)
-      .expect(200);
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/admin/users",
+      ...auth(adminToken),
+    });
 
-    expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body.length).toBeGreaterThanOrEqual(2);
-    expect(res.body[0]).toHaveProperty("_count");
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(Array.isArray(body)).toBe(true);
+    expect(body.length).toBeGreaterThanOrEqual(2);
+    expect(body[0]).toHaveProperty("_count");
   });
 });
 
@@ -104,20 +121,25 @@ describe("PUT /api/admin/users/:id", () => {
       where: { email: regularUser.email },
     });
 
-    const res = await supertest(app.server)
-      .put(`/api/admin/users/${target!.id}`)
-      .set("Authorization", `Bearer ${adminToken}`)
-      .send({ role: "ADMIN" })
-      .expect(200);
+    const res = await app.inject({
+      method: "PUT",
+      url: `/api/admin/users/${target!.id}`,
+      ...auth(adminToken),
+      payload: { role: "ADMIN" },
+    });
 
-    expect(res.body.role).toBe("ADMIN");
+    expect(res.statusCode).toBe(200);
+    expect(res.json().role).toBe("ADMIN");
 
     // Revert
-    await supertest(app.server)
-      .put(`/api/admin/users/${target!.id}`)
-      .set("Authorization", `Bearer ${adminToken}`)
-      .send({ role: "USER" })
-      .expect(200);
+    const revert = await app.inject({
+      method: "PUT",
+      url: `/api/admin/users/${target!.id}`,
+      ...auth(adminToken),
+      payload: { role: "USER" },
+    });
+
+    expect(revert.statusCode).toBe(200);
   });
 
   it("should prevent self-demotion", async () => {
@@ -125,10 +147,13 @@ describe("PUT /api/admin/users/:id", () => {
       where: { email: adminUser.email },
     });
 
-    await supertest(app.server)
-      .put(`/api/admin/users/${admin!.id}`)
-      .set("Authorization", `Bearer ${adminToken}`)
-      .send({ role: "USER" })
-      .expect(400);
+    const res = await app.inject({
+      method: "PUT",
+      url: `/api/admin/users/${admin!.id}`,
+      ...auth(adminToken),
+      payload: { role: "USER" },
+    });
+
+    expect(res.statusCode).toBe(400);
   });
 });
