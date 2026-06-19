@@ -12,5 +12,9 @@ export const updateListSchema = z.object({
   icon: z.string().max(30).optional().nullable(),
 });
 
+export const listIdParams = z.object({
+  id: z.string(),
+});
+
 export type CreateListInput = z.infer<typeof createListSchema>;
 export type UpdateListInput = z.infer<typeof updateListSchema>;

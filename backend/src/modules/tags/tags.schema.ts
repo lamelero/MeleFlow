@@ -14,5 +14,9 @@ export const addTaskTagSchema = z.object({
   tagId: z.string().min(1),
 });
 
+export const tagIdParams = z.object({
+  id: z.string(),
+});
+
 export type CreateTagInput = z.infer<typeof createTagSchema>;
 export type UpdateTagInput = z.infer<typeof updateTagSchema>;

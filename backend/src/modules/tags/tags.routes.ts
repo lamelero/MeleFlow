@@ -1,33 +1,30 @@
 import type { FastifyInstance } from "fastify";
-import { createTagSchema, updateTagSchema } from "./tags.schema";
+import type { ZodTypeProvider } from "@fastify/type-provider-zod";
+import { createTagSchema, updateTagSchema, tagIdParams } from "./tags.schema";
 import { TagService } from "./tags.service";
 
 const service = new TagService();
 
 export async function tagRoutes(app: FastifyInstance) {
-  app.addHook("onRequest", app.authenticate);
+  const s = app.withTypeProvider<ZodTypeProvider>();
+  s.addHook("onRequest", app.authenticate);
 
-  app.get("/", async (req, reply) => {
-    const tags = await service.findAll(req.user.sub);
-    return reply.send(tags);
+  s.get("/", async (req, reply) => {
+    reply.send(await service.findAll(req.user.sub));
   });
 
-  app.post("/", async (req, reply) => {
-    const input = createTagSchema.parse(req.body);
-    const tag = await service.create(req.user.sub, input);
-    return reply.code(201).send(tag);
+  s.post("/", { schema: { body: createTagSchema } }, async (req, reply) => {
+    reply.code(201).send(await service.create(req.user.sub, req.body));
   });
 
-  app.patch("/:id", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const input = updateTagSchema.parse(req.body);
-    const tag = await service.update(req.user.sub, id, input);
-    return reply.send(tag);
+  s.patch("/:id", {
+    schema: { body: updateTagSchema, params: tagIdParams },
+  }, async (req, reply) => {
+    reply.send(await service.update(req.user.sub, req.params.id, req.body));
   });
 
-  app.delete("/:id", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    await service.delete(req.user.sub, id);
-    return reply.code(204).send();
+  s.delete("/:id", { schema: { params: tagIdParams } }, async (req, reply) => {
+    await service.delete(req.user.sub, req.params.id);
+    reply.code(204).send();
   });
 }
