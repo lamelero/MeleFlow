@@ -34,6 +34,29 @@ export const wipeDataSchema = z.object({
   password: z.string().min(1),
 });
 
+export const userIdParams = z.object({
+  id: z.string(),
+});
+
+export const backupNameParams = z.object({
+  name: z.string(),
+});
+
+export const securityLogsQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(200).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+});
+
+export const backupSettingsBodySchema = z.object({
+  backupInterval: z.enum(["manual", "daily", "weekly", "monthly"]).optional(),
+  backupRetention: z.number().int().min(1).max(100).optional(),
+  backupEncrypted: z.boolean().optional(),
+});
+
+export const logoVariantQuerySchema = z.object({
+  variant: z.enum(["light", "dark"]).optional().default("light"),
+});
+
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 export type UpdateSettingsInput = z.infer<typeof updateSettingsSchema>;
 export type WipeDataInput = z.infer<typeof wipeDataSchema>;

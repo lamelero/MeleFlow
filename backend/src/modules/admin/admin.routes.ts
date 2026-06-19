@@ -1,5 +1,15 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import { updateUserSchema, updateSettingsSchema, wipeDataSchema } from "./admin.schema";
+import type { ZodTypeProvider } from "@fastify/type-provider-zod";
+import {
+  updateUserSchema,
+  updateSettingsSchema,
+  wipeDataSchema,
+  userIdParams,
+  backupNameParams,
+  securityLogsQuerySchema,
+  backupSettingsBodySchema,
+  logoVariantQuerySchema,
+} from "./admin.schema";
 import { AdminService } from "./admin.service";
 import { BackupService } from "./backup.service";
 
@@ -10,64 +20,54 @@ async function isAdmin(req: FastifyRequest, reply: FastifyReply) {
   try {
     await req.jwtVerify();
     if (req.user.role !== "ADMIN") {
-      return reply.code(403).send({ error: "Forbidden" });
+      reply.code(403).send({ error: "Forbidden" });
+      return;
     }
   } catch {
-    return reply.code(401).send({ error: "Unauthorized" });
+    reply.code(401).send({ error: "Unauthorized" });
   }
 }
 
 export async function adminRoutes(app: FastifyInstance) {
-  app.addHook("onRequest", isAdmin);
+  const s = app.withTypeProvider<ZodTypeProvider>();
+  s.addHook("onRequest", isAdmin);
 
-  app.get("/users", async (_req, reply) => {
-    const users = await service.getUsers();
-    return reply.send(users);
+  s.get("/users", async (_req, reply) => {
+    reply.send(await service.getUsers());
   });
 
-  app.put("/users/:id", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const input = updateUserSchema.parse(req.body);
-    const result = await service.updateUser(req.user.sub, id, input);
-    return reply.send(result);
+  s.put("/users/:id", { schema: { body: updateUserSchema, params: userIdParams } }, async (req, reply) => {
+    reply.send(await service.updateUser(req.user.sub, req.params.id, req.body));
   });
 
-  app.delete("/users/:id", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    await service.deleteUser(req.user.sub, id);
-    return reply.send({ deleted: true });
+  s.delete("/users/:id", { schema: { params: userIdParams } }, async (req, reply) => {
+    await service.deleteUser(req.user.sub, req.params.id);
+    reply.send({ deleted: true });
   });
 
-  app.get("/stats", async (_req, reply) => {
-    const stats = await service.getStats();
-    return reply.send(stats);
+  s.get("/stats", async (_req, reply) => {
+    reply.send(await service.getStats());
   });
 
-  app.get("/settings", async (_req, reply) => {
-    const settings = await service.getSettings();
-    return reply.send(settings);
+  s.get("/settings", async (_req, reply) => {
+    reply.send(await service.getSettings());
   });
 
-  app.patch("/settings", async (req, reply) => {
-    const input = updateSettingsSchema.parse(req.body);
-    const settings = await service.updateSettings(input);
-    return reply.send(settings);
+  s.patch("/settings", { schema: { body: updateSettingsSchema } }, async (req, reply) => {
+    reply.send(await service.updateSettings(req.body));
   });
 
-  app.get("/security-logs", async (req, reply) => {
-    const query = req.query as { limit?: string; offset?: string };
-    const limit = Math.min(Number(query.limit) || 50, 200);
-    const offset = Number(query.offset) || 0;
-    const logs = await service.getSecurityLogs(limit, offset);
-    return reply.send(logs);
+  s.get("/security-logs", { schema: { querystring: securityLogsQuerySchema } }, async (req, reply) => {
+    reply.send(await service.getSecurityLogs(req.query.limit, req.query.offset));
   });
 
-  app.post("/test-email", async (req, reply) => {
+  s.post("/test-email", async (req, reply) => {
     const { prisma } = await import("../../config/database");
     const body = req.body as { to?: string } | undefined;
     const user = await prisma.user.findUnique({ where: { id: req.user.sub } });
     if (!user) {
-      return reply.code(404).send({ error: "User not found" });
+      reply.code(404).send({ error: "User not found" });
+      return;
     }
     const { sendEmail } = await import("../../lib/email-service");
     const ok = await sendEmail(
@@ -76,23 +76,28 @@ export async function adminRoutes(app: FastifyInstance) {
       "<p>If you're reading this, your SMTP configuration works!</p>",
     );
     if (ok) {
-      return reply.send({ ok: true, message: "Test email sent" });
+      reply.send({ ok: true, message: "Test email sent" });
+      return;
     }
-    return reply.code(500).send({ error: "Failed to send test email. Check your SMTP settings." });
+    reply.code(500).send({ error: "Failed to send test email. Check your SMTP settings." });
   });
 
-  app.post("/logo", async (req, reply) => {
+  s.post("/logo", async (req, reply) => {
     const file = await req.file();
     if (!file) {
-      return reply.code(400).send({ error: "No file uploaded" });
+      reply.code(400).send({ error: "No file uploaded" });
+      return;
     }
 
     const allowedMimes = ["image/png", "image/svg+xml"];
     if (!allowedMimes.includes(file.mimetype)) {
-      return reply.code(400).send({ error: "Only PNG and SVG files are allowed" });
+      reply.code(400).send({ error: "Only PNG and SVG files are allowed" });
+      return;
     }
 
-    const variant = (req.query as { variant?: string }).variant === "dark" ? "dark" : "light";
+    const variant = req.query && typeof req.query === "object" && "variant" in req.query
+      ? (req.query as { variant?: string }).variant === "dark" ? "dark" : "light"
+      : "light";
     const ext = file.mimetype === "image/png" ? ".png" : ".svg";
     const maxSize = 2 * 1024 * 1024;
     const chunks: Buffer[] = [];
@@ -101,63 +106,57 @@ export async function adminRoutes(app: FastifyInstance) {
     for await (const chunk of file.file) {
       totalSize += chunk.length;
       if (totalSize > maxSize) {
-        return reply.code(400).send({ error: "File size exceeds 2MB limit" });
+        reply.code(400).send({ error: "File size exceeds 2MB limit" });
+        return;
       }
       chunks.push(chunk);
     }
 
     const data = Buffer.concat(chunks);
-    const result = await service.uploadLogo(data, ext, variant);
-    return reply.send(result);
+    reply.send(await service.uploadLogo(data, ext, variant));
   });
 
-  app.delete("/logo", async (req, reply) => {
-    const variant = (req.query as { variant?: string }).variant === "dark" ? "dark" : "light";
-    const result = await service.removeLogo(variant);
-    return reply.send(result);
+  s.delete("/logo", { schema: { querystring: logoVariantQuerySchema } }, async (req, reply) => {
+    reply.send(await service.removeLogo(req.query.variant));
   });
 
   // ── Backup routes ─────────────────────────────
 
-  app.post("/backup", async (req, reply) => {
+  s.post("/backup", async (req, reply) => {
     const body = req.body as { encrypted?: boolean } | undefined;
-    const result = await backupService.createBackup(body?.encrypted);
-    return reply.send(result);
+    reply.send(await backupService.createBackup(body?.encrypted));
   });
 
-  app.get("/backups", async (_req, reply) => {
-    const backups = await backupService.listBackups();
-    return reply.send(backups);
+  s.get("/backups", async (_req, reply) => {
+    reply.send(await backupService.listBackups());
   });
 
-  app.get("/backups/:name/download", async (req, reply) => {
-    const { name } = req.params as { name: string };
-    const { stream } = await backupService.downloadBackup(name);
-    reply.header("Content-Disposition", `attachment; filename="${name}"`);
+  s.get("/backups/:name/download", { schema: { params: backupNameParams } }, async (req, reply) => {
+    const { stream } = await backupService.downloadBackup(req.params.name);
+    reply.header("Content-Disposition", `attachment; filename="${req.params.name}"`);
     reply.type("application/gzip");
-    return reply.send(stream);
+    reply.send(stream);
   });
 
-  app.delete("/backups/:name", async (req, reply) => {
-    const { name } = req.params as { name: string };
-    await backupService.deleteBackup(name);
-    return reply.send({ deleted: true });
+  s.delete("/backups/:name", { schema: { params: backupNameParams } }, async (req, reply) => {
+    await backupService.deleteBackup(req.params.name);
+    reply.send({ deleted: true });
   });
 
-  app.post("/restore/:name", async (req, reply) => {
-    const { name } = req.params as { name: string };
-    const { warnings } = await backupService.restoreFromDisk(name);
-    return reply.send({
+  s.post("/restore/:name", { schema: { params: backupNameParams } }, async (req, reply) => {
+    const { warnings } = await backupService.restoreFromDisk(req.params.name);
+    reply.send({
       ok: true,
       message: "Restore complete. Please log in again.",
       warnings: warnings.length > 0 ? warnings : undefined,
     });
   });
 
-  app.post("/restore", async (req, reply) => {
+  s.post("/restore", async (req, reply) => {
     const file = await req.file();
     if (!file) {
-      return reply.code(400).send({ error: "No backup file uploaded" });
+      reply.code(400).send({ error: "No backup file uploaded" });
+      return;
     }
     const chunks: Buffer[] = [];
     for await (const chunk of file.file) {
@@ -165,27 +164,23 @@ export async function adminRoutes(app: FastifyInstance) {
     }
     const buffer = Buffer.concat(chunks);
     const { warnings } = await backupService.restoreFromUpload({ buffer, filename: file.filename });
-    return reply.send({
+    reply.send({
       ok: true,
       message: "Restore complete. Please log in again.",
       warnings: warnings.length > 0 ? warnings : undefined,
     });
   });
 
-  app.get("/backup-settings", async (_req, reply) => {
-    const settings = await backupService.getSettings();
-    return reply.send(settings);
+  s.get("/backup-settings", async (_req, reply) => {
+    reply.send(await backupService.getSettings());
   });
 
-  app.patch("/backup-settings", async (req, reply) => {
-    const body = req.body as { backupInterval?: string; backupRetention?: number; backupEncrypted?: boolean };
-    const settings = await backupService.updateSettings(body);
-    return reply.send(settings);
+  s.patch("/backup-settings", { schema: { body: backupSettingsBodySchema } }, async (req, reply) => {
+    reply.send(await backupService.updateSettings(req.body));
   });
 
-  app.post("/wipe", async (req, reply) => {
-    const { password } = wipeDataSchema.parse(req.body);
-    await service.wipeAllData(req.user.sub, password);
-    return reply.send({ ok: true, message: "All data wiped. App is now fresh." });
+  s.post("/wipe", { schema: { body: wipeDataSchema } }, async (req, reply) => {
+    await service.wipeAllData(req.user.sub, req.body.password);
+    reply.send({ ok: true, message: "All data wiped. App is now fresh." });
   });
 }

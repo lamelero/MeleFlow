@@ -9,20 +9,20 @@ export async function settingsRoutes(app: FastifyInstance) {
     });
     const map: Record<string, string> = {};
     for (const r of rows) map[r.key] = r.value;
-    return reply.send({
+    reply.send({
       logoUrl: map.logoUrl || null,
       logoUrlDark: map.logoUrlDark || null,
     });
   });
 
-  app.get("/settings/registration-status", async () => {
+  app.get("/settings/registration-status", async (_req, reply) => {
     const setting = await prisma.systemSetting.findUnique({
       where: { key: "allowRegistration" },
     });
-    return {
+    reply.send({
       allowRegistration: setting
         ? setting.value === "true"
         : env.ALLOW_REGISTRATION,
-    };
+    });
   });
 }

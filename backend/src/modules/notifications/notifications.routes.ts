@@ -1,35 +1,45 @@
-import { FastifyInstance } from "fastify";
+import type { FastifyInstance } from "fastify";
+import type { ZodTypeProvider } from "@fastify/type-provider-zod";
+import { z } from "zod";
 import { NotificationService } from "./notifications.service";
 import { sendPushToUser } from "../../lib/push-service";
 
+const registerTokenSchema = z.object({
+  token: z.string().min(1),
+  platform: z.string().optional().default("android"),
+});
+
+const unregisterTokenSchema = z.object({
+  token: z.string().min(1),
+});
+
 export async function notificationRoutes(app: FastifyInstance) {
+  const s = app.withTypeProvider<ZodTypeProvider>();
+  s.addHook("onRequest", app.authenticate);
+
   const service = new NotificationService();
 
-  app.get("/notifications/tokens", { onRequest: [app.authenticate] }, async (req, reply) => {
+  s.get("/notifications/tokens", async (req, reply) => {
     const tokens = await service.getTokens(req.user.sub);
-    return reply.send({ tokens: tokens.map((t) => ({ platform: t.platform, createdAt: t.createdAt })) });
+    reply.send({ tokens: tokens.map((t) => ({ platform: t.platform, createdAt: t.createdAt })) });
   });
 
-  app.post("/notifications/register-token", { onRequest: [app.authenticate] }, async (req, reply) => {
-    const { token, platform } = req.body as { token: string; platform?: string };
-    if (!token) return reply.code(400).send({ error: "Token is required" });
-    await service.registerToken(req.user.sub, token, platform || "android");
-    return reply.send({ ok: true });
+  s.post("/notifications/register-token", { schema: { body: registerTokenSchema } }, async (req, reply) => {
+    await service.registerToken(req.user.sub, req.body.token, req.body.platform);
+    reply.send({ ok: true });
   });
 
-  app.post("/notifications/unregister-token", { onRequest: [app.authenticate] }, async (req, reply) => {
-    const { token } = req.body as { token: string };
-    if (!token) return reply.code(400).send({ error: "Token is required" });
-    await service.unregisterToken(req.user.sub, token);
-    return reply.send({ ok: true });
+  s.post("/notifications/unregister-token", { schema: { body: unregisterTokenSchema } }, async (req, reply) => {
+    await service.unregisterToken(req.user.sub, req.body.token);
+    reply.send({ ok: true });
   });
 
-  app.post("/notifications/test-push", { onRequest: [app.authenticate] }, async (req, reply) => {
+  s.post("/notifications/test-push", async (req, reply) => {
     try {
       await sendPushToUser(req.user.sub, "Test push", "If you see this, push notifications work!");
-      return reply.send({ ok: true, message: "Push sent" });
+      reply.send({ ok: true, message: "Push sent" });
     } catch (err: unknown) {
-      return reply.code(500).send({ ok: false, error: (err as Error).message || "Push failed" });
+      reply.code(500).send({ ok: false, error: (err as Error).message || "Push failed" });
     }
   });
 }

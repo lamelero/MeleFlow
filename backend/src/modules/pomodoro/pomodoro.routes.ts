@@ -1,60 +1,49 @@
 import type { FastifyInstance } from "fastify";
+import type { ZodTypeProvider } from "@fastify/type-provider-zod";
+import { z } from "zod";
 import { startSessionSchema, updateSettingsSchema } from "./pomodoro.schema";
 import { PomodoroService } from "./pomodoro.service";
 
+const pomodoroIdParams = z.object({ id: z.string() });
 const service = new PomodoroService();
 
 export async function pomodoroRoutes(app: FastifyInstance) {
-  app.addHook("onRequest", app.authenticate);
+  const s = app.withTypeProvider<ZodTypeProvider>();
+  s.addHook("onRequest", app.authenticate);
 
-  app.get("/current", async (req, reply) => {
-    const session = await service.getCurrent(req.user.sub);
-    return reply.send(session ?? null);
+  s.get("/current", async (req, reply) => {
+    reply.send(await service.getCurrent(req.user.sub) ?? null);
   });
 
-  app.post("/start", async (req, reply) => {
-    const input = startSessionSchema.parse(req.body);
-    const session = await service.start(req.user.sub, input);
-    return reply.code(201).send(session);
+  s.post("/start", { schema: { body: startSessionSchema } }, async (req, reply) => {
+    reply.code(201).send(await service.start(req.user.sub, req.body));
   });
 
-  app.post("/:id/pause", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const session = await service.pause(req.user.sub, id);
-    return reply.send(session);
+  s.post("/:id/pause", { schema: { params: pomodoroIdParams } }, async (req, reply) => {
+    reply.send(await service.pause(req.user.sub, req.params.id));
   });
 
-  app.post("/:id/resume", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const session = await service.resume(req.user.sub, id);
-    return reply.send(session);
+  s.post("/:id/resume", { schema: { params: pomodoroIdParams } }, async (req, reply) => {
+    reply.send(await service.resume(req.user.sub, req.params.id));
   });
 
-  app.post("/:id/complete", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const session = await service.complete(req.user.sub, id);
-    return reply.send(session);
+  s.post("/:id/complete", { schema: { params: pomodoroIdParams } }, async (req, reply) => {
+    reply.send(await service.complete(req.user.sub, req.params.id));
   });
 
-  app.post("/:id/cancel", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const session = await service.cancel(req.user.sub, id);
-    return reply.send(session);
+  s.post("/:id/cancel", { schema: { params: pomodoroIdParams } }, async (req, reply) => {
+    reply.send(await service.cancel(req.user.sub, req.params.id));
   });
 
-  app.get("/settings", async (req, reply) => {
-    const settings = await service.getSettings(req.user.sub);
-    return reply.send(settings);
+  s.get("/settings", async (req, reply) => {
+    reply.send(await service.getSettings(req.user.sub));
   });
 
-  app.put("/settings", async (req, reply) => {
-    const input = updateSettingsSchema.parse(req.body);
-    const settings = await service.updateSettings(req.user.sub, input);
-    return reply.send(settings);
+  s.put("/settings", { schema: { body: updateSettingsSchema } }, async (req, reply) => {
+    reply.send(await service.updateSettings(req.user.sub, req.body));
   });
 
-  app.get("/stats", async (req, reply) => {
-    const stats = await service.getStats(req.user.sub);
-    return reply.send(stats);
+  s.get("/stats", async (req, reply) => {
+    reply.send(await service.getStats(req.user.sub));
   });
 }

@@ -1,93 +1,52 @@
 import type { FastifyInstance } from "fastify";
+import type { ZodTypeProvider } from "@fastify/type-provider-zod";
 import { IcsCalendarService } from "./ics-calendars.service";
 import {
   createIcsCalendarSchema,
   updateIcsCalendarSchema,
   eventsQuerySchema,
+  icsCalendarIdParams,
+  searchQuerySchema,
 } from "./ics-calendars.schema";
 
 const service = new IcsCalendarService();
 
 export async function icsCalendarRoutes(app: FastifyInstance) {
-  // List user's ICS calendars
-  app.get(
-    "/",
-    { preHandler: [app.authenticate] },
-    async (req, reply) => {
-      const calendars = await service.findAll(req.user!.sub);
-      return reply.send(calendars);
-    },
-  );
+  const s = app.withTypeProvider<ZodTypeProvider>();
+  s.addHook("onRequest", app.authenticate);
 
-  // Add new ICS calendar feed
-  app.post(
-    "/",
-    { preHandler: [app.authenticate] },
-    async (req, reply) => {
-      const input = createIcsCalendarSchema.parse(req.body);
-      const calendar = await service.create(req.user!.sub, input);
-      return reply.code(201).send(calendar);
-    },
-  );
+  s.get("/", async (req, reply) => {
+    reply.send(await service.findAll(req.user.sub));
+  });
 
-  // Delete ICS calendar feed
-  app.delete(
-    "/:id",
-    { preHandler: [app.authenticate] },
-    async (req, reply) => {
-      const { id } = req.params as { id: string };
-      await service.remove(req.user!.sub, id);
-      return reply.code(204).send();
-    },
-  );
+  s.post("/", { schema: { body: createIcsCalendarSchema } }, async (req, reply) => {
+    reply.code(201).send(await service.create(req.user.sub, req.body));
+  });
 
-  // Update ICS calendar feed (notification prefs, name, color)
-  app.patch(
-    "/:id",
-    { preHandler: [app.authenticate] },
-    async (req, reply) => {
-      const { id } = req.params as { id: string };
-      const input = updateIcsCalendarSchema.parse(req.body);
-      const calendar = await service.update(req.user!.sub, id, input);
-      return reply.send(calendar);
-    },
-  );
+  s.delete("/:id", { schema: { params: icsCalendarIdParams } }, async (req, reply) => {
+    await service.remove(req.user.sub, req.params.id);
+    reply.code(204).send();
+  });
 
-  // Manually sync a calendar
-  app.post(
-    "/:id/sync",
-    { preHandler: [app.authenticate] },
-    async (req, reply) => {
-      const { id } = req.params as { id: string };
-      const result = await service.sync(req.user!.sub, id);
-      return reply.send(result);
-    },
-  );
+  s.patch("/:id", {
+    schema: { body: updateIcsCalendarSchema, params: icsCalendarIdParams },
+  }, async (req, reply) => {
+    reply.send(await service.update(req.user.sub, req.params.id, req.body));
+  });
 
-  // Get events for a date range
-  app.get(
-    "/events",
-    { preHandler: [app.authenticate] },
-    async (req, reply) => {
-      const query = eventsQuerySchema.parse(req.query);
-      const events = await service.getEvents(
-        req.user!.sub,
-        query.from,
-        query.to,
-      );
-      return reply.send(events);
-    },
-  );
+  s.post("/:id/sync", { schema: { params: icsCalendarIdParams } }, async (req, reply) => {
+    reply.send(await service.sync(req.user.sub, req.params.id));
+  });
 
-  // Search events across all calendars
-  app.get(
-    "/search",
-    { preHandler: [app.authenticate] },
-    async (req, reply) => {
-      const { q } = req.query as { q: string };
-      if (!q || q.length < 2) return reply.send([]);
-      const results = await service.searchEvents(req.user!.sub, q);
-      return reply.send(results);
-    },
-  );
+  s.get("/events", { schema: { querystring: eventsQuerySchema } }, async (req, reply) => {
+    reply.send(await service.getEvents(req.user.sub, req.query.from, req.query.to));
+  });
+
+  s.get("/search", { schema: { querystring: searchQuerySchema } }, async (req, reply) => {
+    if (!req.query.q || req.query.q.length < 2) {
+      reply.send([]);
+      return;
+    }
+    reply.send(await service.searchEvents(req.user.sub, req.query.q));
+  });
 }
