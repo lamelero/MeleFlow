@@ -3,7 +3,7 @@ import fs from "fs/promises";
 import { randomUUID } from "crypto";
 import { prisma } from "../../config/database";
 import { env } from "../../config/env";
-import { AppError } from "../../lib/app-error";
+import createError from "http-errors";
 
 const UPLOAD_DIR = path.resolve("uploads");
 
@@ -41,12 +41,12 @@ export class AttachmentService {
         ],
       },
     });
-    if (!task) throw new AppError(404, "Task not found");
+    if (!task) throw createError.NotFound("Task not found");
 
     const maxSize = await this.getMaxUploadSize();
     const sizeMB = file.buffer.length / (1024 * 1024);
     if (sizeMB > maxSize) {
-      throw new AppError(413, `File exceeds the ${maxSize}MB upload limit`);
+      throw createError.PayloadTooLarge( `File exceeds the ${maxSize}MB upload limit`);
     }
 
     // Check storage quota
@@ -54,13 +54,13 @@ export class AttachmentService {
       where: { id: userId },
       select: { storageUsed: true, storageQuota: true },
     });
-    if (!user) throw new AppError(404, "User not found");
+    if (!user) throw createError.NotFound("User not found");
 
     const globalMax = await this.getMaxStoragePerUser();
     const maxStorage = Number(user.storageQuota) || globalMax;
     const currentUsed = Number(user.storageUsed);
     if (currentUsed + file.buffer.length > maxStorage) {
-      throw new AppError(413, "Storage quota exceeded. Free up space or contact your admin.");
+      throw createError.PayloadTooLarge( "Storage quota exceeded. Free up space or contact your admin.");
     }
 
     await ensureUploadDir();
@@ -99,7 +99,7 @@ export class AttachmentService {
         ],
       },
     });
-    if (!task) throw new AppError(404, "Task not found");
+    if (!task) throw createError.NotFound("Task not found");
 
     return prisma.attachment.findMany({
       where: { taskId },
@@ -117,12 +117,12 @@ export class AttachmentService {
         ],
       },
     });
-    if (!task) throw new AppError(404, "Task not found");
+    if (!task) throw createError.NotFound("Task not found");
 
     const attachment = await prisma.attachment.findFirst({
       where: { id: attachmentId, taskId },
     });
-    if (!attachment) throw new AppError(404, "Attachment not found");
+    if (!attachment) throw createError.NotFound("Attachment not found");
 
     const filePath = path.resolve(attachment.fileUrl.replace(/^\//, ""));
     try {

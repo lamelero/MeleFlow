@@ -1,10 +1,10 @@
 import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import createError from "http-errors";
 import { prisma } from "../../config/database";
 import { Role } from "@prisma/client";
 import { env } from "../../config/env";
-import { AppError } from "../../lib/app-error";
 import { checkRateLimit, recordFailedAttempt, clearFailedAttempts } from "../../lib/rate-limit";
 import { logSecurityEvent } from "../../lib/security-log";
 import { sendEmail, buildOTPEmail, isEmailConfigured } from "../../lib/email-service";
@@ -29,7 +29,7 @@ export class AuthService {
       ? setting.value === "true"
       : env.ALLOW_REGISTRATION;
     if (!allowed) {
-      throw new AppError(403, "Registration is disabled. Contact an administrator.");
+      throw createError.Forbidden("Registration is disabled. Contact an administrator.");
     }
 
     const existing = await prisma.user.findFirst({
@@ -38,7 +38,7 @@ export class AuthService {
 
     if (existing) {
       const field = existing.email === input.email ? "email" : "username";
-      throw new AppError(409, `${field} already taken`);
+      throw createError.Conflict(`${field} already taken`);
     }
 
     const passwordHash = await bcrypt.hash(input.password, 12);
@@ -68,8 +68,7 @@ export class AuthService {
         ip,
         userAgent,
       });
-      throw new AppError(
-        429,
+      throw createError.TooManyRequests(
         `Too many login attempts. Try again in ${rateCheck.lockoutMinutes} minutes.`,
       );
     }
@@ -86,7 +85,7 @@ export class AuthService {
         ip,
         userAgent,
       });
-      throw new AppError(401, "Invalid credentials");
+      throw createError.Unauthorized("Invalid credentials");
     }
 
     const valid = await bcrypt.compare(input.password, user.passwordHash);
@@ -98,7 +97,7 @@ export class AuthService {
         ip,
         userAgent,
       });
-      throw new AppError(401, "Invalid credentials");
+      throw createError.Unauthorized("Invalid credentials");
     }
 
     // Clear failed attempts on successful password verification
@@ -181,19 +180,19 @@ export class AuthService {
     try {
       payload = jwt.verify(input.twoFactorToken, env.JWT_SECRET) as { sub: string; type: string };
     } catch {
-      throw new AppError(401, "Invalid or expired 2FA token. Please login again.");
+      throw createError.Unauthorized("Invalid or expired 2FA token. Please login again.");
     }
 
     const user = await prisma.user.findUnique({ where: { id: payload.sub } });
     if (!user || !user.isActive) {
-      throw new AppError(400, "User not found or deactivated");
+      throw createError.BadRequest("User not found or deactivated");
     }
 
     let success = false;
 
     if (payload.type === "2fa") {
       if (!user.isTwoFactorEnabled || !user.twoFactorSecret) {
-        throw new AppError(400, "2FA is not enabled for this account");
+        throw createError.BadRequest("2FA is not enabled for this account");
       }
 
       // Try TOTP code first
@@ -280,7 +279,7 @@ export class AuthService {
         ip,
         userAgent,
       });
-      throw new AppError(401, "Invalid code. Please try again.");
+      throw createError.Unauthorized("Invalid code. Please try again.");
     }
 
     const tokens = await this.buildTokens(user.id, user.role, false);
@@ -333,18 +332,18 @@ export class AuthService {
     try {
       payload = jwt.verify(twoFactorToken, env.JWT_SECRET) as { sub: string };
     } catch {
-      throw new AppError(401, "Invalid or expired token. Please login again.");
+      throw createError.Unauthorized("Invalid or expired token. Please login again.");
     }
 
     const user = await prisma.user.findUnique({ where: { id: payload.sub } });
     if (!user || !user.isActive) {
-      throw new AppError(400, "User not found or deactivated");
+      throw createError.BadRequest("User not found or deactivated");
     }
 
     // Check email is configured
     const emailConfigured = await isEmailConfigured();
     if (!emailConfigured) {
-      throw new AppError(500, "Email is not configured. Set up SMTP in the admin panel first.");
+      throw createError.InternalServerError("Email is not configured. Set up SMTP in the admin panel first.");
     }
 
     // Rate limit: max 3 OTPs per hour
@@ -356,7 +355,7 @@ export class AuthService {
       },
     });
     if (recentCount >= 3) {
-      throw new AppError(429, "Too many OTP requests. Try again in an hour.");
+      throw createError.TooManyRequests("Too many OTP requests. Try again in an hour.");
     }
 
     await this.generateAndSendOTP(user);
@@ -391,7 +390,7 @@ export class AuthService {
 
     const sent = await sendEmail(to, subject, html);
     if (!sent) {
-      throw new AppError(500, "Failed to send verification email. Check SMTP configuration.");
+      throw createError.InternalServerError("Failed to send verification email. Check SMTP configuration.");
     }
   }
 
@@ -405,13 +404,13 @@ export class AuthService {
       if (stored) {
         await prisma.refreshToken.delete({ where: { id: stored.id } });
       }
-      throw new AppError(401, "Invalid or expired refresh token");
+      throw createError.Unauthorized("Invalid or expired refresh token");
     }
 
     const user = await prisma.user.findUnique({ where: { id: stored.userId } });
     if (!user || !user.isActive) {
       await prisma.refreshToken.delete({ where: { id: stored.id } });
-      throw new AppError(401, "User not found or deactivated");
+      throw createError.Unauthorized("User not found or deactivated");
     }
 
     // Rotate: delete old token
@@ -447,7 +446,7 @@ export class AuthService {
         },
       });
 
-      if (!user) throw new AppError(404, "User not found");
+      if (!user) throw createError.NotFound("User not found");
 
       // Parse notificationPrefs for frontend
       return {
@@ -455,7 +454,7 @@ export class AuthService {
         notificationPrefs: user.notificationPrefs ? JSON.parse(user.notificationPrefs) : { email: true, push: true, browser: true },
       };
     } catch (err) {
-      if (err instanceof AppError) throw err;
+      if (err instanceof createError.HttpError) throw err;
 
       // Fallback: columns may not exist yet (pre-migration)
       const user = await prisma.user.findUnique({
@@ -471,7 +470,7 @@ export class AuthService {
         },
       });
 
-      if (!user) throw new AppError(404, "User not found");
+      if (!user) throw createError.NotFound("User not found");
       return {
         ...user,
         notificationPrefs: user.notificationPrefs ? JSON.parse(user.notificationPrefs) : { email: true, push: true, browser: true },
@@ -524,7 +523,7 @@ export class AuthService {
       where: { id: userId },
       select: { email: true },
     });
-    if (!user) throw new AppError(404, "User not found");
+    if (!user) throw createError.NotFound("User not found");
 
     const uri = generateTOTPUri(secret, user.email);
 
@@ -549,12 +548,12 @@ export class AuthService {
   async enable2FA(userId: string, code: string) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user || !user.twoFactorSecret) {
-      throw new AppError(400, "Please setup 2FA first");
+      throw createError.BadRequest("Please setup 2FA first");
     }
 
     const valid = await verifyTOTP(code, user.twoFactorSecret);
     if (!valid) {
-      throw new AppError(400, "Invalid verification code");
+      throw createError.BadRequest("Invalid verification code");
     }
 
     await prisma.user.update({
@@ -572,11 +571,11 @@ export class AuthService {
 
   async disable2FA(userId: string, password: string) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new AppError(404, "User not found");
+    if (!user) throw createError.NotFound("User not found");
 
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {
-      throw new AppError(400, "Invalid password");
+      throw createError.BadRequest("Invalid password");
     }
 
     await prisma.user.update({
@@ -645,11 +644,11 @@ export class AuthService {
 
   async getRecoveryCodes(userId: string, password: string) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new AppError(404, "User not found");
+    if (!user) throw createError.NotFound("User not found");
 
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {
-      throw new AppError(400, "Invalid password");
+      throw createError.BadRequest("Invalid password");
     }
 
     const { plainCodes, hashedCodes } = await generateRecoveryCodes();

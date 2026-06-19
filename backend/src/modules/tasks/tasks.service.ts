@@ -1,5 +1,5 @@
 import { prisma } from "../../config/database";
-import { AppError } from "../../lib/app-error";
+import createError from "http-errors";
 import { sendEmail } from "../../lib/email-service";
 import { t } from "../../lib/email-i18n";
 import type { CreateTaskInput, UpdateTaskInput, TaskQuery, AddCollaboratorInput } from "./tasks.schema";
@@ -71,7 +71,7 @@ export class TaskService {
       },
       include: taskInclude,
     });
-    if (!task) throw new AppError(404, "Task not found");
+    if (!task) throw createError.NotFound("Task not found");
     return { isOwner: task.userId === userId, task };
   }
 
@@ -141,7 +141,7 @@ export class TaskService {
         where: { id: input.parentTaskId, userId },
       });
       if (!parent) {
-        throw new AppError(404, "Parent task not found");
+        throw createError.NotFound("Parent task not found");
       }
     }
 
@@ -150,7 +150,7 @@ export class TaskService {
         where: { id: input.listId, userId },
       });
       if (!list) {
-        throw new AppError(404, "List not found");
+        throw createError.NotFound("List not found");
       }
     }
 
@@ -189,13 +189,13 @@ export class TaskService {
 
     if (input.parentTaskId) {
       if (input.parentTaskId === taskId) {
-        throw new AppError(400, "A task cannot be its own parent");
+        throw createError.BadRequest("A task cannot be its own parent");
       }
       const parent = await prisma.task.findFirst({
         where: { id: input.parentTaskId, userId },
       });
       if (!parent) {
-        throw new AppError(404, "Parent task not found");
+        throw createError.NotFound("Parent task not found");
       }
     }
 
@@ -204,7 +204,7 @@ export class TaskService {
         where: { id: input.listId, userId },
       });
       if (!list) {
-        throw new AppError(404, "List not found");
+        throw createError.NotFound("List not found");
       }
     }
 
@@ -278,7 +278,7 @@ export class TaskService {
 
   async delete(userId: string, taskId: string) {
     const { isOwner } = await this.canAccessTask(userId, taskId);
-    if (!isOwner) throw new AppError(403, "Only the task owner can delete this task");
+    if (!isOwner) throw createError.Forbidden("Only the task owner can delete this task");
 
     await prisma.$transaction(async (tx) => {
       await tx.task.deleteMany({ where: { parentTaskId: taskId } });
@@ -288,18 +288,18 @@ export class TaskService {
 
   async addCollaborator(userId: string, taskId: string, input: AddCollaboratorInput) {
     const { isOwner, task } = await this.canAccessTask(userId, taskId);
-    if (!isOwner) throw new AppError(403, "Only the task owner can add collaborators");
+    if (!isOwner) throw createError.Forbidden("Only the task owner can add collaborators");
 
     const collaborator = await prisma.user.findUnique({
       where: { username: input.username },
     });
-    if (!collaborator) throw new AppError(404, "User not found");
-    if (collaborator.id === userId) throw new AppError(400, "Cannot add yourself as collaborator");
+    if (!collaborator) throw createError.NotFound("User not found");
+    if (collaborator.id === userId) throw createError.BadRequest("Cannot add yourself as collaborator");
 
     const existingCollab = await prisma.taskCollaborator.findUnique({
       where: { taskId_userId: { taskId, userId: collaborator.id } },
     });
-    if (existingCollab) throw new AppError(400, "User is already a collaborator");
+    if (existingCollab) throw createError.BadRequest("User is already a collaborator");
 
     await prisma.taskCollaborator.create({
       data: { taskId, userId: collaborator.id },
@@ -327,12 +327,12 @@ export class TaskService {
 
   async removeCollaborator(userId: string, taskId: string, collaboratorUserId: string) {
     const { isOwner, task } = await this.canAccessTask(userId, taskId);
-    if (!isOwner) throw new AppError(403, "Only the task owner can remove collaborators");
+    if (!isOwner) throw createError.Forbidden("Only the task owner can remove collaborators");
 
     const existing = await prisma.taskCollaborator.findUnique({
       where: { taskId_userId: { taskId, userId: collaboratorUserId } },
     });
-    if (!existing) throw new AppError(404, "Collaborator not found");
+    if (!existing) throw createError.NotFound("Collaborator not found");
 
     await prisma.taskCollaborator.delete({
       where: { taskId_userId: { taskId, userId: collaboratorUserId } },
@@ -358,7 +358,7 @@ export class TaskService {
     const tag = await prisma.tag.findFirst({
       where: { id: tagId, userId },
     });
-    if (!tag) throw new AppError(404, "Tag not found");
+    if (!tag) throw createError.NotFound("Tag not found");
 
     await prisma.taskTag.upsert({
       where: { taskId_tagId: { taskId, tagId } },
