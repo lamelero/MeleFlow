@@ -74,6 +74,7 @@ services:
       - ./backend/package-lock.json:/usr/src/app/package-lock.json
       - ./backend/tsconfig.json:/usr/src/app/tsconfig.json
       - ./backend/vitest.config.ts:/usr/src/app/vitest.config.ts
+      - ./backend/vitest.global.ts:/usr/src/app/vitest.global.ts
       - ./backend/uploads:/usr/src/app/uploads
       - meleflow_backend_node_modules:/usr/src/app/node_modules
       - meleflow_backend_node_modules:/usr/src/app/node_modules
