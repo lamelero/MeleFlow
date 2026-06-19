@@ -4,8 +4,9 @@ import { buildApp } from "../../../app";
 import { prisma } from "../../../config/database";
 import { redis } from "../../../config/redis";
 import type { FastifyInstance } from "fastify";
+import type { AppInstance } from "../../../app";
 
-let app: FastifyInstance;
+let app: AppInstance;
 let accessToken: string;
 let listId: string;
 

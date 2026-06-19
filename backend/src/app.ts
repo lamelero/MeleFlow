@@ -1,5 +1,5 @@
 import Fastify, { type FastifyRequest, type FastifyReply } from "fastify";
-import { ZodTypeProvider } from "@fastify/type-provider-zod";
+import { ZodTypeProvider, serializerCompiler, validatorCompiler } from "@fastify/type-provider-zod";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
@@ -34,6 +34,9 @@ export async function buildApp(opts: Record<string, unknown> = {}) {
     trustProxy: true,
     ...opts,
   }).withTypeProvider<ZodTypeProvider>();
+
+  app.setValidatorCompiler(validatorCompiler);
+  app.setSerializerCompiler(serializerCompiler);
 
   // ── Plugins ──────────────────────────────────
   await app.register(helmet, {
@@ -157,3 +160,5 @@ export async function buildApp(opts: Record<string, unknown> = {}) {
 
   return app;
 }
+
+export type AppInstance = Awaited<ReturnType<typeof buildApp>>;
