@@ -33,11 +33,23 @@ function getEncryptionKey(): Buffer {
 
 async function exportDatabase(): Promise<Record<string, unknown[]>> {
   const data: Record<string, unknown[]> = {};
-  const db = prisma as unknown as Record<string, { findMany: () => Promise<unknown[]> }>;
+  const db = prisma as unknown as Record<string, { findMany: (args?: unknown) => Promise<unknown[]> }>;
   for (const model of EXPORTED_MODELS) {
     try {
-      const records = await db[model].findMany();
-      data[model] = records as unknown[];
+      if (model === "user") {
+        const records = await prisma.user.findMany({
+          select: {
+            id: true, email: true, username: true, displayName: true,
+            role: true, isActive: true, language: true, notificationPrefs: true,
+            timezone: true, bio: true, notificationEmail: true, avatarUrl: true,
+            createdAt: true, updatedAt: true,
+          },
+        });
+        data[model] = records as unknown[];
+      } else {
+        const records = await db[model].findMany();
+        data[model] = records as unknown[];
+      }
     } catch {
       data[model] = [];
     }
@@ -232,20 +244,33 @@ export class BackupService {
     return backups;
   }
 
+  private assertSafeName(name: string): string {
+    const base = path.basename(name);
+    if (!base.startsWith("meleflow-backup")) {
+      throw createError.BadRequest("Invalid backup name");
+    }
+    const resolved = path.resolve(BACKUP_DIR, base);
+    if (!resolved.startsWith(path.resolve(BACKUP_DIR))) {
+      throw createError.BadRequest("Invalid backup name");
+    }
+    return resolved;
+  }
+
   async downloadBackup(name: string): Promise<{ path: string; stream: NodeJS.ReadableStream }> {
-    await this.assertBackupExists(name);
-    const filePath = path.join(BACKUP_DIR, name);
+    const filePath = this.assertSafeName(name);
+    await this.assertBackupExists(path.basename(filePath));
     return { path: filePath, stream: createReadStream(filePath) };
   }
 
   async deleteBackup(name: string): Promise<void> {
-    await this.assertBackupExists(name);
-    await fs.unlink(path.join(BACKUP_DIR, name));
+    const filePath = this.assertSafeName(name);
+    await this.assertBackupExists(path.basename(filePath));
+    await fs.unlink(filePath);
   }
 
   async restoreFromDisk(name: string): Promise<{ warnings: string[] }> {
-    const filePath = path.join(BACKUP_DIR, name);
-    await this.assertBackupExists(name);
+    const filePath = this.assertSafeName(name);
+    await this.assertBackupExists(path.basename(filePath));
 
     let extractPath = filePath;
     let cleanupPath: string | null = null;
@@ -342,8 +367,8 @@ export class BackupService {
   }
 
   private async assertBackupExists(name: string) {
-    const filePath = path.join(BACKUP_DIR, name);
-    const exists = await fs.stat(filePath).then(() => true).catch(() => false);
+    const safePath = this.assertSafeName(name);
+    const exists = await fs.stat(safePath).then(() => true).catch(() => false);
     if (!exists) throw createError.NotFound( "Backup not found");
   }
 

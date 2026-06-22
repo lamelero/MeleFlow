@@ -9,6 +9,7 @@ import {
   taskIdParams,
   taskIdTagIdParams,
   taskIdCollabIdParams,
+  taskIdAttachmentIdParams,
   searchQuerySchema,
 } from "./tasks.schema";
 import { TaskService } from "./tasks.service";
@@ -107,9 +108,9 @@ export async function taskRoutes(app: FastifyInstance) {
   });
 
   s.delete("/:id/attachments/:attachmentId", {
-    schema: { params: taskIdCollabIdParams },
+    schema: { params: taskIdAttachmentIdParams },
   }, async (req, reply) => {
-    await attachmentService.delete(req.user.sub, req.params.id, req.params.collaboratorId);
+    await attachmentService.delete(req.user.sub, req.params.id, req.params.attachmentId);
     reply.code(204).send();
   });
 }

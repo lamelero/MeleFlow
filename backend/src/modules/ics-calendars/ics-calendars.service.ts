@@ -146,11 +146,26 @@ export class IcsCalendarService {
     }));
   }
 
+  private isSafeUrl(url: string): boolean {
+    try {
+      const parsed = new URL(url);
+      const hostname = parsed.hostname.toLowerCase();
+      if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]" || hostname === "0.0.0.0") return false;
+      if (/^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|169\.254\.)/.test(hostname)) return false;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   private async fetchAndParse(
     url: string,
     icsCalendarId: string,
     userId: string,
   ) {
+    if (!this.isSafeUrl(url)) {
+      throw new Error("Invalid calendar URL: private/internal IPs are not allowed");
+    }
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30000);
     try {

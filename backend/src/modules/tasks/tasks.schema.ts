@@ -69,6 +69,11 @@ export const taskIdCollabIdParams = z.object({
   collaboratorId: z.string(),
 });
 
+export const taskIdAttachmentIdParams = z.object({
+  id: z.string(),
+  attachmentId: z.string(),
+});
+
 export const searchQuerySchema = z.object({
   q: z.string().optional(),
 });
