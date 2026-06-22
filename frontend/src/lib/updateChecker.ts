@@ -6,7 +6,7 @@ const CACHED_URL_KEY = "update_cached_url";
 const ONE_DAY = 24 * 60 * 60 * 1000;
 
 // Change this to "0.0.1" to test the update checker
-const CURRENT_VERSION = "1.0.0";
+const CURRENT_VERSION = "1.1.0";
 
 export interface UpdateInfo {
   available: boolean;
