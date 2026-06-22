@@ -71,17 +71,19 @@ export const useHabitStore = create<HabitState>((set, get) => ({
       set({ habits: data, isLoading: false });
       updateHabitData(data);
       if (isNative()) {
-        scheduleTaskReminders(
-          data
-            .filter((h: Habit) => h.frequency)
-            .map((h: Habit) => ({
-              id: h.id,
-              title: h.name,
-              dueDate: null,
-              reminderEnabled: true,
-              reminderConfig: h.frequency,
-            }))
-        );
+        setTimeout(() => {
+          scheduleTaskReminders(
+            data
+              .filter((h: Habit) => h.frequency)
+              .map((h: Habit) => ({
+                id: h.id,
+                title: h.name,
+                dueDate: null,
+                reminderEnabled: true,
+                reminderConfig: h.frequency,
+              }))
+          );
+        }, 0);
       }
     } catch {
       set({ isLoading: false });
