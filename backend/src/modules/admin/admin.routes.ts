@@ -9,6 +9,8 @@ import {
   securityLogsQuerySchema,
   backupSettingsBodySchema,
   logoVariantQuerySchema,
+  testEmailBodySchema,
+  createBackupBodySchema,
 } from "./admin.schema";
 import { AdminService } from "./admin.service";
 import { BackupService } from "./backup.service";
@@ -62,9 +64,8 @@ export async function adminRoutes(app: FastifyInstance) {
     reply.send(await service.getSecurityLogs(req.query.limit, req.query.offset));
   });
 
-  s.post("/test-email", async (req, reply) => {
+  s.post("/test-email", { schema: { body: testEmailBodySchema } }, async (req, reply) => {
     const { prisma } = await import("../../config/database");
-    const body = req.body as { to?: string } | undefined;
     const user = await prisma.user.findUnique({ where: { id: req.user.sub } });
     if (!user) {
       reply.code(404).send({ error: "User not found" });
@@ -72,7 +73,7 @@ export async function adminRoutes(app: FastifyInstance) {
     }
     const { sendEmail } = await import("../../lib/email-service");
     const ok = await sendEmail(
-      body?.to || user.email,
+      req.body.to || user.email,
       "Test email from MeleFlow",
       "<p>If you're reading this, your SMTP configuration works!</p>",
     );
@@ -83,7 +84,7 @@ export async function adminRoutes(app: FastifyInstance) {
     reply.code(500).send({ error: "Failed to send test email. Check your SMTP settings." });
   });
 
-  s.post("/logo", async (req, reply) => {
+  s.post("/logo", { schema: { querystring: logoVariantQuerySchema } }, async (req, reply) => {
     const file = await req.file();
     if (!file) {
       reply.code(400).send({ error: "No file uploaded" });
@@ -96,9 +97,7 @@ export async function adminRoutes(app: FastifyInstance) {
       return;
     }
 
-    const variant = req.query && typeof req.query === "object" && "variant" in req.query
-      ? (req.query as { variant?: string }).variant === "dark" ? "dark" : "light"
-      : "light";
+    const variant = req.query.variant;
     const ext = file.mimetype === "image/png" ? ".png" : ".svg";
     const maxSize = 2 * 1024 * 1024;
     const chunks: Buffer[] = [];
@@ -123,9 +122,8 @@ export async function adminRoutes(app: FastifyInstance) {
 
   // ── Backup routes ─────────────────────────────
 
-  s.post("/backup", async (req, reply) => {
-    const body = req.body as { encrypted?: boolean } | undefined;
-    reply.send(await backupService.createBackup(body?.encrypted));
+  s.post("/backup", { schema: { body: createBackupBodySchema } }, async (req, reply) => {
+    reply.send(await backupService.createBackup(req.body.encrypted));
   });
 
   s.get("/backups", async (_req, reply) => {

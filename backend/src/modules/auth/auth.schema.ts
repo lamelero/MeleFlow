@@ -52,6 +52,16 @@ export const getRecoveryCodesSchema = z.object({
   password: z.string().min(1),
 });
 
+export const updateNotificationPrefsSchema = z.object({
+  email: z.boolean().optional(),
+  push: z.boolean().optional(),
+  browser: z.boolean().optional(),
+});
+
+export const searchUsersQuerySchema = z.object({
+  q: z.string().min(1),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type Verify2FALoginInput = z.infer<typeof verify2FASchema>;

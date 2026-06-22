@@ -57,6 +57,14 @@ export const logoVariantQuerySchema = z.object({
   variant: z.enum(["light", "dark"]).optional().default("light"),
 });
 
+export const testEmailBodySchema = z.object({
+  to: z.string().email().optional(),
+});
+
+export const createBackupBodySchema = z.object({
+  encrypted: z.boolean().optional(),
+});
+
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 export type UpdateSettingsInput = z.infer<typeof updateSettingsSchema>;
 export type WipeDataInput = z.infer<typeof wipeDataSchema>;

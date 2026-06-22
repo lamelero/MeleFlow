@@ -16,6 +16,8 @@ import {
   disable2FASchema,
   sendOTPSchema,
   getRecoveryCodesSchema,
+  updateNotificationPrefsSchema,
+  searchUsersQuerySchema,
 } from "./auth.schema";
 
 const service = new AuthService();
@@ -244,9 +246,12 @@ export async function authRoutes(app: FastifyInstance) {
   });
 
   // ── Update notification prefs (authenticated)
-  s.patch("/notification-prefs", { onRequest: [app.authenticate] }, async (req, reply) => {
+  s.patch("/notification-prefs", {
+    onRequest: [app.authenticate],
+    schema: { body: updateNotificationPrefsSchema },
+  }, async (req, reply) => {
     const { sub } = req.user;
-    const body = req.body as { email?: boolean; push?: boolean; browser?: boolean };
+    const body = req.body;
     const existing = await prisma.user.findUnique({
       where: { id: sub },
       select: { notificationPrefs: true },
@@ -263,13 +268,11 @@ export async function authRoutes(app: FastifyInstance) {
   });
 
   // ── Search users (authenticated) ───────────
-  s.get("/users/search", { onRequest: [app.authenticate] }, async (req, reply) => {
-    const { q } = req.query as { q: string };
-    if (!q || q.length < 1) {
-      reply.send([]);
-      return;
-    }
-    reply.send(await service.searchUsers(q, req.user.sub));
+  s.get("/users/search", {
+    onRequest: [app.authenticate],
+    schema: { querystring: searchUsersQuerySchema },
+  }, async (req, reply) => {
+    reply.send(await service.searchUsers(req.query.q, req.user.sub));
   });
 
   // ── 2FA Management (authenticated) ─────────

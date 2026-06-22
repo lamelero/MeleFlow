@@ -1,9 +1,12 @@
 import { prisma } from "../../config/database";
 import { env } from "../../config/env";
 import type { FastifyInstance } from "fastify";
+import type { ZodTypeProvider } from "@fastify/type-provider-zod";
 
 export async function settingsRoutes(app: FastifyInstance) {
-  app.get("/settings/logo", async (_req, reply) => {
+  const s = app.withTypeProvider<ZodTypeProvider>();
+
+  s.get("/settings/logo", async (_req, reply) => {
     const rows = await prisma.systemSetting.findMany({
       where: { key: { in: ["logoUrl", "logoUrlDark"] } },
     });
@@ -15,7 +18,7 @@ export async function settingsRoutes(app: FastifyInstance) {
     });
   });
 
-  app.get("/settings/registration-status", async (_req, reply) => {
+  s.get("/settings/registration-status", async (_req, reply) => {
     const setting = await prisma.systemSetting.findUnique({
       where: { key: "allowRegistration" },
     });

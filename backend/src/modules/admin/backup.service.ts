@@ -246,7 +246,7 @@ export class BackupService {
 
   private assertSafeName(name: string): string {
     const base = path.basename(name);
-    if (!base.startsWith("meleflow-backup")) {
+    if (!/^meleflow-backup-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.tar\.gz(\.enc)?$/.test(base)) {
       throw createError.BadRequest("Invalid backup name");
     }
     const resolved = path.resolve(BACKUP_DIR, base);
