@@ -4,6 +4,7 @@ const SKIPPED_VERSION_KEY = "update_skipped_version";
 const CACHED_VERSION_KEY = "update_cached_version";
 const CACHED_URL_KEY = "update_cached_url";
 const CACHED_DOWNLOAD_URL_KEY = "update_cached_download_url";
+const APP_VERSION_KEY = "update_app_version";
 const ONE_DAY = 24 * 60 * 60 * 1000;
 
 // Change this to "0.0.1" to test the update checker
@@ -76,6 +77,22 @@ function extractDownloadUrl(data: { assets?: { name: string; browser_download_ur
 }
 
 export async function checkForUpdate(): Promise<UpdateInfo> {
+  // If the app version changed (app was updated), invalidate cache
+  const lastAppVersion = (() => {
+    try {
+      return localStorage.getItem(APP_VERSION_KEY);
+    } catch { return null; }
+  })();
+  if (lastAppVersion !== CURRENT_VERSION) {
+    try {
+      localStorage.removeItem(CACHED_VERSION_KEY);
+      localStorage.removeItem(CACHED_URL_KEY);
+      localStorage.removeItem(CACHED_DOWNLOAD_URL_KEY);
+      localStorage.removeItem(LAST_CHECK_KEY);
+      localStorage.setItem(APP_VERSION_KEY, CURRENT_VERSION);
+    } catch {}
+  }
+
   const now = Date.now();
   const lastCheck = (() => {
     try {
