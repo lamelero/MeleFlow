@@ -14,6 +14,8 @@ export interface ListIconDef {
   icon: ComponentType<SVGProps<SVGSVGElement>>;
 }
 
+export const DEFAULT_ICON = "pencil";
+
 export const LIST_ICONS: ListIconDef[] = [
   // Original 28 icons (preserving names for backward compat)
   { name: "pencil", icon: Pencil },

@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import { Inbox } from "lucide-react";
 import type { Task } from "../../store/taskStore";
 import { useTaskStore } from "../../store/taskStore";
+import { useListStore } from "../../store/listStore";
+import { ListIcon } from "../lists/listIcons";
 import TagPill from "../tags/TagPill";
 import { isNative } from "../../capacitor/register";
 
@@ -64,7 +67,10 @@ const checkVariants = {
 export default function TaskCard({ task, onClick }: TaskCardProps) {
   const { i18n } = useTranslation();
   const { toggleTask, deleteTask } = useTaskStore();
+  const lists = useListStore((s) => s.lists);
   const [deleting, setDeleting] = useState(false);
+
+  const taskList = task.listId ? lists.find((l) => l.id === task.listId) : undefined;
 
   async function handleToggle(e: React.MouseEvent) {
     e.stopPropagation();
@@ -92,49 +98,23 @@ export default function TaskCard({ task, onClick }: TaskCardProps) {
       style={task.priority < 4 ? { borderLeftColor: priorityColors[task.priority] } : undefined}
     >
       <div className="flex h-6 items-center pt-0.5">
-        <motion.button
-          onClick={handleToggle}
-          animate={task.isCompleted ? "checked" : "unchecked"}
-          variants={checkVariants}
-          whileTap={{ scale: 0.85 }}
-          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-colors ${
-            task.isCompleted
-              ? "border-primary bg-primary text-white"
-              : "border-gray-300 hover:border-primary dark:border-gray-600"
-          }`}
-        >
-          {task.isCompleted && (
-            <motion.svg
-              initial={{ pathLength: 0 }}
-              animate={{ pathLength: 1 }}
-              transition={{ duration: 0.2, ease: "easeInOut" }}
-              className="h-3 w-3"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={3}
-            >
-              <motion.path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M5 13l4 4L19 7"
-                initial={{ pathLength: 0 }}
-                animate={{ pathLength: 1 }}
-                transition={{ duration: 0.2, ease: "easeInOut" }}
-              />
-            </motion.svg>
-          )}
-        </motion.button>
+        {taskList ? (
+          <span style={{ color: taskList.color }}>
+            <ListIcon name={taskList.icon || "pencil"} className="h-5 w-5" />
+          </span>
+        ) : (
+          <Inbox className="h-5 w-5 text-gray-300 dark:text-gray-600" />
+        )}
       </div>
 
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              {task.status === "in_progress" && (
-                <span className="shrink-0 rounded bg-blue-100 px-1.5 py-0.5 font-urbanist text-[9px] font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
-                  {i18n.language?.startsWith("es") ? "En curso" : "In progress"}
-                </span>
-              )}
-              <h3
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          {task.status === "in_progress" && (
+            <span className="shrink-0 rounded bg-blue-100 px-1.5 py-0.5 font-urbanist text-[9px] font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+              {i18n.language?.startsWith("es") ? "En curso" : "In progress"}
+            </span>
+          )}
+          <h3
             className={`font-urbanist text-[15px] font-medium ${
               task.isCompleted
                 ? "text-gray-400 line-through dark:text-gray-500"
@@ -175,19 +155,54 @@ export default function TaskCard({ task, onClick }: TaskCardProps) {
         </div>
       </div>
 
-      <motion.button
-        onClick={handleDelete}
-        disabled={deleting}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-        className={`shrink-0 rounded-lg p-1.5 transition-all hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20 ${
-          isNative() ? "text-gray-400" : "text-gray-300 opacity-0 group-hover:opacity-100"
-        }`}
-      >
-        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-        </svg>
-      </motion.button>
+      <div className="flex items-start gap-1">
+        <motion.button
+          onClick={handleDelete}
+          disabled={deleting}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          className={`shrink-0 rounded-lg p-1.5 transition-all hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20 ${
+            isNative() ? "text-gray-400" : "text-gray-300 opacity-0 group-hover:opacity-100"
+          }`}
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </motion.button>
+        <motion.button
+          onClick={handleToggle}
+          animate={task.isCompleted ? "checked" : "unchecked"}
+          variants={checkVariants}
+          whileTap={{ scale: 0.85 }}
+          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-colors ${
+            task.isCompleted
+              ? "border-primary bg-primary text-white"
+              : "border-gray-300 hover:border-primary dark:border-gray-600"
+          }`}
+        >
+          {task.isCompleted && (
+            <motion.svg
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: 0.2, ease: "easeInOut" }}
+              className="h-3 w-3"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={3}
+            >
+              <motion.path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M5 13l4 4L19 7"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ duration: 0.2, ease: "easeInOut" }}
+              />
+            </motion.svg>
+          )}
+        </motion.button>
+      </div>
     </motion.div>
   );
 }

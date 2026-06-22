@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { client } from "../api/client";
+import { DEFAULT_ICON } from "../components/lists/listIcons";
 
 interface List {
   id: string;
@@ -35,7 +36,7 @@ export const useListStore = create<ListState>((set, get) => ({
   },
 
   createList: async (input) => {
-    const { data } = await client.post("/lists", input);
+    const { data } = await client.post("/lists", { ...input, icon: input.icon || DEFAULT_ICON });
     set((state) => ({ lists: [...state.lists, data] }));
     return data;
   },
