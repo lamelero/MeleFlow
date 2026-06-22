@@ -169,6 +169,7 @@ export const useHabitStore = create<HabitState>((set, get) => ({
       if (date) params.set("date", date);
       if (status) params.set("status", status);
       await client.post(`/habits/${id}/progress?${params}`);
+      localStorage.removeItem(CACHE_KEY);
       await get().fetchHabits();
     } catch (err: unknown) {
       const msg =
@@ -182,6 +183,7 @@ export const useHabitStore = create<HabitState>((set, get) => ({
     try {
       const params = date ? `?date=${date}` : "";
       await client.delete(`/habits/${id}/progress${params}`);
+      localStorage.removeItem(CACHE_KEY);
       await get().fetchHabits();
     } catch (err: unknown) {
       const msg =
