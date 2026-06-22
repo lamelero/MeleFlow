@@ -19,6 +19,7 @@ import HabitCard from "../../components/habits/HabitCard";
 import HabitFormModal from "../../components/habits/HabitFormModal";
 import CategoryManager from "../../components/habits/CategoryManager";
 import AppLayout from "../../components/AppLayout";
+import EmptyState from "../../components/EmptyState";
 import IconPicker from "../../components/lists/IconPicker";
 import { ListIcon, LIST_ICONS } from "../../components/lists/listIcons";
 import { isNative } from "../../capacitor/register";
@@ -507,15 +508,31 @@ export default function Dashboard() {
               </div>
 
               {habits.filter((h) => !h.isArchived).length === 0 ? (
-                <div className="rounded-2xl bg-white p-10 text-center shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
-                  <p className="font-urbanist text-sm text-gray-400">{t("dashboard.noHabits")}</p>
-                </div>
+                <EmptyState
+                  icon={<Heart className="h-6 w-6" />}
+                  title={t("dashboard.noHabits")}
+                  action={
+                    <button
+                      onClick={() => { setHabitFormOpen(true); setEditingHabit(null); }}
+                      className="rounded-xl bg-primary px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600"
+                    >
+                      {t("dashboard.newHabit")}
+                    </button>
+                  }
+                />
               ) : (
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <motion.div
+                  className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+                  variants={{ animate: { transition: { staggerChildren: 0.04 } } }}
+                  initial="initial"
+                  animate="animate"
+                >
                   {habits.filter((h) => !h.isArchived).map((habit) => (
-                    <HabitCard key={habit.id} habit={habit} onEdit={handleEditHabit} />
+                    <motion.div key={habit.id} variants={{ initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 } }}>
+                      <HabitCard habit={habit} onEdit={handleEditHabit} />
+                    </motion.div>
                   ))}
-                </div>
+                </motion.div>
               )}
 
               {habits.filter((h) => h.isArchived).length > 0 && (

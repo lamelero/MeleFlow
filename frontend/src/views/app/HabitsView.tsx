@@ -4,8 +4,22 @@ import { useTranslation } from "react-i18next";
 import AppLayout from "../../components/AppLayout";
 import HabitCard from "../../components/habits/HabitCard";
 import HabitFormModal from "../../components/habits/HabitFormModal";
+import EmptyState from "../../components/EmptyState";
+import { HabitsGridSkeleton } from "../../components/Skeletons";
 import PullToRefresh from "../../components/PullToRefresh";
 import { useHabitStore, type Habit } from "../../store/habitStore";
+import { Heart } from "lucide-react";
+
+const containerVariants = {
+  animate: {
+    transition: { staggerChildren: 0.04 },
+  },
+};
+
+const itemVariants = {
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0 },
+};
 
 export default function HabitsView() {
   const { t } = useTranslation();
@@ -67,22 +81,35 @@ export default function HabitsView() {
               </button>
             </div>
 
-            {activeHabits.length === 0 ? (
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="rounded-2xl bg-white p-10 text-center shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800"
-              >
-                <p className="font-urbanist text-sm text-gray-400">
-                  {t("dashboard.noHabits")}
-                </p>
-              </motion.div>
+            {isLoading && activeHabits.length === 0 ? (
+              <HabitsGridSkeleton />
+            ) : activeHabits.length === 0 ? (
+              <EmptyState
+                icon={<Heart className="h-6 w-6" />}
+                title={t("dashboard.noHabits")}
+                description="Start building your routine by creating your first habit"
+                action={
+                  <button
+                    onClick={() => { setEditingHabit(null); setFormOpen(true); }}
+                    className="rounded-xl bg-primary px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600"
+                  >
+                    {t("dashboard.newHabit")}
+                  </button>
+                }
+              />
             ) : (
-              <div className="flex flex-col gap-3">
+              <motion.div
+                className="flex flex-col gap-3"
+                variants={containerVariants}
+                initial="initial"
+                animate="animate"
+              >
                 {activeHabits.map((habit) => (
-                  <HabitCard key={habit.id} habit={habit} onEdit={handleEditHabit} />
+                  <motion.div key={habit.id} variants={itemVariants}>
+                    <HabitCard habit={habit} onEdit={handleEditHabit} />
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
             )}
 
             {archivedHabits.length > 0 && (

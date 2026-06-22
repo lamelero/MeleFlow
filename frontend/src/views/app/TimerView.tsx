@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { usePomodoroStore, type PomodoroSettings } from "../../store/pomodoroStore";
 import AppLayout from "../../components/AppLayout";
+import { TimerSkeleton } from "../../components/Skeletons";
 
 const SIZE = 240;
 const STROKE = 8;
@@ -90,9 +91,7 @@ export default function TimerView() {
   if (isLoading) {
     return (
       <AppLayout title={t("menu.timer")}>
-        <div className="flex min-h-full items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-        </div>
+        <TimerSkeleton />
       </AppLayout>
     );
   }

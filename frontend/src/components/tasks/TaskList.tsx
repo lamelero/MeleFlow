@@ -5,6 +5,8 @@ import type { Task } from "../../store/taskStore";
 import { useTaskStore } from "../../store/taskStore";
 import TaskCard from "./TaskCard";
 import PullToRefresh from "../PullToRefresh";
+import EmptyState from "../EmptyState";
+import { TaskSkeleton } from "../Skeletons";
 import type { FilterPreset } from "./TaskFilters";
 
 interface TaskListProps {
@@ -81,8 +83,10 @@ export default function TaskList({
   }, [tasks, filter?.preset]);
 
   const content = isLoading ? (
-    <div className="flex items-center justify-center py-12">
-      <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+    <div className="space-y-2">
+      <TaskSkeleton />
+      <TaskSkeleton />
+      <TaskSkeleton />
     </div>
   ) : error ? (
     <div className="rounded-xl bg-red-50 px-4 py-3 text-center font-urbanist text-sm text-red-600 dark:bg-red-900/30 dark:text-red-400">
@@ -97,27 +101,15 @@ export default function TaskList({
         Tap to retry
       </button>
     </div>
-  ) : tasks.length === 0 ? (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl bg-white p-10 text-center shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800"
-    >
-      <svg
-        className="mx-auto mb-4 h-16 w-16 dark:opacity-70"
-        viewBox="0 0 64 64"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <rect x="12" y="10" width="40" height="44" rx="4" stroke="#14B8A6" strokeWidth="2" strokeDasharray="4 3" fill="rgba(20,184,166,0.05)" />
-        <path d="M22 26h20" stroke="#14B8A6" strokeWidth="2" strokeLinecap="round" opacity="0.4" />
-        <path d="M22 34h14" stroke="#14B8A6" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
-        <path d="M22 42h8" stroke="#14B8A6" strokeWidth="2" strokeLinecap="round" opacity="0.3" />
-        <circle cx="48" cy="48" r="10" fill="rgba(20,184,166,0.1)" stroke="#14B8A6" strokeWidth="1.5" />
-        <path d="M45 48l2 2 4-4" stroke="#14B8A6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-      <p className="font-urbanist text-sm text-gray-400">{effectiveEmptyMessage}</p>
-    </motion.div>
+  ) : sortedTasks.length === 0 ? (
+    <EmptyState
+      icon={
+        <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        </svg>
+      }
+      title={effectiveEmptyMessage}
+    />
   ) : (
     <motion.div
       className="space-y-2"
