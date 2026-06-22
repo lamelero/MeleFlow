@@ -13,10 +13,11 @@ const UPLOAD_DIR = path.resolve("uploads");
 
 const EXPORTED_MODELS = [
   "user", "list", "tag", "task", "taskTag", "checklistItem",
-  "attachment", "habit", "habitLog",
+  "attachment", "habit", "habitCategoryModel", "habitLog",
   "pomodoroSession",
   "refreshToken", "securityLog", "systemSetting",
   "taskCollaborator",
+  "icsCalendar", "icsEvent",
 ] as const;
 
 async function ensureBackupDir() {
