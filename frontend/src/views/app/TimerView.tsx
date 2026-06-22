@@ -176,7 +176,7 @@ export default function TimerView() {
                 return (
                   <button key={opt.value}
                     onClick={() => setCustomType(opt.value)}
-                    className={`flex-1 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
+                    className={`flex flex-1 items-center justify-center gap-1 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
                       selected ? "text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
                     }`}
                     style={selected ? { backgroundColor: c } : undefined}>
@@ -192,7 +192,7 @@ export default function TimerView() {
           {!session && (
             <motion.button onClick={handleStart}
               whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-              className="w-full rounded-xl bg-primary px-6 py-3 font-urbanist text-base font-semibold text-white shadow-sm transition-colors hover:bg-primary-dark">
+              className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-primary px-6 py-3 font-urbanist text-base font-semibold text-white shadow-sm transition-colors hover:bg-primary-dark">
               {readyLabel.icon} {t("pomodoro.start")}
             </motion.button>
           )}
@@ -206,8 +206,8 @@ export default function TimerView() {
               </motion.button>
               <motion.button onClick={complete}
                 whileTap={{ scale: 0.95 }}
-                className="flex-1 rounded-xl bg-green-50 px-4 py-3 font-urbanist text-sm font-medium text-green-700 transition-colors hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50">
-                  <Check className="mr-0.5 inline h-4 w-4" /> {t("pomodoro.complete")}
+                className="flex flex-1 items-center justify-center gap-1 rounded-xl bg-green-50 px-4 py-3 font-urbanist text-sm font-medium text-green-700 transition-colors hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50">
+                  <Check className="h-4 w-4" /> {t("pomodoro.complete")}
               </motion.button>
               <motion.button onClick={cancel}
                 whileTap={{ scale: 0.95 }}
@@ -226,8 +226,8 @@ export default function TimerView() {
               </motion.button>
               <motion.button onClick={complete}
                 whileTap={{ scale: 0.95 }}
-                className="flex-1 rounded-xl bg-green-50 px-4 py-3 font-urbanist text-sm font-medium text-green-700 transition-colors hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50">
-                  <Check className="mr-0.5 inline h-4 w-4" /> {t("pomodoro.complete")}
+                className="flex flex-1 items-center justify-center gap-1 rounded-xl bg-green-50 px-4 py-3 font-urbanist text-sm font-medium text-green-700 transition-colors hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50">
+                  <Check className="h-4 w-4" /> {t("pomodoro.complete")}
               </motion.button>
               <motion.button onClick={cancel}
                 whileTap={{ scale: 0.95 }}
@@ -240,7 +240,7 @@ export default function TimerView() {
           {isCompleted && (
             <motion.button onClick={handleStart}
               whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-              className="w-full rounded-xl bg-primary px-6 py-3 font-urbanist text-base font-semibold text-white shadow-sm transition-colors hover:bg-primary-dark">
+              className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-primary px-6 py-3 font-urbanist text-base font-semibold text-white shadow-sm transition-colors hover:bg-primary-dark">
               {readyLabel.icon} {t("pomodoro.start")} {readyLabel.label}
             </motion.button>
           )}
