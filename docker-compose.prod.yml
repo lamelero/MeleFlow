@@ -4,6 +4,8 @@ services:
     image: postgres:16-alpine
     container_name: meleflow-postgres
     restart: unless-stopped
+    labels:
+      - DCB-Ignore-Check-Updates=true
     environment:
       POSTGRES_USER: taskflow
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-taskflow}
@@ -23,6 +25,8 @@ services:
     image: redis:7-alpine
     container_name: meleflow-redis
     restart: unless-stopped
+    labels:
+      - DCB-Ignore-Check-Updates=true
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
@@ -39,6 +43,8 @@ services:
     image: ${DOCKER_USER:-meleflow}/meleflow-backend:${TAG:-latest}
     container_name: meleflow-backend
     restart: unless-stopped
+    labels:
+      - DCB-Auto-Update=true
     command: sh -c "sleep 3 && npx prisma migrate deploy && node --import tsx/esm dist/server.js"
     environment:
       NODE_ENV: production
@@ -57,8 +63,10 @@ services:
       MAX_LOGIN_ATTEMPTS: ${MAX_LOGIN_ATTEMPTS:-5}
       LOGIN_LOCKOUT_MINUTES: ${LOGIN_LOCKOUT_MINUTES:-15}
       CORS_ORIGIN: ${CORS_ORIGIN:-}
+      FIREBASE_SERVICE_ACCOUNT_PATH: /usr/src/app/firebase-key.json
     volumes:
       - uploads:/usr/src/app/uploads
+      - ./firebase-key.json:/usr/src/app/firebase-key.json:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -77,6 +85,8 @@ services:
     image: ${DOCKER_USER:-meleflow}/meleflow-backend:${TAG:-latest}
     container_name: meleflow-worker
     restart: unless-stopped
+    labels:
+      - DCB-Auto-Update=true
     command: node --import tsx/esm dist/worker.js
     healthcheck:
       disable: true
@@ -88,6 +98,7 @@ services:
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
       FRONTEND_URL: ${FRONTEND_URL}
+      FIREBASE_SERVICE_ACCOUNT_PATH: /usr/src/app/firebase-key.json
     depends_on:
       postgres:
         condition: service_healthy
@@ -95,11 +106,15 @@ services:
         condition: service_healthy
     networks:
       - meleflow-net
+    volumes:
+      - ./firebase-key.json:/usr/src/app/firebase-key.json:ro
 
   nginx:
     image: ${DOCKER_USER:-meleflow}/meleflow-frontend:${TAG:-latest}
     container_name: meleflow-nginx
     restart: unless-stopped
+    labels:
+      - DCB-Auto-Update=true
     ports:
       - "${NGINX_PORT:-3001}:80"
     volumes:
