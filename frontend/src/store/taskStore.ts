@@ -58,6 +58,7 @@ interface TaskState {
   sharedTasks: Task[];
   isLoading: boolean;
   error: string | null;
+  lastFilter: TaskFilters | null;
   fetchTasks: (filters?: TaskFilters, retry?: number) => Promise<void>;
   fetchSharedTasks: () => Promise<void>;
   createTask: (input: {
@@ -96,9 +97,10 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   sharedTasks: [],
   isLoading: false,
   error: null,
+  lastFilter: null,
 
   fetchTasks: async (filters, retry = 0) => {
-    if (retry === 0) set({ isLoading: true, error: null });
+    if (retry === 0) set({ isLoading: true, error: null, lastFilter: filters || null });
     try {
       const params = new URLSearchParams();
       if (filters?.listId) params.set("listId", filters.listId);
@@ -186,6 +188,8 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       toast.success(completed ? "Task completed" : "Task reopened");
       if (isNative()) setTimeout(() => scheduleTaskReminders(get().tasks), 0);
       updateTaskData(get().tasks);
+      const lastFilter = get().lastFilter;
+      if (lastFilter) get().fetchTasks(lastFilter);
     } catch {
       set({ tasks: prev });
       toast.error("Failed to update task");
