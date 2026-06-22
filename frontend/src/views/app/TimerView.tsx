@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { usePomodoroStore, type PomodoroSettings } from "../../store/pomodoroStore";
 import AppLayout from "../../components/AppLayout";
 import { TimerSkeleton } from "../../components/Skeletons";
+import { Target, Coffee, Palmtree, Check, X } from "lucide-react";
 
 const SIZE = 240;
 const STROKE = 8;
@@ -16,10 +17,10 @@ function formatTime(seconds: number) {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-const PHASE_LABELS: Record<string, { icon: string; label: string; color: string }> = {
-  FOCUS: { icon: "🎯", label: "Focus", color: "#14B8A6" },
-  SHORT_BREAK: { icon: "☕", label: "Short Break", color: "#F59E0B" },
-  LONG_BREAK: { icon: "🌴", label: "Long Break", color: "#3B82F6" },
+const PHASE_LABELS: Record<string, { icon: React.ReactNode; label: string; color: string }> = {
+  FOCUS: { icon: <Target className="h-5 w-5" />, label: "Focus", color: "#14B8A6" },
+  SHORT_BREAK: { icon: <Coffee className="h-5 w-5" />, label: "Short Break", color: "#F59E0B" },
+  LONG_BREAK: { icon: <Palmtree className="h-5 w-5" />, label: "Long Break", color: "#3B82F6" },
 };
 const PHASE_OPTIONS: { value: "FOCUS" | "SHORT_BREAK" | "LONG_BREAK"; label: string }[] = [
   { value: "FOCUS", label: "Focus" },
@@ -155,9 +156,11 @@ export default function TimerView() {
 
         <div className="mb-6 flex items-center justify-center gap-1.5">
           {Array.from({ length: cycleCount }, (_, i) => (
-            <span key={i} className="text-lg">
-              {i < filledDots ? "🍅" : "◻️"}
-            </span>
+            i < filledDots ? (
+              <span key={i} className="inline-block h-2.5 w-2.5 rounded-full bg-primary" />
+            ) : (
+              <span key={i} className="inline-block h-2.5 w-2.5 rounded-full border border-gray-300 dark:border-gray-600" />
+            )
           ))}
           <span className="ml-2 font-urbanist text-xs text-gray-400 dark:text-gray-500">
             {completedCount > 0 ? t("pomodoro.completedToday", { count: completedCount }) : ""}
@@ -204,12 +207,12 @@ export default function TimerView() {
               <motion.button onClick={complete}
                 whileTap={{ scale: 0.95 }}
                 className="flex-1 rounded-xl bg-green-50 px-4 py-3 font-urbanist text-sm font-medium text-green-700 transition-colors hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50">
-                ✓ {t("pomodoro.complete")}
+                  <Check className="mr-0.5 inline h-4 w-4" /> {t("pomodoro.complete")}
               </motion.button>
               <motion.button onClick={cancel}
                 whileTap={{ scale: 0.95 }}
                 className="rounded-xl px-3 py-3 font-urbanist text-sm font-medium text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-500 dark:hover:bg-gray-800 dark:hover:text-red-400">
-                ✕
+                  <X className="h-4 w-4" />
               </motion.button>
             </div>
           )}
@@ -224,12 +227,12 @@ export default function TimerView() {
               <motion.button onClick={complete}
                 whileTap={{ scale: 0.95 }}
                 className="flex-1 rounded-xl bg-green-50 px-4 py-3 font-urbanist text-sm font-medium text-green-700 transition-colors hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50">
-                ✓ {t("pomodoro.complete")}
+                  <Check className="mr-0.5 inline h-4 w-4" /> {t("pomodoro.complete")}
               </motion.button>
               <motion.button onClick={cancel}
                 whileTap={{ scale: 0.95 }}
                 className="rounded-xl px-3 py-3 font-urbanist text-sm font-medium text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-500 dark:hover:bg-gray-800 dark:hover:text-red-400">
-                ✕
+                  <X className="h-4 w-4" />
               </motion.button>
             </div>
           )}
