@@ -2,19 +2,25 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { skipVersion } from "../lib/updateChecker";
+import { isNative } from "../capacitor/register";
 
 interface UpdateBannerProps {
   version: string;
   url: string;
+  downloadUrl: string;
   onDismiss: () => void;
 }
 
-export default function UpdateBanner({ version, url, onDismiss }: UpdateBannerProps) {
+export default function UpdateBanner({ version, url, downloadUrl, onDismiss }: UpdateBannerProps) {
   const { t } = useTranslation();
   const [visible, setVisible] = useState(true);
 
   function handleDownload() {
-    window.open(url, "_blank");
+    if (isNative() && downloadUrl) {
+      window.location.href = downloadUrl;
+    } else {
+      window.open(url, "_blank");
+    }
   }
 
   function handleSkip() {

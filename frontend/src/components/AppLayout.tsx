@@ -21,7 +21,7 @@ export default function AppLayout({ title, children }: { title: string; children
   const activeLogo = theme === "dark" && logoUrlDark ? resolveImageUrl(logoUrlDark) : resolveImageUrl(logoUrl);
   const orientation = useOrientation();
   const isLandscape = isNative() && orientation === "landscape";
-  const [updateInfo, setUpdateInfo] = useState<{ version: string; url: string } | null>(null);
+  const [updateInfo, setUpdateInfo] = useState<{ version: string; url: string; downloadUrl: string } | null>(null);
 
   useEffect(() => {
     fetchLogo();
@@ -30,7 +30,7 @@ export default function AppLayout({ title, children }: { title: string; children
   useEffect(() => {
     checkForUpdate().then((info) => {
       if (info.available && info.version !== getSkippedVersion()) {
-        setUpdateInfo({ version: info.version, url: info.url });
+        setUpdateInfo({ version: info.version, url: info.url, downloadUrl: info.downloadUrl });
       }
     });
   }, []);
@@ -80,6 +80,7 @@ export default function AppLayout({ title, children }: { title: string; children
         <UpdateBanner
           version={updateInfo.version}
           url={updateInfo.url}
+          downloadUrl={updateInfo.downloadUrl}
           onDismiss={() => setUpdateInfo(null)}
         />
       )}
