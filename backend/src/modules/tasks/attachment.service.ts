@@ -4,6 +4,7 @@ import { randomUUID } from "crypto";
 import { prisma } from "../../config/database";
 import { env } from "../../config/env";
 import createError from "http-errors";
+import { validateFile } from "../../utils/file-validator";
 
 const UPLOAD_DIR = path.resolve("uploads");
 
@@ -44,6 +45,11 @@ export class AttachmentService {
     if (!task) throw createError.NotFound("Task not found");
 
     const maxSize = await this.getMaxUploadSize();
+    const sizeBytes = maxSize * 1024 * 1024;
+    const validation = validateFile(file.buffer, file.mimetype, sizeBytes);
+    if (!validation.valid) {
+      throw createError.BadRequest(validation.error!);
+    }
     const sizeMB = file.buffer.length / (1024 * 1024);
     if (sizeMB > maxSize) {
       throw createError.PayloadTooLarge( `File exceeds the ${maxSize}MB upload limit`);

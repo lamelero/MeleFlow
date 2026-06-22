@@ -1,11 +1,12 @@
 import { prisma } from "../../config/database";
+import createError from "http-errors";
 
 export class NotificationService {
   async registerToken(userId: string, token: string, platform = "android") {
     const existing = await prisma.deviceToken.findUnique({ where: { token } });
     if (existing) {
       if (existing.userId !== userId) {
-        await prisma.deviceToken.update({ where: { token }, data: { userId } });
+        throw createError.Conflict("Token already registered to another user");
       }
       return existing;
     }

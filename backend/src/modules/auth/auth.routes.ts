@@ -4,6 +4,7 @@ import path from "path";
 import fs from "fs/promises";
 import { prisma } from "../../config/database";
 import { AuthService } from "./auth.service";
+import { validateFile } from "../../utils/file-validator";
 import {
   registerSchema,
   loginSchema,
@@ -19,6 +20,8 @@ import {
 
 const service = new AuthService();
 
+const isSecure = process.env.NODE_ENV === "production" || process.env.FORCE_SECURE === "true";
+
 const REFRESH_COOKIE = "refreshToken";
 const DEVICE_COOKIE = "device_token";
 const COOKIE_PATH = "/api/auth";
@@ -33,7 +36,7 @@ function setRefreshCookie(
   const maxAge = rememberMe ? 30 * 24 * 60 * 60 : undefined;
   reply.setCookie(REFRESH_COOKIE, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: isSecure,
     sameSite: SAME_SITE,
     path: COOKIE_PATH,
     ...(maxAge ? { maxAge } : {}),
@@ -48,7 +51,7 @@ function clearRefreshCookie(reply: FastifyReply) {
 function setDeviceCookie(reply: FastifyReply, token: string) {
   reply.setCookie(DEVICE_COOKIE, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: isSecure,
     sameSite: SAME_SITE,
     path: COOKIE_PATH,
     maxAge: 30 * 24 * 60 * 60,
@@ -190,17 +193,33 @@ export async function authRoutes(app: FastifyInstance) {
       return;
     }
 
-    const ext = path.extname(data.filename) || ".png";
+    const allowedAvatarTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"] as const;
+    const chunks: Buffer[] = [];
+    let totalSize = 0;
+    const maxSize = 5 * 1024 * 1024;
+
+    for await (const chunk of data.file) {
+      totalSize += chunk.length;
+      if (totalSize > maxSize) {
+        reply.code(400).send({ error: "File size exceeds 5MB limit" });
+        return;
+      }
+      chunks.push(chunk);
+    }
+
+    const buffer = Buffer.concat(chunks);
+    const validation = validateFile(buffer, data.mimetype, maxSize, allowedAvatarTypes);
+    if (!validation.valid) {
+      reply.code(400).send({ error: validation.error });
+      return;
+    }
+
+    const ext = ".png";
     const filename = `avatar-${sub}${ext}`;
     const uploadDir = path.resolve("uploads");
     await fs.mkdir(uploadDir, { recursive: true });
     const filePath = path.join(uploadDir, filename);
-
-    const chunks: Buffer[] = [];
-    for await (const chunk of data.file) {
-      chunks.push(chunk);
-    }
-    await fs.writeFile(filePath, Buffer.concat(chunks));
+    await fs.writeFile(filePath, buffer);
 
     const avatarUrl = `/uploads/${filename}`;
 
