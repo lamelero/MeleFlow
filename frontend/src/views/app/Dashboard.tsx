@@ -47,6 +47,7 @@ export default function Dashboard() {
   const [activeListId, setActiveListId] = useState<string | undefined>();
   const [activeTagId, setActiveTagId] = useState<string | undefined>();
   const [filterPreset, setFilterPreset] = useState<FilterPreset>("all");
+  const [showCompleted, setShowCompleted] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "kanban" | "matrix">("list");
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [showNewList, setShowNewList] = useState(false);
@@ -573,7 +574,7 @@ export default function Dashboard() {
 
                 <div className="mb-4 flex items-center gap-2">
                   <div className="flex-1">
-                    <TaskFilters active={filterPreset} onChange={setFilterPreset} />
+                    <TaskFilters active={filterPreset} onChange={setFilterPreset} showCompleted={showCompleted} onToggleCompleted={() => setShowCompleted((s) => !s)} />
                   </div>
                   <div className="flex gap-1 rounded-lg bg-gray-100 p-0.5 dark:bg-gray-800">
                     {(["list", "kanban", "matrix"] as const).map((vm) => (
@@ -596,7 +597,7 @@ export default function Dashboard() {
 
                 {viewMode === "list" && (
                   <TaskList
-                    filter={{ listId: activeListId, tagId: activeTagId, preset: filterPreset }}
+                    filter={{ listId: activeListId, tagId: activeTagId, preset: filterPreset, status: showCompleted ? undefined : "pending" }}
                     onTaskClick={setSelectedTask}
                     emptyMessage={
                       activeListId

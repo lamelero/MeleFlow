@@ -515,7 +515,9 @@
     "today": "Today",
     "week": "Next 7 days",
     "overdue": "Overdue",
-    "noDate": "No date"
+    "noDate": "No date",
+    "showCompleted": "Completed",
+    "hideCompleted": "Hide completed"
   },
   "kanban": {
     "pending": "To Do",

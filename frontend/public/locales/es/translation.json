@@ -515,7 +515,9 @@
     "today": "Hoy",
     "week": "Próximos 7 días",
     "overdue": "Vencidas",
-    "noDate": "Sin fecha"
+    "noDate": "Sin fecha",
+    "showCompleted": "Completadas",
+    "hideCompleted": "Ocultar completadas"
   },
   "kanban": {
     "pending": "Por hacer",
