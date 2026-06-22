@@ -5,6 +5,24 @@ import { scheduleTaskReminders } from "../capacitor/localNotifications";
 import { isNative } from "../capacitor/register";
 import { updateHabitData } from "../lib/browserNotifications";
 
+const CACHE_KEY = "meleflow_habits";
+const CACHE_TTL = 5 * 60 * 1000;
+
+function loadCache(): { data: Habit[]; ts: number } | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveCache(data: Habit[]) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ data, ts: Date.now() }));
+  } catch {}
+}
+
 export interface Habit {
   id: string;
   name: string;
@@ -60,15 +78,21 @@ interface HabitState {
 }
 
 export const useHabitStore = create<HabitState>((set, get) => ({
-  habits: [],
+  habits: loadCache()?.data ?? [],
   isLoading: false,
 
   fetchHabits: async (archived = false) => {
+    const cached = loadCache();
+    if (cached && Date.now() - cached.ts < CACHE_TTL) {
+      if (get().habits.length === 0) set({ habits: cached.data });
+      return;
+    }
     set({ isLoading: true });
     try {
       const params = archived ? "?archived=true" : "";
       const { data } = await client.get(`/habits${params}`);
       set({ habits: data, isLoading: false });
+      saveCache(data);
       updateHabitData(data);
       if (isNative()) {
         setTimeout(() => {
@@ -99,6 +123,7 @@ export const useHabitStore = create<HabitState>((set, get) => ({
     try {
       const { data } = await client.post("/habits", input);
       set((state) => ({ habits: [data, ...state.habits] }));
+      saveCache([data, ...get().habits]);
       toast.success("Habit created");
     } catch (err: unknown) {
       const msg =
@@ -111,9 +136,9 @@ export const useHabitStore = create<HabitState>((set, get) => ({
   updateHabit: async (id, input) => {
     try {
       const { data } = await client.patch(`/habits/${id}`, input);
-      set((state) => ({
-        habits: state.habits.map((h) => (h.id === id ? { ...h, ...data } : h)),
-      }));
+      const updated = get().habits.map((h) => (h.id === id ? { ...h, ...data } : h));
+      set({ habits: updated });
+      saveCache(updated);
       toast.success("Habit updated");
     } catch (err: unknown) {
       const msg =
@@ -126,7 +151,9 @@ export const useHabitStore = create<HabitState>((set, get) => ({
   deleteHabit: async (id) => {
     try {
       await client.delete(`/habits/${id}`);
-      set((state) => ({ habits: state.habits.filter((h) => h.id !== id) }));
+      const updated = get().habits.filter((h) => h.id !== id);
+      set({ habits: updated });
+      saveCache(updated);
       toast.success("Habit deleted");
     } catch (err: unknown) {
       const msg =
@@ -167,11 +194,11 @@ export const useHabitStore = create<HabitState>((set, get) => ({
   resetProgress: async (id) => {
     try {
       await client.post(`/habits/${id}/reset`);
-      set((state) => ({
-        habits: state.habits.map((h) =>
-          h.id === id ? { ...h, logs: [], streakCount: 0, totalDays: 0, completedToday: false } : h,
-        ),
-      }));
+      const updated = get().habits.map((h) =>
+        h.id === id ? { ...h, logs: [], streakCount: 0, totalDays: 0, completedToday: false } : h,
+      );
+      set({ habits: updated });
+      saveCache(updated);
       toast.success("Progress reset");
     } catch (err: unknown) {
       const msg =

@@ -2,6 +2,24 @@ import { create } from "zustand";
 import toast from "react-hot-toast";
 import { client } from "../api/client";
 
+const CACHE_KEY = "meleflow_habit_categories";
+const CACHE_TTL = 30 * 60 * 1000;
+
+function loadCache(): { data: HabitCategoryItem[]; ts: number } | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveCache(data: HabitCategoryItem[]) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ data, ts: Date.now() }));
+  } catch {}
+}
+
 export interface HabitCategoryItem {
   id: string;
   userId: string;
@@ -22,14 +40,20 @@ interface HabitCategoryStore {
 }
 
 export const useHabitCategoryStore = create<HabitCategoryStore>((set, get) => ({
-  categories: [],
+  categories: loadCache()?.data ?? [],
   isLoading: false,
 
   fetchCategories: async () => {
+    const cached = loadCache();
+    if (cached && Date.now() - cached.ts < CACHE_TTL) {
+      if (get().categories.length === 0) set({ categories: cached.data });
+      return;
+    }
     set({ isLoading: true });
     try {
       const { data } = await client.get("/habit-categories");
       set({ categories: data, isLoading: false });
+      saveCache(data);
     } catch {
       set({ isLoading: false });
     }
@@ -38,7 +62,9 @@ export const useHabitCategoryStore = create<HabitCategoryStore>((set, get) => ({
   createCategory: async (input) => {
     try {
       const { data } = await client.post("/habit-categories", input);
-      set((state) => ({ categories: [...state.categories, data] }));
+      const updated = [...get().categories, data];
+      set({ categories: updated });
+      saveCache(updated);
       toast.success("Category created");
       return data;
     } catch (err: unknown) {
@@ -51,9 +77,9 @@ export const useHabitCategoryStore = create<HabitCategoryStore>((set, get) => ({
   updateCategory: async (id, input) => {
     try {
       const { data } = await client.patch(`/habit-categories/${id}`, input);
-      set((state) => ({
-        categories: state.categories.map((c) => (c.id === id ? { ...c, ...data } : c)),
-      }));
+      const updated = get().categories.map((c) => (c.id === id ? { ...c, ...data } : c));
+      set({ categories: updated });
+      saveCache(updated);
       toast.success("Category updated");
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || "Failed to update category";
@@ -64,7 +90,9 @@ export const useHabitCategoryStore = create<HabitCategoryStore>((set, get) => ({
   deleteCategory: async (id) => {
     try {
       await client.delete(`/habit-categories/${id}`);
-      set((state) => ({ categories: state.categories.filter((c) => c.id !== id) }));
+      const updated = get().categories.filter((c) => c.id !== id);
+      set({ categories: updated });
+      saveCache(updated);
       toast.success("Category deleted");
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || "Failed to delete category";

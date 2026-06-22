@@ -2,6 +2,7 @@ import { create } from "zustand";
 import toast from "react-hot-toast";
 import { client } from "../api/client";
 import { scheduleTaskReminders } from "../capacitor/localNotifications";
+import { isNative } from "../capacitor/register";
 import { updateTaskData } from "../lib/browserNotifications";
 
 export interface Attachment {
@@ -109,7 +110,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       const qs = params.toString();
       const { data } = await client.get(`/tasks${qs ? `?${qs}` : ""}`);
       set({ tasks: data, isLoading: false, error: null });
-      scheduleTaskReminders(data);
+      if (isNative()) setTimeout(() => scheduleTaskReminders(data), 0);
       updateTaskData(data);
     } catch (err) {
       if (retry < 3) {
@@ -158,7 +159,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         tasks: state.tasks.map((t) => (t.id === id ? data : t)),
       }));
       toast.success("Task updated");
-      scheduleTaskReminders(get().tasks);
+      if (isNative()) setTimeout(() => scheduleTaskReminders(get().tasks), 0);
       updateTaskData(get().tasks);
     } catch {
       set({ tasks: prev });
@@ -183,7 +184,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         tasks: state.tasks.map((t) => (t.id === id ? data : t)),
       }));
       toast.success(completed ? "Task completed" : "Task reopened");
-      scheduleTaskReminders(get().tasks);
+      if (isNative()) setTimeout(() => scheduleTaskReminders(get().tasks), 0);
       updateTaskData(get().tasks);
     } catch {
       set({ tasks: prev });
@@ -199,7 +200,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     try {
       await client.delete(`/tasks/${id}`);
       toast.success("Task deleted");
-      scheduleTaskReminders(get().tasks);
+      if (isNative()) setTimeout(() => scheduleTaskReminders(get().tasks), 0);
       updateTaskData(get().tasks);
     } catch {
       set({ tasks: prev });
