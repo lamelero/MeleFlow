@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import DatePicker from "react-datepicker";
+import DatePicker, { registerLocale } from "react-datepicker";
+import { es } from "date-fns/locale";
+registerLocale("es", es);
 import Markdown from "react-markdown";
 import toast from "react-hot-toast";
 import type { Task, Attachment } from "../../store/taskStore";
@@ -798,6 +800,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
                   placeholderText={trans("common.setDueDate")}
                   isClearable
                   calendarStartDay={1}
+                  locale={i18n.language?.startsWith("es") ? "es" : "en"}
                   className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                 />
                 {dueDate && (
