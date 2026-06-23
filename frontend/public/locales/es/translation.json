@@ -359,6 +359,8 @@
     "high": "Alta",
     "medium": "Media",
     "low": "Baja",
+    "complete": "Completar",
+    "reopen": "Reabrir",
     "toasts": {
       "failedAddTag": "Error al añadir etiqueta",
       "failedRemoveTag": "Error al eliminar etiqueta",

@@ -481,6 +481,21 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
           </button>
         </div>
 
+        {t.isCompleted ? (
+          <div className="px-6 pt-4">
+            <button onClick={() => handleStatusChange("todo")}
+              className="w-full rounded-xl bg-gray-100 py-3 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700">
+              ↩ {trans("common.reopen")}
+            </button>
+          </div>
+        ) : (
+          <div className="px-6 pt-4">
+            <button onClick={() => handleStatusChange("completed")}
+              className="w-full rounded-xl bg-green-500 py-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-green-600">
+              ✓ {trans("common.complete")}
+            </button>
+          </div>
+        )}
         <div className="flex-1 overflow-y-auto px-6 py-4">
           <div className="mb-4">
             <label className="mb-2 block font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">

@@ -359,6 +359,8 @@
     "high": "High",
     "medium": "Medium",
     "low": "Low",
+    "complete": "Complete",
+    "reopen": "Reopen",
     "toasts": {
       "failedAddTag": "Failed to add tag",
       "failedRemoveTag": "Failed to remove tag",
