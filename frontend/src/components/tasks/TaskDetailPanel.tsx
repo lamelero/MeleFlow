@@ -32,7 +32,7 @@ interface TaskDetailPanelProps {
 }
 
 export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps) {
-  const { t: trans } = useTranslation();
+  const { i18n, t: trans } = useTranslation();
   const { updateTask, replaceTask, addCollaborator, removeCollaborator } = useTaskStore();
   const { lists, fetchLists } = useListStore();
   const currentUser = useAuthStore((s) => s.user);
