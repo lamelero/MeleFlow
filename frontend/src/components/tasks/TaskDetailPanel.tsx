@@ -248,6 +248,8 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
   async function handleStatusChange(s: "todo" | "in_progress" | "completed") {
     setStatus(s);
     await updateTask(t.id, { status: s, isCompleted: s === "completed" });
+    const state = useTaskStore.getState();
+    if (state.lastFilter) state.fetchTasks(state.lastFilter);
   }
 
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
