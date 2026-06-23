@@ -6,6 +6,7 @@ import { es } from "date-fns/locale";
 registerLocale("es", es);
 import Markdown from "react-markdown";
 import toast from "react-hot-toast";
+import { isNative } from "../../capacitor/register";
 import type { Task, Attachment } from "../../store/taskStore";
 import { getNextTrigger, formatNextTrigger } from "../../lib/nextTriggerTime";
 
@@ -485,7 +486,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
           </button>
         </div>
 
-        {t.isCompleted ? (
+        {isNative() && (t.isCompleted ? (
           <div className="px-6 pt-4">
             <button onClick={() => handleStatusChange("todo")}
               className="w-full rounded-xl bg-gray-100 py-3 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700">
@@ -495,11 +496,11 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
         ) : (
           <div className="px-6 pt-4">
             <button onClick={() => handleStatusChange("completed")}
-              className="w-full rounded-xl bg-green-500 py-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-green-600">
+              className="w-full rounded-xl bg-primary py-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary/90">
               ✓ {trans("common.complete")}
             </button>
           </div>
-        )}
+        ))}
         <div className="flex-1 overflow-y-auto px-6 py-4">
           <div className="mb-4">
             <label className="mb-2 block font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
