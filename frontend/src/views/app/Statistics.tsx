@@ -50,7 +50,7 @@ export default function Statistics() {
     cutoff.setDate(cutoff.getDate() - daysBack);
     const active = habits.filter((h) => !h.isArchived);
     if (active.length === 0) return 0;
-    const expectedTotal = active.length * (period === "week" ? 7 : 30);
+    const expectedTotal = active.length * (period === "week" ? 8 : 31);
     let completedCount = 0;
     for (const h of active) {
       for (const log of h.logs) {
