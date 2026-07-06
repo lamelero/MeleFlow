@@ -1,4 +1,5 @@
 const GITHUB_API = "https://api.github.com/repos/lamelero/MeleFlow/releases/latest";
+const RAW_APK_BASE = "https://github.com/lamelero/MeleFlow/raw/main/releases";
 const LAST_CHECK_KEY = "update_last_check";
 const SKIPPED_VERSION_KEY = "update_skipped_version";
 const CACHED_VERSION_KEY = "update_cached_version";
@@ -8,7 +9,7 @@ const APP_VERSION_KEY = "update_app_version";
 const ONE_DAY = 24 * 60 * 60 * 1000;
 
 // Change this to "0.0.1" to test the update checker
-const CURRENT_VERSION = "1.1.0";
+const CURRENT_VERSION = "1.2.0";
 
 export interface UpdateInfo {
   available: boolean;
@@ -70,10 +71,12 @@ export function clearSkippedVersion() {
   } catch {}
 }
 
-function extractDownloadUrl(data: { assets?: { name: string; browser_download_url: string }[] }): string {
-  if (!data.assets) return "";
-  const apk = data.assets.find((a) => a.name.endsWith(".apk"));
-  return apk?.browser_download_url || "";
+function extractDownloadUrl(data: { assets?: { name: string; browser_download_url: string }[] }, version: string): string {
+  if (data.assets) {
+    const apk = data.assets.find((a) => a.name.endsWith(".apk"));
+    if (apk?.browser_download_url) return apk.browser_download_url;
+  }
+  return `${RAW_APK_BASE}/MeleFlow-v${version}.apk`;
 }
 
 export async function checkForUpdate(): Promise<UpdateInfo> {
@@ -128,7 +131,7 @@ export async function checkForUpdate(): Promise<UpdateInfo> {
     const data = await res.json();
     const version = (data.tag_name || "").replace(/^v/, "");
     const url = data.html_url || "";
-    const downloadUrl = extractDownloadUrl(data);
+    const downloadUrl = extractDownloadUrl(data, version);
     setCache(version, url, downloadUrl);
     return { available: version !== CURRENT_VERSION && version !== "", version, url, downloadUrl };
   } catch {
