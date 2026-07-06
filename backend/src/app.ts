@@ -1,4 +1,4 @@
-import Fastify, { type FastifyInstance, type FastifyRequest, type FastifyReply } from "fastify";
+import Fastify, { type FastifyRequest, type FastifyReply } from "fastify";
 import { ZodTypeProvider, serializerCompiler, validatorCompiler } from "@fastify/type-provider-zod";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
@@ -23,12 +23,12 @@ import { adminRoutes } from "./modules/admin/admin.routes";
 import { settingsRoutes } from "./modules/settings/settings.routes";
 import { icsCalendarRoutes } from "./modules/ics-calendars/ics-calendars.routes";
 
-// Custom BigInt serializer (Prisma uses BigInt for storage counts)
-// Using a replacer avoids mutating native prototypes and losing precision for values > 2^53
-function bigIntReplacer(_key: string, value: unknown): unknown {
-  if (typeof value === "bigint") return Number(value);
-  return value;
-}
+// BigInt serialization for JSON responses (Prisma uses BigInt for storage counts)
+// Using toString() for values > MAX_SAFE_INTEGER to avoid precision loss
+(BigInt.prototype as unknown as { toJSON: () => number | string }).toJSON = function () {
+  const n = this as unknown as bigint;
+  return n > Number.MAX_SAFE_INTEGER ? n.toString() : Number(n);
+};
 
 export async function buildApp(opts: Record<string, unknown> = {}) {
   const app = Fastify({
@@ -38,10 +38,7 @@ export async function buildApp(opts: Record<string, unknown> = {}) {
   }).withTypeProvider<ZodTypeProvider>();
 
   app.setValidatorCompiler(validatorCompiler);
-  app.setSerializerCompiler(function (this: FastifyInstance, options: any) {
-    const original = serializerCompiler.call(this, options);
-    return (data: unknown) => JSON.stringify(data, bigIntReplacer);
-  });
+  app.setSerializerCompiler(serializerCompiler);
 
   // ── Plugins ──────────────────────────────────
   await app.register(helmet, {
