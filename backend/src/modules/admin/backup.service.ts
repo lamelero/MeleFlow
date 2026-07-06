@@ -349,7 +349,7 @@ export class BackupService {
     return {
       backupInterval: map.backupInterval || "manual",
       backupRetention: Number(map.backupRetention) || 10,
-      backupEncrypted: map.backupEncrypted === "true",
+      backupEncrypted: map.backupEncrypted !== "false",
     };
   }
 

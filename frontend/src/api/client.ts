@@ -138,7 +138,8 @@ export function getServerOrigin(): string {
 
 export function resolveImageUrl(path: string | null): string | null {
   if (!path) return null;
-  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  if (/^https?:\/\//.test(path)) return path;
+  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(path)) return null;
   const origin = getServerOrigin();
   if (!origin) return path;
   return `${origin}${path.startsWith("/") ? "" : "/"}${path}`;

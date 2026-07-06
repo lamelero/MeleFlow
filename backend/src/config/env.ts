@@ -20,7 +20,7 @@ export const env = z
     NODE_ENV: z
       .enum(["development", "production", "test"])
       .default("development"),
-    ENCRYPTION_KEY: z.string().min(32).default("dev-encryption-key-32chars!default00"),
+    ENCRYPTION_KEY: z.string().min(32),
     ALLOW_REGISTRATION: z
       .string()
       .default("true")

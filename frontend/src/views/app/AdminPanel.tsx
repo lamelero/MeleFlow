@@ -857,7 +857,7 @@ export default function AdminPanel() {
               {t("admin.wipeModalTitle")}
             </h3>
             <div className="mb-4 space-y-2 font-urbanist text-sm text-gray-600 dark:text-gray-300">
-              <p dangerouslySetInnerHTML={{ __html: t("admin.wipeModalWarning") }} />
+              <p>{t("admin.wipeModalWarningBefore")}<strong>{t("admin.wipeModalWarningStrong")}</strong>{t("admin.wipeModalWarningAfter")}</p>
               <ul className="list-disc pl-5 space-y-1">
                 <li>{t("admin.wipeModalItemUsers")}</li>
                 <li>{t("admin.wipeModalItemData")}</li>

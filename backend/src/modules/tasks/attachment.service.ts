@@ -77,6 +77,12 @@ export class AttachmentService {
 
     await fs.writeFile(filePath, file.buffer);
 
+    const stat = await fs.lstat(filePath);
+    if (stat.isSymbolicLink()) {
+      await fs.unlink(filePath);
+      throw createError.InternalServerError("Symlink detected");
+    }
+
     const attachment = await prisma.attachment.create({
       data: {
         fileName: file.filename,

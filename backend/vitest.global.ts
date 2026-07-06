@@ -9,6 +9,10 @@ const testRedisUrl = HOST_REDIS_URL.replace(/\/\d*$/, "/1");
 
 process.env.DATABASE_URL = testDbUrl;
 process.env.REDIS_URL = testRedisUrl;
+process.env.JWT_SECRET = "test-jwt-secret-min-16-chars!!";
+process.env.JWT_REFRESH_SECRET = "test-refresh-secret-min-16-chars!";
+process.env.ENCRYPTION_KEY = "test-encryption-key-32chars!!!!!!!";
+process.env.CORS_ORIGIN = "http://localhost:5173";
 
 export async function setup() {
   // Create test database and apply migrations

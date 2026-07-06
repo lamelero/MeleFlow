@@ -1,28 +1,33 @@
 import { prisma } from "../config/database";
+import { redis } from "../config/redis";
 import { env } from "../config/env";
+
+const CACHE_TTL = 60;
+
+async function getCachedSetting(key: string, fallback: number): Promise<number> {
+  try {
+    const cached = await redis.get(`setting:${key}`);
+    if (cached !== null) return Number(cached);
+  } catch {
+    // redis unavailable, fall through to DB
+  }
+  const setting = await prisma.systemSetting.findUnique({ where: { key } });
+  const value = Number(setting?.value) || fallback;
+  try {
+    await redis.setex(`setting:${key}`, CACHE_TTL, value);
+  } catch {
+    // non-critical
+  }
+  return value;
+}
 
 export async function checkRateLimit(email: string, ip: string): Promise<{
   blocked: boolean;
   remainingAttempts: number;
   lockoutMinutes: number;
 }> {
-  const maxAttempts =
-    Number(
-      (
-        await prisma.systemSetting.findUnique({
-          where: { key: "maxLoginAttempts" },
-        })
-      )?.value,
-    ) || env.MAX_LOGIN_ATTEMPTS;
-
-  const lockoutMinutes =
-    Number(
-      (
-        await prisma.systemSetting.findUnique({
-          where: { key: "loginLockoutMinutes" },
-        })
-      )?.value,
-    ) || env.LOGIN_LOCKOUT_MINUTES;
+  const maxAttempts = await getCachedSetting("maxLoginAttempts", env.MAX_LOGIN_ATTEMPTS);
+  const lockoutMinutes = await getCachedSetting("loginLockoutMinutes", env.LOGIN_LOCKOUT_MINUTES);
 
   const since = new Date(Date.now() - lockoutMinutes * 60 * 1000);
 

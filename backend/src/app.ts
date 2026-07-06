@@ -57,6 +57,7 @@ export async function buildApp(opts: Record<string, unknown> = {}) {
   });
 
   const configuredOrigin = env.CORS_ORIGIN;
+  const fallbackOrigin = env.FRONTEND_URL;
   await app.register(cors, {
     origin: (configuredOrigin
       ? async (origin: string | undefined) => {
@@ -68,7 +69,7 @@ export async function buildApp(opts: Record<string, unknown> = {}) {
           } catch {}
           return false;
         }
-      : true) as any,
+      : fallbackOrigin) as any,
     credentials: true,
   });
 
@@ -93,6 +94,7 @@ export async function buildApp(opts: Record<string, unknown> = {}) {
     root: path.resolve("uploads"),
     prefix: "/uploads/",
     decorateReply: false,
+    allowedExt: [".jpg", ".jpeg", ".png", ".webp", ".gif", ".pdf", ".doc", ".docx"],
   });
 
   await app.register(sensible);

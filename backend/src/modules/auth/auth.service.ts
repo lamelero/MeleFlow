@@ -64,7 +64,7 @@ export class AuthService {
     if (rateCheck.blocked) {
       await logSecurityEvent({
         action: "LOGIN_BLOCKED",
-        details: JSON.stringify({ email: input.email, reason: "rate_limit" }),
+        details: JSON.stringify({ reason: "rate_limit" }),
         ip,
         userAgent,
       });
@@ -81,7 +81,7 @@ export class AuthService {
       await recordFailedAttempt(input.email, ip || "unknown", userAgent);
       await logSecurityEvent({
         action: "LOGIN_FAILED",
-        details: JSON.stringify({ email: input.email, reason: "user_not_found" }),
+        details: JSON.stringify({ reason: "user_not_found" }),
         ip,
         userAgent,
       });
@@ -93,7 +93,7 @@ export class AuthService {
       await recordFailedAttempt(input.email, ip || "unknown", userAgent);
       await logSecurityEvent({
         action: "LOGIN_FAILED",
-        details: JSON.stringify({ email: input.email, reason: "wrong_password" }),
+        details: JSON.stringify({ reason: "wrong_password" }),
         ip,
         userAgent,
       });
@@ -122,7 +122,6 @@ export class AuthService {
       await logSecurityEvent({
         userId: user.id,
         action: "2FA_REQUIRED",
-        details: JSON.stringify({ email: input.email }),
         ip,
         userAgent,
       });
@@ -427,55 +426,30 @@ export class AuthService {
   }
 
   async getMe(userId: string) {
-    try {
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          id: true,
-          email: true,
-          username: true,
-          displayName: true,
-          avatarUrl: true,
-          notificationEmail: true,
-          bio: true,
-          timezone: true,
-          role: true,
-          language: true,
-          isTwoFactorEnabled: true,
-          notificationPrefs: true,
-        },
-      });
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        displayName: true,
+        avatarUrl: true,
+        notificationEmail: true,
+        bio: true,
+        timezone: true,
+        role: true,
+        language: true,
+        isTwoFactorEnabled: true,
+        notificationPrefs: true,
+      },
+    });
 
-      if (!user) throw createError.NotFound("User not found");
+    if (!user) throw createError.NotFound("User not found");
 
-      // Parse notificationPrefs for frontend
-      return {
-        ...user,
-        notificationPrefs: user.notificationPrefs ? JSON.parse(user.notificationPrefs) : { email: true, push: true, browser: true },
-      };
-    } catch (err) {
-      if (err instanceof createError.HttpError) throw err;
-
-      // Fallback: columns may not exist yet (pre-migration)
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          id: true,
-          email: true,
-          username: true,
-          role: true,
-          language: true,
-          isTwoFactorEnabled: true,
-          notificationPrefs: true,
-        },
-      });
-
-      if (!user) throw createError.NotFound("User not found");
-      return {
-        ...user,
-        notificationPrefs: user.notificationPrefs ? JSON.parse(user.notificationPrefs) : { email: true, push: true, browser: true },
-      };
-    }
+    return {
+      ...user,
+      notificationPrefs: user.notificationPrefs ? JSON.parse(user.notificationPrefs) : { email: true, push: true, browser: true },
+    };
   }
 
   async updateLanguage(userId: string, language: string) {
