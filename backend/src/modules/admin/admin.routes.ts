@@ -157,8 +157,15 @@ export async function adminRoutes(app: FastifyInstance) {
       reply.code(400).send({ error: "No backup file uploaded" });
       return;
     }
+    const MAX_BACKUP_SIZE = 500 * 1024 * 1024; // 500MB
     const chunks: Buffer[] = [];
+    let totalSize = 0;
     for await (const chunk of file.file) {
+      totalSize += chunk.length;
+      if (totalSize > MAX_BACKUP_SIZE) {
+        reply.code(413).send({ error: "Backup file too large (max 500MB)" });
+        return;
+      }
       chunks.push(chunk);
     }
     const buffer = Buffer.concat(chunks);

@@ -7,7 +7,10 @@ let initialized = false;
 
 function getCredentials(): string | null {
   const fromEnv = process.env.FIREBASE_SERVICE_ACCOUNT;
-  if (fromEnv) return fromEnv;
+  if (fromEnv) {
+    console.warn("[push] WARNING: FIREBASE_SERVICE_ACCOUNT env var may leak credentials in logs/child processes. Prefer FIREBASE_SERVICE_ACCOUNT_PATH with a file.");
+    return fromEnv;
+  }
 
   const filePath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
   if (filePath) {

@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "562578115732",
+    "project_id": "meleflow-b5dc7",
+    "storage_bucket": "meleflow-b5dc7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:562578115732:android:8c10e3e2c1438b02897881",
+        "android_client_info": {
+          "package_name": "com.meleflow.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDoIa-xMvRJMlAsptyGP3UKpLuZtJsaWEA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:562578115732:android:dbb5c13c3a941294897881",
+        "android_client_info": {
+          "package_name": "com.bcproject.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDoIa-xMvRJMlAsptyGP3UKpLuZtJsaWEA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
