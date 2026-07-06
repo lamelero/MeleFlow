@@ -9,6 +9,21 @@
 
 Self-hosted task management web app with tasks, lists, tags, habits, Pomodoro timer, ICS calendar feeds, Kanban/Eisenhower views, NLP input, admin panel, push notifications (FCM + browser + email), and i18n (EN/ES).
 
+## Screenshots
+
+<p align="center">
+  <img src="screenshots/MainLiight.png" alt="Dashboard Light" width="45%" />
+  <img src="screenshots/MainDark.png" alt="Dashboard Dark" width="45%" />
+</p>
+<p align="center">
+  <img src="screenshots/admin.png" alt="Admin Panel" width="45%" />
+  <img src="screenshots/NewHabit.png" alt="New Habit" width="45%" />
+</p>
+<p align="center">
+  <img src="screenshots/Menu.png" alt="Navigation Menu" width="45%" />
+  <img src="screenshots/2FA.png" alt="Two-Factor Auth" width="45%" />
+</p>
+
 ## Features
 
 - **Tasks** — Full CRUD with subtasks, due dates, attachments, tags, checklists, Markdown descriptions, status (todo/in_progress/completed), priority levels, NLP input ("buy milk tomorrow at 3pm #groceries")
