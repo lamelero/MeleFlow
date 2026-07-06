@@ -94,7 +94,6 @@ export async function buildApp(opts: Record<string, unknown> = {}) {
     root: path.resolve("uploads"),
     prefix: "/uploads/",
     decorateReply: false,
-    allowedExt: [".jpg", ".jpeg", ".png", ".webp", ".gif", ".pdf", ".doc", ".docx"],
   });
 
   await app.register(sensible);
