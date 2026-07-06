@@ -237,6 +237,7 @@
     "noUsers": "No users found",
     "tableUsername": "Username",
     "tableEmail": "Email",
+    "createUser": "Create user",
     "tableRole": "Role",
     "tableActive": "Active",
     "tableTasks": "Tasks",
