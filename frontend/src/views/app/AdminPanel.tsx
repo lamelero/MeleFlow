@@ -9,7 +9,7 @@ import { useBrandingStore } from "../../store/brandingStore";
 import StatsCards from "../../components/admin/StatsCards";
 import UsersTable from "../../components/admin/UsersTable";
 import AppLayout from "../../components/AppLayout";
-import { getAccessToken } from "../../api/client";
+import { client, getAccessToken } from "../../api/client";
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -34,6 +34,21 @@ export default function AdminPanel() {
   const [localMaxAttempts, setLocalMaxAttempts] = useState(settings.maxLoginAttempts);
   const [localLockoutMinutes, setLocalLockoutMinutes] = useState(settings.loginLockoutMinutes);
   const [localFrontendUrl, setLocalFrontendUrl] = useState(settings.frontendUrl);
+  const [showUserForm, setShowUserForm] = useState(false);
+  const [newUserEmail, setNewUserEmail] = useState("");
+  const [newUserUsername, setNewUserUsername] = useState("");
+  const [newUserPassword, setNewUserPassword] = useState("");
+
+  const createUser = async () => {
+    if (!newUserEmail || !newUserUsername || !newUserPassword) { toast.error("Completa todos los campos"); return; }
+    try {
+      await client.post("/admin/users", { email: newUserEmail, username: newUserUsername, password: newUserPassword });
+      toast.success("Usuario creado");
+      setShowUserForm(false);
+      setNewUserEmail(""); setNewUserUsername(""); setNewUserPassword("");
+      fetchUsers();
+    } catch (err: any) { toast.error(err.response?.data?.error || "Error al crear usuario"); }
+  };
 
   // Email settings local state
   const [localSmtpHost, setLocalSmtpHost] = useState(settings.smtpHost);
@@ -825,10 +840,32 @@ export default function AdminPanel() {
           )}
         </div>
 
-        <div>
-          <h2 className="mb-4 font-outfit text-lg font-semibold text-gray-900 dark:text-gray-100">
-            {t("admin.users")}
-          </h2>
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-outfit text-lg font-semibold text-gray-900 dark:text-gray-100">
+              {t("admin.users")}
+            </h2>
+            <button onClick={() => setShowUserForm(!showUserForm)}
+              className="rounded-xl bg-primary px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-primary-hover">
+              {showUserForm ? t("common.cancel") : "+ " + t("admin.createUser")}
+            </button>
+          </div>
+          {showUserForm && (
+            <div className="mb-4 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
+              <div className="grid grid-cols-3 gap-3">
+                <input placeholder="Email" value={newUserEmail} onChange={(e) => setNewUserEmail(e.target.value)}
+                  className="rounded-xl border border-gray-200 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700" />
+                <input placeholder="Username" value={newUserUsername} onChange={(e) => setNewUserUsername(e.target.value)}
+                  className="rounded-xl border border-gray-200 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700" />
+                <input placeholder="Contraseña" type="password" value={newUserPassword} onChange={(e) => setNewUserPassword(e.target.value)}
+                  className="rounded-xl border border-gray-200 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700" />
+              </div>
+              <button onClick={createUser}
+                className="mt-3 rounded-xl bg-primary px-6 py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-primary-hover">
+                Guardar
+              </button>
+            </div>
+          )}
           <UsersTable />
         </div>
 

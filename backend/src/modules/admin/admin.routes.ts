@@ -12,8 +12,10 @@ import {
   testEmailBodySchema,
   createBackupBodySchema,
 } from "./admin.schema";
+import bcrypt from "bcryptjs";
 import { AdminService } from "./admin.service";
 import { BackupService } from "./backup.service";
+import { prisma } from "../../config/database";
 
 const service = new AdminService();
 const backupService = new BackupService();
@@ -24,6 +26,14 @@ export async function adminRoutes(app: FastifyInstance) {
 
   s.get("/users", async (_req, reply) => {
     reply.send(await service.getUsers());
+  });
+
+  s.post("/users", async (req, reply) => {
+    const { email, username, password } = req.body as { email: string; username: string; password: string };
+    if (!email || !username || !password) { reply.code(400).send({ error: "Email, username y password son requeridos" }); return; }
+    const passwordHash = await bcrypt.hash(password, 12);
+    const user = await prisma.user.create({ data: { email, username, passwordHash, role: "USER" } });
+    reply.code(201).send({ id: user.id, email: user.email, username: user.username, role: user.role });
   });
 
   s.put("/users/:id", { schema: { body: updateUserSchema, params: userIdParams } }, async (req, reply) => {
