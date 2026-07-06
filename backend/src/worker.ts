@@ -274,8 +274,7 @@ cron.schedule("* * * * *", async () => {
         await redis.set(reminderKey, "1", "EX", 86400);
       }
 
-      // ── Fichaje notifications ───────────────────────
-      await checkFichajeNotifications();
+
     })(), JOB_TIMEOUT, "reminder job");
   } catch (err) {
     console.error("[Worker] Error processing reminders:", err);
