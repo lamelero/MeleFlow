@@ -400,10 +400,22 @@ export class AuthService {
       where: { tokenHash },
     });
 
-    if (!stored || stored.expiresAt < new Date()) {
-      if (stored) {
-        await prisma.refreshToken.delete({ where: { id: stored.id } });
+    if (!stored) {
+      // Token not in DB — could be expired OR reused (rotated by attacker/legitimate user)
+      // Try to decode the JWT to check if it was a valid token that got rotated
+      try {
+        const decoded = jwt.verify(rawToken, env.JWT_REFRESH_SECRET) as { sub: string };
+        // Token is cryptographically valid but not in DB → reuse detected
+        await prisma.refreshToken.deleteMany({ where: { userId: decoded.sub } });
+        await logSecurityEvent({ userId: decoded.sub, action: "TOKEN_REUSE_DETECTED" });
+      } catch {
+        // Invalid or expired JWT, nothing extra to do
       }
+      throw createError.Unauthorized("Invalid or expired refresh token");
+    }
+
+    if (stored.expiresAt < new Date()) {
+      await prisma.refreshToken.delete({ where: { id: stored.id } });
       throw createError.Unauthorized("Invalid or expired refresh token");
     }
 
