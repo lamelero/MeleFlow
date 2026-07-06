@@ -23,7 +23,7 @@ export const env = z
     ENCRYPTION_KEY: z.string().min(32),
     ALLOW_REGISTRATION: z
       .string()
-      .default("true")
+      .default("false")
       .transform((v) => v === "true"),
     MAX_UPLOAD_SIZE: z.coerce.number().default(50),
     MAX_LOGIN_ATTEMPTS: z.coerce.number().default(5),

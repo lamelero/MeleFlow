@@ -7,6 +7,7 @@ import { Role } from "@prisma/client";
 import { env } from "../../config/env";
 import { checkRateLimit, recordFailedAttempt, clearFailedAttempts } from "../../lib/rate-limit";
 import { logSecurityEvent } from "../../lib/security-log";
+import { parseNotificationPrefs } from "../../utils/notification-prefs";
 import { sendEmail, buildOTPEmail, isEmailConfigured } from "../../lib/email-service";
 import { t } from "../../lib/email-i18n";
 import {
@@ -448,7 +449,7 @@ export class AuthService {
 
     return {
       ...user,
-      notificationPrefs: user.notificationPrefs ? JSON.parse(user.notificationPrefs) : { email: true, push: true, browser: true },
+      notificationPrefs: parseNotificationPrefs(user.notificationPrefs),
     };
   }
 
@@ -663,7 +664,7 @@ export class AuthService {
       select: { id: true, email: true, username: true, displayName: true, avatarUrl: true, notificationEmail: true, bio: true, timezone: true, role: true, language: true, notificationPrefs: true },
     });
 
-    const parsedPrefs = user?.notificationPrefs ? JSON.parse(user.notificationPrefs) : { email: true, push: true, browser: true };
+    const parsedPrefs = parseNotificationPrefs(user?.notificationPrefs);
 
     return {
       accessToken,

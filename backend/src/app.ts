@@ -1,4 +1,4 @@
-import Fastify, { type FastifyRequest, type FastifyReply } from "fastify";
+import Fastify, { type FastifyInstance, type FastifyRequest, type FastifyReply } from "fastify";
 import { ZodTypeProvider, serializerCompiler, validatorCompiler } from "@fastify/type-provider-zod";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
@@ -23,10 +23,12 @@ import { adminRoutes } from "./modules/admin/admin.routes";
 import { settingsRoutes } from "./modules/settings/settings.routes";
 import { icsCalendarRoutes } from "./modules/ics-calendars/ics-calendars.routes";
 
-// BigInt serialization for JSON responses (Prisma uses BigInt for storage counts)
-(BigInt.prototype as unknown as Record<string, unknown>).toJSON = function () {
-  return Number(this);
-};
+// Custom BigInt serializer (Prisma uses BigInt for storage counts)
+// Using a replacer avoids mutating native prototypes and losing precision for values > 2^53
+function bigIntReplacer(_key: string, value: unknown): unknown {
+  if (typeof value === "bigint") return Number(value);
+  return value;
+}
 
 export async function buildApp(opts: Record<string, unknown> = {}) {
   const app = Fastify({
@@ -36,7 +38,10 @@ export async function buildApp(opts: Record<string, unknown> = {}) {
   }).withTypeProvider<ZodTypeProvider>();
 
   app.setValidatorCompiler(validatorCompiler);
-  app.setSerializerCompiler(serializerCompiler);
+  app.setSerializerCompiler(function (this: FastifyInstance, options: any) {
+    const original = serializerCompiler.call(this, options);
+    return (data: unknown) => JSON.stringify(data, bigIntReplacer);
+  });
 
   // ── Plugins ──────────────────────────────────
   await app.register(helmet, {
@@ -108,6 +113,21 @@ export async function buildApp(opts: Record<string, unknown> = {}) {
         reply.code(401).send({ error: "Unauthorized" });
       }
     },
+  );
+
+  app.decorate(
+    "requireRole",
+    (role: string) =>
+      async (req: FastifyRequest, reply: FastifyReply) => {
+        try {
+          await req.jwtVerify();
+          if (req.user.role !== role) {
+            reply.code(403).send({ error: "Forbidden" });
+          }
+        } catch {
+          reply.code(401).send({ error: "Unauthorized" });
+        }
+      },
   );
 
   // ── Error handler ────────────────────────────

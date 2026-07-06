@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "@fastify/type-provider-zod";
 import {
   updateUserSchema,
@@ -18,22 +18,9 @@ import { BackupService } from "./backup.service";
 const service = new AdminService();
 const backupService = new BackupService();
 
-async function isAdmin(req: FastifyRequest, reply: FastifyReply) {
-  try {
-    await req.jwtVerify();
-    if (req.user.role !== "ADMIN") {
-      reply.code(403).send({ error: "Forbidden" });
-      return;
-    }
-  } catch {
-    reply.code(401).send({ error: "Unauthorized" });
-    return;
-  }
-}
-
 export async function adminRoutes(app: FastifyInstance) {
   const s = app.withTypeProvider<ZodTypeProvider>();
-  s.addHook("onRequest", isAdmin);
+  app.addHook("onRequest", app.requireRole("ADMIN"));
 
   s.get("/users", async (_req, reply) => {
     reply.send(await service.getUsers());

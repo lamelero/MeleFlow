@@ -5,6 +5,7 @@ import fs from "fs/promises";
 import { prisma } from "../../config/database";
 import { AuthService } from "./auth.service";
 import { validateFile } from "../../utils/file-validator";
+import { parseNotificationPrefs } from "../../utils/notification-prefs";
 import {
   registerSchema,
   loginSchema,
@@ -239,9 +240,7 @@ export async function authRoutes(app: FastifyInstance) {
       where: { id: req.user.sub },
       select: { notificationPrefs: true },
     });
-    const prefs = user?.notificationPrefs
-      ? JSON.parse(user.notificationPrefs)
-      : { email: true, push: true, browser: true };
+    const prefs = parseNotificationPrefs(user?.notificationPrefs);
     reply.send(prefs);
   });
 
@@ -256,9 +255,7 @@ export async function authRoutes(app: FastifyInstance) {
       where: { id: sub },
       select: { notificationPrefs: true },
     });
-    const current = existing?.notificationPrefs
-      ? JSON.parse(existing.notificationPrefs)
-      : { email: true, push: true, browser: true };
+    const current = parseNotificationPrefs(existing?.notificationPrefs);
     const merged = { ...current, ...body };
     await prisma.user.update({
       where: { id: sub },
