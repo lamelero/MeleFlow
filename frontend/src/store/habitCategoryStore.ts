@@ -33,15 +33,18 @@ export interface HabitCategoryItem {
 interface HabitCategoryStore {
   categories: HabitCategoryItem[];
   isLoading: boolean;
+  colorVersion: number;
   fetchCategories: () => Promise<void>;
   createCategory: (input: { name: string; icon: string; color: string }) => Promise<HabitCategoryItem | null>;
   updateCategory: (id: string, input: Partial<HabitCategoryItem>) => Promise<void>;
   deleteCategory: (id: string) => Promise<void>;
+  bumpColorVersion: () => void;
 }
 
 export const useHabitCategoryStore = create<HabitCategoryStore>((set, get) => ({
   categories: loadCache()?.data ?? [],
   isLoading: false,
+  colorVersion: 0,
 
   fetchCategories: async () => {
     const cached = loadCache();
@@ -80,12 +83,13 @@ export const useHabitCategoryStore = create<HabitCategoryStore>((set, get) => ({
       const updated = get().categories.map((c) => (c.id === id ? { ...c, ...data } : c));
       set({ categories: updated });
       saveCache(updated);
-      toast.success("Category updated");
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || "Failed to update category";
       toast.error(msg);
     }
   },
+
+  bumpColorVersion: () => set((s) => ({ colorVersion: s.colorVersion + 1 })),
 
   deleteCategory: async (id) => {
     try {

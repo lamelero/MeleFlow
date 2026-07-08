@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import type { Habit } from "../../store/habitStore";
 import { useHabitStore } from "../../store/habitStore";
-import { HABIT_CATEGORIES } from "../../lib/habit-categories";
+import { HABIT_CATEGORIES, getCategoryColor } from "../../lib/habit-categories";
+import { useHabitCategoryStore } from "../../store/habitCategoryStore";
 import { LIST_ICONS } from "../lists/listIcons";
 
 interface HabitCardProps {
@@ -51,20 +52,30 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
   const navigate = useNavigate();
   const { checkIn, deleteHabit, resetProgress } = useHabitStore();
 
+  const categories = useHabitCategoryStore((s) => s.categories);
+  const colorVersion = useHabitCategoryStore((s) => s.colorVersion);
+
   const catInfo = useMemo(() => {
-    if (habit.habitCategory) {
-      const dyn = habit.habitCategory;
-      const IconComp = LIST_ICONS.find((i) => i.name === dyn.icon);
-      return {
-        color: dyn.color,
-        bgColor: dyn.color + "20",
-        label: dyn.name,
-        labelEs: dyn.name,
-        icon: () => IconComp ? <IconComp.icon className="h-4 w-4" /> : null,
-      };
+    if (habit.categoryId) {
+      const userCat = categories.find((c) => c.id === habit.categoryId);
+      if (userCat) {
+        const IconComp = LIST_ICONS.find((i) => i.name === userCat.icon);
+        return {
+          color: userCat.color,
+          bgColor: userCat.color + "20",
+          label: userCat.name,
+          labelEs: userCat.name,
+          icon: () => IconComp ? <IconComp.icon className="h-4 w-4" /> : null,
+        };
+      }
     }
-    return HABIT_CATEGORIES[habit.category] || HABIT_CATEGORIES.OTROS;
-  }, [habit.category, habit.habitCategory]);
+    const catKey = habit.category;
+    return {
+      ...(HABIT_CATEGORIES[catKey] || HABIT_CATEGORIES.OTROS),
+      color: getCategoryColor(catKey),
+      bgColor: getCategoryColor(catKey) + "20",
+    };
+  }, [habit.category, habit.categoryId, categories, colorVersion]);
   const Icon = catInfo.icon;
   const today = new Date().toISOString().split("T")[0];
   const [menuOpen, setMenuOpen] = useState(false);

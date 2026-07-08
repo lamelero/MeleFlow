@@ -126,3 +126,18 @@ export const HABIT_CATEGORIES: Record<string, HabitCategoryInfo> = {
 };
 
 export const HABIT_CATEGORY_KEYS = Object.keys(HABIT_CATEGORIES);
+
+export function getCategoryColor(key: string): string {
+  if (!key) return "#6B7280";
+  try {
+    return localStorage.getItem(`habit_cat_color_${key}`) || HABIT_CATEGORIES[key]?.color || "#6B7280";
+  } catch {
+    return HABIT_CATEGORIES[key]?.color || "#6B7280";
+  }
+}
+
+export function setCategoryColor(key: string, color: string): void {
+  try {
+    localStorage.setItem(`habit_cat_color_${key}`, color);
+  } catch {}
+}

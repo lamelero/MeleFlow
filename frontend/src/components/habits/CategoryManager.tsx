@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { HexColorPicker } from "react-colorful";
 import { useHabitCategoryStore, type HabitCategoryItem } from "../../store/habitCategoryStore";
+import { HABIT_CATEGORIES, HABIT_CATEGORY_KEYS, getCategoryColor, setCategoryColor } from "../../lib/habit-categories";
 import { LIST_ICONS } from "../lists/listIcons";
 import IconPicker from "../lists/IconPicker";
 
@@ -12,7 +13,7 @@ interface CategoryManagerProps {
 
 export default function CategoryManager({ selectedId, onSelect }: CategoryManagerProps) {
   const { t } = useTranslation();
-  const { categories, createCategory, updateCategory, deleteCategory } = useHabitCategoryStore();
+  const { categories, createCategory, updateCategory, deleteCategory, bumpColorVersion } = useHabitCategoryStore();
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -23,9 +24,14 @@ export default function CategoryManager({ selectedId, onSelect }: CategoryManage
   const [editColorId, setEditColorId] = useState<string | null>(null);
   const [editTempColor, setEditTempColor] = useState("");
   const popoverRef = useRef<HTMLDivElement>(null);
+  const sysPopoverRef = useRef<HTMLDivElement>(null);
+  const [sysColorKey, setSysColorKey] = useState<string | null>(null);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
+      if (sysPopoverRef.current && !sysPopoverRef.current.contains(e.target as Node)) {
+        setSysColorKey(null);
+      }
       if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
         if (editColorId && editTempColor) {
           const cat = categories.find((c) => c.id === editColorId);
@@ -36,11 +42,11 @@ export default function CategoryManager({ selectedId, onSelect }: CategoryManage
         setEditTempColor("");
       }
     }
-    if (colorPickerOpen || editColorId) {
+    if (colorPickerOpen || editColorId || sysColorKey) {
       document.addEventListener("mousedown", handleClick);
       return () => document.removeEventListener("mousedown", handleClick);
     }
-  }, [colorPickerOpen, editColorId, editTempColor, categories, updateCategory]);
+  }, [colorPickerOpen, editColorId, editTempColor, sysColorKey, categories, updateCategory]);
 
   async function handleCreate() {
     if (!name.trim() || !icon) return;
@@ -69,6 +75,34 @@ export default function CategoryManager({ selectedId, onSelect }: CategoryManage
 
   return (
     <div className="space-y-2">
+      {/* Predefined system categories */}
+      <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-2 dark:border-gray-700 dark:bg-gray-800/50">
+        <p className="mb-1.5 px-1 font-urbanist text-[10px] font-semibold uppercase tracking-wider text-gray-400">Categorías del sistema</p>
+        <div className="space-y-0.5">
+          {HABIT_CATEGORY_KEYS.map((key) => {
+            const info = HABIT_CATEGORIES[key];
+            const currentColor = getCategoryColor(key);
+            return (
+              <div key={key} className="flex items-center gap-2 rounded-lg px-2 py-1">
+                <span style={{ color: currentColor }}>{info.icon()}</span>
+                <span className="flex-1 font-urbanist text-xs text-gray-600 dark:text-gray-400">{info.labelEs}</span>
+                <div className="relative">
+                  <div className="h-4 w-4 cursor-pointer rounded-full border border-gray-300"
+                    style={{ backgroundColor: currentColor }}
+                    onClick={(e) => { e.stopPropagation(); setSysColorKey(sysColorKey === key ? null : key); }} />
+                  {sysColorKey === key && (
+                    <div ref={sysPopoverRef} className="absolute right-0 top-5 z-20 rounded-xl border border-gray-200 bg-white p-3 shadow-lg dark:border-gray-700 dark:bg-gray-800">
+                      <HexColorPicker color={currentColor}
+                        onChange={(c) => { setCategoryColor(key, c); bumpColorVersion(); }} />
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {sorted.map((cat) => {
         const IconComp = LIST_ICONS.find((i) => i.name === cat.icon);
         return (
