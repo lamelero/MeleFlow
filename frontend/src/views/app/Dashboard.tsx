@@ -23,14 +23,10 @@ import EmptyState from "../../components/EmptyState";
 import IconPicker from "../../components/lists/IconPicker";
 import { ListIcon, LIST_ICONS } from "../../components/lists/listIcons";
 import { isNative } from "../../capacitor/register";
+import { HexColorPicker } from "react-colorful";
 import { LayoutList, CheckSquare, Heart, Calendar } from "lucide-react";
 import { parseTaskInput } from "../../lib/nlp";
 import { registerShortcuts, clearShortcuts } from "../../lib/keyboardShortcuts";
-
-const LIST_COLORS = [
-  "#14B8A6", "#EF4444", "#F59E0B", "#3B82F6",
-  "#8B5CF6", "#EC4899", "#10B981", "#6366F1",
-];
 
 export default function Dashboard() {
   const { t } = useTranslation();
@@ -54,8 +50,10 @@ export default function Dashboard() {
   const [newListName, setNewListName] = useState("");
   const [newListIcon, setNewListIcon] = useState<string | null>(null);
   const [newListColor, setNewListColor] = useState("#14B8A6");
+  const [newColorPickerOpen, setNewColorPickerOpen] = useState(false);
   const [emojiPickerListId, setEmojiPickerListId] = useState<string | null>(null);
   const [colorPickerListId, setColorPickerListId] = useState<string | null>(null);
+  const [editListTempColor, setEditListTempColor] = useState("");
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [habitFormOpen, setHabitFormOpen] = useState(false);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
@@ -101,16 +99,17 @@ export default function Dashboard() {
     return () => clearShortcuts();
   }, [navigate]);
 
-  // Close menu on outside click
+  // Close menu and color picker on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setMenuOpenListId(null);
+        setColorPickerListId(null);
       }
     }
-    if (menuOpenListId) document.addEventListener("mousedown", handleClick);
+    if (menuOpenListId || colorPickerListId) document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, [menuOpenListId]);
+  }, [menuOpenListId, colorPickerListId]);
 
   async function handleRename(listId: string) {
     const name = editingListName.trim();
@@ -276,18 +275,17 @@ export default function Dashboard() {
                     autoFocus
                   />
                 </div>
-                <div className="flex gap-1.5 px-0.5">
-                  {LIST_COLORS.map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => setNewListColor(c)}
-                      className={`h-5 w-5 rounded-full transition-all ${
-                        newListColor === c ? "ring-2 ring-gray-400 ring-offset-1 dark:ring-offset-gray-900" : "ring-1 ring-transparent hover:ring-gray-300"
-                      }`}
-                      style={{ backgroundColor: c }}
-                    />
-                  ))}
+                <div className="relative">
+                  <div className="h-5 w-5 cursor-pointer rounded-full border border-gray-300"
+                    style={{ backgroundColor: newListColor }}
+                    onClick={() => setNewColorPickerOpen(!newColorPickerOpen)} />
+                  {newColorPickerOpen && (
+                    <div className="absolute left-0 top-6 z-30 rounded-xl border border-gray-200 bg-white p-3 shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                      onClick={(e) => e.stopPropagation()}>
+                      <HexColorPicker color={newListColor}
+                        onChange={setNewListColor} />
+                    </div>
+                  )}
                 </div>
               </form>
             )}
@@ -425,23 +423,10 @@ export default function Dashboard() {
                   )}
 
                   {colorPickerListId === list.id && (
-                    <div className="absolute left-0 top-full z-30 mt-1 rounded-xl border bg-white p-2 shadow-lg dark:border-gray-700 dark:bg-gray-800">
-                      <div className="mb-1 px-1">
-                        <span className="font-urbanist text-[10px] text-gray-400">{t("dashboard.changeColor")}</span>
-                      </div>
-                      <div className="flex gap-1.5 px-0.5">
-                        {LIST_COLORS.map((c) => (
-                          <button
-                            key={c}
-                            type="button"
-                            onClick={() => { updateList(list.id, { color: c }); setColorPickerListId(null); }}
-                            className={`h-7 w-7 rounded-full transition-all ${
-                              list.color === c ? "ring-2 ring-gray-400 ring-offset-2 dark:ring-offset-gray-900" : "ring-1 ring-transparent hover:ring-gray-300"
-                            }`}
-                            style={{ backgroundColor: c }}
-                          />
-                        ))}
-                      </div>
+                    <div className="absolute left-0 top-full z-30 mt-1 rounded-xl border border-gray-200 bg-white p-3 shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                      onClick={(e) => e.stopPropagation()}>
+                      <HexColorPicker color={editListTempColor || list.color}
+                        onChange={(c) => { setEditListTempColor(c); updateList(list.id, { color: c }); }} />
                     </div>
                   )}
                 </div>
