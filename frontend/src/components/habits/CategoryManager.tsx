@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { HexColorPicker } from "react-colorful";
 import { useHabitCategoryStore, type HabitCategoryItem } from "../../store/habitCategoryStore";
@@ -20,6 +20,15 @@ export default function CategoryManager({ selectedId, onSelect }: CategoryManage
   const [color, setColor] = useState("#14B8A6");
   const [editingName, setEditingName] = useState("");
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
+  const [editColorId, setEditColorId] = useState<string | null>(null);
+
+  useEffect(() => {
+    function handleClick() { setColorPickerOpen(false); setEditColorId(null); }
+    if (colorPickerOpen || editColorId) {
+      document.addEventListener("click", handleClick);
+      return () => document.removeEventListener("click", handleClick);
+    }
+  }, [colorPickerOpen, editColorId]);
 
   async function handleCreate() {
     if (!name.trim() || !icon) return;
@@ -82,6 +91,18 @@ export default function CategoryManager({ selectedId, onSelect }: CategoryManage
                 )}
               </button>
             )}
+            <div className="relative">
+              <div className="h-4 w-4 cursor-pointer rounded-full border border-gray-300"
+                style={{ backgroundColor: cat.color }}
+                onClick={(e) => { e.stopPropagation(); setEditColorId(editColorId === cat.id ? null : cat.id); }} />
+              {editColorId === cat.id && (
+                <div className="absolute right-0 top-6 z-20 rounded-xl border border-gray-200 bg-white p-3 shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                  onPointerDownCapture={(e) => e.stopPropagation()}>
+                  <HexColorPicker color={cat.color}
+                    onChange={async (c) => { await updateCategory(cat.id, { color: c }); }} />
+                </div>
+              )}
+            </div>
             <button
               onClick={() => startEdit(cat)}
               className="shrink-0 rounded p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"

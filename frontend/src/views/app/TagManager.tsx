@@ -13,18 +13,28 @@ export default function TagManager() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [colorDropdownId, setColorDropdownId] = useState<string | null>(null);
+  const [pendingColorTag, setPendingColorTag] = useState<string | null>(null);
+  const [pendingColor, setPendingColor] = useState("");
 
   useEffect(() => {
     fetchTags();
   }, [fetchTags]);
 
   useEffect(() => {
-    function handleClick() { setColorDropdownId(null); }
+    function handleClick() {
+      if (pendingColorTag && pendingColor) {
+        const tag = tags.find((t) => t.id === pendingColorTag);
+        if (tag && pendingColor !== tag.color) updateTag(tag.id, { color: pendingColor });
+      }
+      setColorDropdownId(null);
+      setPendingColorTag(null);
+      setPendingColor("");
+    }
     if (colorDropdownId) {
       document.addEventListener("click", handleClick);
       return () => document.removeEventListener("click", handleClick);
     }
-  }, [colorDropdownId]);
+  }, [colorDropdownId, pendingColorTag, pendingColor]);
 
   function startEdit(tag: Tag) {
     setEditingId(tag.id);
@@ -105,19 +115,25 @@ export default function TagManager() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    setColorDropdownId(colorDropdownId === tag.id ? null : tag.id);
+                    if (colorDropdownId === tag.id) {
+                      setColorDropdownId(null);
+                    } else {
+                      setPendingColor(tag.color);
+                      setPendingColorTag(tag.id);
+                      setColorDropdownId(tag.id);
+                    }
                   }}
                   className="inline-block h-5 w-5 rounded-full ring-2 ring-transparent transition-all hover:ring-gray-300 focus:outline-none"
-                  style={{ backgroundColor: tag.color }}
+                  style={{ backgroundColor: tag.id === pendingColorTag ? pendingColor : tag.color }}
                 />
                 {colorDropdownId === tag.id && (
                   <div className="absolute left-0 top-7 z-20 rounded-xl border border-gray-200 bg-white p-3 shadow-lg dark:border-gray-700 dark:bg-gray-800"
                     onClick={(e) => e.stopPropagation()}
                     onPointerDownCapture={(e) => e.stopPropagation()}>
-                    <HexColorPicker color={tag.color}
-                      onChange={(c) => handleColorChange(tag, c)} />
-                    <input value={tag.color}
-                      onChange={(e) => handleColorChange(tag, e.target.value)}
+                    <HexColorPicker color={pendingColor}
+                      onChange={setPendingColor} />
+                    <input value={pendingColor}
+                      onChange={(e) => setPendingColor(e.target.value)}
                       onClick={(e) => e.stopPropagation()}
                       className="mt-2 w-full rounded border border-gray-200 px-2 py-1 text-xs font-mono dark:border-gray-600 dark:bg-gray-700" />
                   </div>
