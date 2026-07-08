@@ -92,9 +92,12 @@ JWT_REFRESH_SECRET=$(openssl rand -base64 32)
 ENCRYPTION_KEY=$(openssl rand -hex 16)
 
 # 3. Create .env file
+mkdir -p uploads
+
+# 4. Create .env file
 cat > .env << EOF
 DOCKER_USER=meleflow
-TAG=v1.1.0
+TAG=latest
 NGINX_PORT=3001
 POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
 DATABASE_URL=postgresql://taskflow:${POSTGRES_PASSWORD}@postgres:5432/taskflow
@@ -110,13 +113,13 @@ ALLOW_REGISTRATION=true
 MAX_UPLOAD_SIZE=50
 EOF
 
-# 4. Pull images from Docker Hub
+# 5. Pull images from Docker Hub
 docker compose -f docker-compose.prod.yml --env-file .env pull
 
-# 5. Launch everything
+# 6. Launch everything
 docker compose -f docker-compose.prod.yml --env-file .env up -d
 
-# 6. Watch logs
+# 7. Watch logs
 docker compose -f docker-compose.prod.yml logs -f
 ```
 
@@ -157,8 +160,8 @@ Pre-built images are available on Docker Hub:
 
 | Image | Tags |
 |-------|------|
-| `meleflow/meleflow-backend` | `latest`, `v1.1.0` |
-| `meleflow/meleflow-frontend` | `latest`, `v1.1.0` |
+| `meleflow/meleflow-backend` | `latest` |
+| `meleflow/meleflow-frontend` | `latest` |
 
 ## Custom Port
 
