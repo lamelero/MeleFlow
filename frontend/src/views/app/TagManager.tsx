@@ -3,13 +3,9 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useTagStore, type Tag } from "../../store/tagStore";
+import { HexColorPicker } from "react-colorful";
 import TagPill from "../../components/tags/TagPill";
 import AppLayout from "../../components/AppLayout";
-
-const TAG_COLORS = [
-  "#EF4444", "#F59E0B", "#10B981", "#3B82F6", "#8B5CF6",
-  "#EC4899", "#14B8A6", "#F97316", "#6366F1", "#84CC16",
-];
 
 export default function TagManager() {
   const { t } = useTranslation();
@@ -115,26 +111,15 @@ export default function TagManager() {
                   style={{ backgroundColor: tag.color }}
                 />
                 {colorDropdownId === tag.id && (
-                  <div
-                    className="absolute left-0 top-7 z-20 w-36 rounded-xl border border-gray-200 bg-white p-2 shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                  <div className="absolute left-0 top-7 z-20 rounded-xl border border-gray-200 bg-white p-3 shadow-lg dark:border-gray-700 dark:bg-gray-800"
                     onClick={(e) => e.stopPropagation()}
-                  >
-                    {TAG_COLORS.map((c) => (
-                      <button
-                        key={c}
-                        onClick={() => {
-                          handleColorChange(tag, c);
-                          setColorDropdownId(null);
-                        }}
-                        className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left font-urbanist text-xs text-gray-700 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
-                      >
-                        <span
-                          className="inline-block h-3 w-3 shrink-0 rounded-full"
-                          style={{ backgroundColor: c }}
-                        />
-                        {c}
-                      </button>
-                    ))}
+                    onPointerDownCapture={(e) => e.stopPropagation()}>
+                    <HexColorPicker color={tag.color}
+                      onChange={(c) => handleColorChange(tag, c)} />
+                    <input value={tag.color}
+                      onChange={(e) => handleColorChange(tag, e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="mt-2 w-full rounded border border-gray-200 px-2 py-1 text-xs font-mono dark:border-gray-600 dark:bg-gray-700" />
                   </div>
                 )}
               </div>

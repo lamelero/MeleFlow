@@ -1,13 +1,9 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { HexColorPicker } from "react-colorful";
 import { useHabitCategoryStore, type HabitCategoryItem } from "../../store/habitCategoryStore";
 import { LIST_ICONS } from "../lists/listIcons";
 import IconPicker from "../lists/IconPicker";
-
-const LIST_COLORS = [
-  "#14B8A6", "#EF4444", "#F59E0B", "#3B82F6",
-  "#8B5CF6", "#EC4899", "#10B981", "#6366F1",
-];
 
 interface CategoryManagerProps {
   selectedId?: string | null;
@@ -23,6 +19,7 @@ export default function CategoryManager({ selectedId, onSelect }: CategoryManage
   const [icon, setIcon] = useState<string | null>(null);
   const [color, setColor] = useState("#14B8A6");
   const [editingName, setEditingName] = useState("");
+  const [colorPickerOpen, setColorPickerOpen] = useState(false);
 
   async function handleCreate() {
     if (!name.trim() || !icon) return;
@@ -122,18 +119,21 @@ export default function CategoryManager({ selectedId, onSelect }: CategoryManage
               onKeyDown={(e) => { if (e.key === "Enter") handleCreate(); }}
             />
           </div>
-          <div className="flex gap-1.5 px-0.5">
-            {LIST_COLORS.map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setColor(c)}
-                className={`h-5 w-5 rounded-full transition-all ${
-                  color === c ? "ring-2 ring-gray-400 ring-offset-1 dark:ring-offset-gray-800" : "ring-1 ring-transparent hover:ring-gray-300"
-                }`}
-                style={{ backgroundColor: c }}
-              />
-            ))}
+          <div className="relative">
+            <div className="h-5 w-5 cursor-pointer rounded-full border border-gray-300"
+              style={{ backgroundColor: color }}
+              onClick={() => setColorPickerOpen(!colorPickerOpen)} />
+            {colorPickerOpen && (
+              <div className="absolute left-0 top-7 z-20 rounded-xl border border-gray-200 bg-white p-3 shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                onPointerDownCapture={(e) => e.stopPropagation()}>
+                <HexColorPicker color={color}
+                  onChange={setColor} />
+                <input value={color}
+                  onChange={(e) => setColor(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  className="mt-2 w-full rounded border border-gray-200 px-2 py-1 text-xs font-mono dark:border-gray-600 dark:bg-gray-700" />
+              </div>
+            )}
           </div>
           <div className="flex gap-2">
             <button
