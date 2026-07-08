@@ -99,8 +99,11 @@ JWT_SECRET=$(openssl rand -base64 32)
 JWT_REFRESH_SECRET=$(openssl rand -base64 32)
 ENCRYPTION_KEY=$(openssl rand -hex 16)
 
-# 4. Create the data folders
+# 4. Create the data folders and .env file
 mkdir -p uploads backups
+
+# ⚠️ IMPORTANT: replace YOUR_SERVER_IP with your server's IP or domain
+#    Example: http://192.168.1.100:3001 or https://meleflow.tudominio.com
 cat > .env << EOF
 DOCKER_USER=meleflow
 TAG=latest
@@ -129,8 +132,6 @@ docker compose up -d
 curl -s http://localhost:3001/api/health
 # → {"status":"ok","timestamp":"..."}
 ```
-
-> ⚠️ **Before step 4:** replace `YOUR_SERVER_IP` with your server's IP or domain (e.g. `http://192.168.1.100:3001` or `https://meleflow.tudominio.com`).
 
 ---
 
