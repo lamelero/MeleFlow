@@ -110,7 +110,7 @@ export class HabitService {
           select: { date: true, status: true },
         },
         habitCategory: true,
-        _count: { select: { logs: true } },
+        _count: { select: { logs: { where: { status: "completed" } } } },
       },
       orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
     });
@@ -151,7 +151,7 @@ export class HabitService {
           select: { date: true, status: true },
         },
         habitCategory: true,
-        _count: { select: { logs: true } },
+        _count: { select: { logs: { where: { status: "completed" } } } },
       },
     });
     if (!habit) throw createError.NotFound( "Habit not found");
