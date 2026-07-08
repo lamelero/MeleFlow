@@ -79,22 +79,28 @@ docker compose logs -f
 
 The app is at **http://localhost:3001**.
 
-## Production Deployment
+## Production Deployment (fresh install)
+
+You only need a server with Docker installed. **No need to compile anything.**
+
+### Step by step
 
 ```bash
-# 1. Clone the repo on your server
-git clone <repo> meleflow && cd meleflow
+# 1. Create a folder for MeleFlow
+mkdir -p ~/meleflow && cd ~/meleflow
 
-# 2. Generate unique secrets
+# 2. Download the docker-compose file
+curl -L -o docker-compose.yml \
+  "https://raw.githubusercontent.com/lamelero/MeleFlow/main/docker-compose.prod.yml"
+
+# 3. Generate secure random passwords
 POSTGRES_PASSWORD=$(openssl rand -base64 32)
 JWT_SECRET=$(openssl rand -base64 32)
 JWT_REFRESH_SECRET=$(openssl rand -base64 32)
 ENCRYPTION_KEY=$(openssl rand -hex 16)
 
-# 3. Create .env file
+# 4. Create the configuration file
 mkdir -p uploads
-
-# 4. Create .env file
 cat > .env << EOF
 DOCKER_USER=meleflow
 TAG=latest
@@ -113,38 +119,71 @@ ALLOW_REGISTRATION=true
 MAX_UPLOAD_SIZE=50
 EOF
 
-# 5. Pull images from Docker Hub
-docker compose -f docker-compose.prod.yml --env-file .env pull
+# 5. Pull the Docker images from Docker Hub
+docker compose pull
 
-# 6. Launch everything
-docker compose -f docker-compose.prod.yml --env-file .env up -d
+# 6. Start MeleFlow
+docker compose up -d
 
-# 7. Watch logs
-docker compose -f docker-compose.prod.yml logs -f
+# 7. Check it's running
+curl -s http://localhost:3001/api/health
+# → {"status":"ok","timestamp":"..."}
 ```
 
-> **Note:** Replace `YOUR_SERVER_IP` with your server's IP or domain. For HTTPS behind a reverse proxy, set `FORCE_SECURE=true` to enable Secure cookies.
+> ⚠️ **Before step 4:** replace `YOUR_SERVER_IP` with your server's IP or domain (e.g. `http://192.168.1.100:3001` or `https://meleflow.tudominio.com`).
+
+---
+
+### After installing
+
+- Open `http://YOUR_SERVER_IP:3001` in your browser
+- Create an account — **the first user becomes admin automatically**
+- Start using MeleFlow!
+
+To change the port, edit `NGINX_PORT` in `.env` before starting, then run `docker compose up -d` again.
+
+To see the logs:
+
+```bash
+docker compose logs -f
+```
+
+To stop:
+
+```bash
+docker compose down
+```
+
+---
 
 ### Synology NAS specifics
 
-On Synology DSM, Docker is installed as **Container Manager**. The docker and docker-compose binaries are located at `/var/packages/ContainerManager/target/usr/bin/`. You may need to use the full path or `sudo` depending on your user permissions.
+On Synology DSM, Docker is called **Container Manager**. The `docker` and `docker compose` commands may not be in the default PATH. The easiest way to install is:
 
 ```bash
-# On Synology with sudo
-sudo /var/packages/ContainerManager/target/usr/bin/docker compose \
-  -f /path/to/docker-compose.prod.yml --env-file /path/to/.env up -d
+# 1. Connect to your NAS via SSH (admin user)
+ssh admin@YOUR_NAS_IP
+
+# 2. Get a root shell (this adds docker to the PATH automatically)
+sudo -i
+
+# 3. Follow the steps above (create folder, download compose, etc.)
+mkdir -p ~/meleflow && cd ~/meleflow
+curl -L -o docker-compose.yml \
+  "https://raw.githubusercontent.com/lamelero/MeleFlow/main/docker-compose.prod.yml"
+# ... continue with step 3 (generate secrets) ...
 ```
 
-### Firewall
+> 💡 Using `sudo -i` gives you a root shell where `docker compose` works without specifying the full path. If you prefer not to use root, the binaries are at `/var/packages/ContainerManager/target/usr/bin/docker`.
 
-If containers can't reach each other (e.g. `postgres:5432` unreachable), temporarily disable the Synology firewall or add a rule for the Docker bridge network:
+#### Firewall
+
+On Synology, if containers can't reach each other (e.g. `postgres:5432` unreachable), temporarily disable the firewall or add a rule for the Docker bridge network:
 
 ```bash
 # Disable firewall (temporary debug)
 synofirewall --disable
 ```
-
-For a permanent setup, create an allow rule from the Docker bridge subnet (`172.x.0.0/16`) to the NAS IP on the required ports.
 
 | Service     | Internal URL                    |
 |-------------|---------------------------------|
