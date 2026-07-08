@@ -6,7 +6,7 @@ export class ListService {
   async findAll(userId: string) {
     return prisma.list.findMany({
       where: { userId },
-      include: { _count: { select: { tasks: true } } },
+      include: { _count: { select: { tasks: { where: { isCompleted: false } } } } },
       orderBy: { createdAt: "asc" },
     });
   }
@@ -22,7 +22,7 @@ export class ListService {
 
     return prisma.list.create({
       data: { userId, ...input },
-      include: { _count: { select: { tasks: true } } },
+      include: { _count: { select: { tasks: { where: { isCompleted: false } } } } },
     });
   }
 
@@ -47,7 +47,7 @@ export class ListService {
     return prisma.list.update({
       where: { id: listId },
       data: input,
-      include: { _count: { select: { tasks: true } } },
+      include: { _count: { select: { tasks: { where: { isCompleted: false } } } } },
     });
   }
 
