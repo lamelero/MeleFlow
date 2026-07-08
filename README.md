@@ -99,8 +99,8 @@ JWT_SECRET=$(openssl rand -base64 32)
 JWT_REFRESH_SECRET=$(openssl rand -base64 32)
 ENCRYPTION_KEY=$(openssl rand -hex 16)
 
-# 4. Create the configuration file
-mkdir -p uploads
+# 4. Create the data folders
+mkdir -p uploads backups
 cat > .env << EOF
 DOCKER_USER=meleflow
 TAG=latest

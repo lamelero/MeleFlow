@@ -65,7 +65,8 @@ services:
       CORS_ORIGIN: ${CORS_ORIGIN:-}
       FIREBASE_SERVICE_ACCOUNT_PATH: /usr/src/app/firebase-key.json
     volumes:
-      - uploads:/usr/src/app/uploads
+      - ./uploads:/usr/src/app/uploads
+      - ./backups:/usr/src/app/backups
       - ./firebase-key.json:/usr/src/app/firebase-key.json:ro
     depends_on:
       postgres:
@@ -107,6 +108,7 @@ services:
     networks:
       - meleflow-net
     volumes:
+      - ./backups:/usr/src/app/backups
       - ./firebase-key.json:/usr/src/app/firebase-key.json:ro
 
   nginx:
@@ -118,7 +120,7 @@ services:
     ports:
       - "${NGINX_PORT:-3001}:80"
     volumes:
-      - uploads:/var/www/uploads:ro
+      - ./uploads:/var/www/uploads:ro
     depends_on:
       backend:
         condition: service_started
@@ -139,6 +141,4 @@ volumes:
   postgres_data:
     driver: local
   redis_data:
-    driver: local
-  uploads:
     driver: local
