@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { HexColorPicker } from "react-colorful";
 import { useHabitCategoryStore, type HabitCategoryItem } from "../../store/habitCategoryStore";
@@ -21,14 +21,26 @@ export default function CategoryManager({ selectedId, onSelect }: CategoryManage
   const [editingName, setEditingName] = useState("");
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
   const [editColorId, setEditColorId] = useState<string | null>(null);
+  const [editTempColor, setEditTempColor] = useState("");
+  const popoverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    function handleClick() { setColorPickerOpen(false); setEditColorId(null); }
-    if (colorPickerOpen || editColorId) {
-      document.addEventListener("click", handleClick);
-      return () => document.removeEventListener("click", handleClick);
+    function handleClick(e: MouseEvent) {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        if (editColorId && editTempColor) {
+          const cat = categories.find((c) => c.id === editColorId);
+          if (cat && editTempColor !== cat.color) updateCategory(cat.id, { color: editTempColor });
+        }
+        setColorPickerOpen(false);
+        setEditColorId(null);
+        setEditTempColor("");
+      }
     }
-  }, [colorPickerOpen, editColorId]);
+    if (colorPickerOpen || editColorId) {
+      document.addEventListener("mousedown", handleClick);
+      return () => document.removeEventListener("mousedown", handleClick);
+    }
+  }, [colorPickerOpen, editColorId, editTempColor, categories, updateCategory]);
 
   async function handleCreate() {
     if (!name.trim() || !icon) return;
@@ -93,13 +105,12 @@ export default function CategoryManager({ selectedId, onSelect }: CategoryManage
             )}
             <div className="relative">
               <div className="h-4 w-4 cursor-pointer rounded-full border border-gray-300"
-                style={{ backgroundColor: cat.color }}
-                onClick={(e) => { e.stopPropagation(); setEditColorId(editColorId === cat.id ? null : cat.id); }} />
+                style={{ backgroundColor: cat.id === editColorId && editTempColor ? editTempColor : cat.color }}
+                onClick={(e) => { e.stopPropagation(); if (editColorId === cat.id) { setEditColorId(null); } else { setEditTempColor(cat.color); setEditColorId(cat.id); } }} />
               {editColorId === cat.id && (
-                <div className="absolute right-0 top-6 z-20 rounded-xl border border-gray-200 bg-white p-3 shadow-lg dark:border-gray-700 dark:bg-gray-800"
-                  onPointerDownCapture={(e) => e.stopPropagation()}>
-                  <HexColorPicker color={cat.color}
-                    onChange={async (c) => { await updateCategory(cat.id, { color: c }); }} />
+                <div ref={popoverRef} className="absolute right-0 top-6 z-20 rounded-xl border border-gray-200 bg-white p-3 shadow-lg dark:border-gray-700 dark:bg-gray-800">
+                  <HexColorPicker color={editTempColor}
+                    onChange={setEditTempColor} />
                 </div>
               )}
             </div>
