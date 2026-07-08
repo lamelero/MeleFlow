@@ -99,8 +99,9 @@ JWT_SECRET=$(openssl rand -base64 32)
 JWT_REFRESH_SECRET=$(openssl rand -base64 32)
 ENCRYPTION_KEY=$(openssl rand -hex 16)
 
-# 4. Create the data folders and .env file
+# 4. Create the data folders, placeholder for Firebase (optional), and .env file
 mkdir -p uploads backups
+echo '{}' > firebase-key.json          # placeholder for push notifications (see guide below)
 
 # ⚠️ IMPORTANT: replace YOUR_SERVER_IP with your server's IP or domain
 #    Example: http://192.168.1.100:3001 or https://meleflow.tudominio.com
@@ -474,34 +475,22 @@ cd android
 ```
 
 APK outputs:
-- `android/app/build/outputs/apk/normal/debug/meleflow-normal.apk` → renamed as `meleflow-v1.1.0.apk`
+- `android/app/build/outputs/apk/normal/debug/meleflow-normal.apk` → renamed as `MeleFlow-v1.2.0.apk`
 - `android/app/build/outputs/apk/trabajo/debug/meleflow-trabajo.apk`
+
+The latest APK can be downloaded from the [GitHub Releases](https://github.com/lamelero/MeleFlow/releases) page.
 
 ### Backend: Firebase Admin SDK
 
-For the backend to send push notifications, it needs a **service account key**:
+The `docker-compose.yml` already mounts `./firebase-key.json` for the backend and worker, and the `.env` already sets `FIREBASE_SERVICE_ACCOUNT_PATH`. The install script creates a **placeholder** (`echo '{}' > firebase-key.json`) so everything works out of the box (push is just disabled).
+
+To enable push notifications, replace the placeholder with a real service account key:
 
 1. In Firebase Console → Project Settings → **Service accounts** → **Generate new private key**
-2. Save the downloaded JSON file on your server (e.g., `/opt/meleflow/firebase-key.json`)
-3. Mount it as a volume:
-
-```yaml
-backend:
-  volumes:
-    - /opt/meleflow/firebase-key.json:/usr/src/app/firebase-key.json:ro
-  environment:
-    - FIREBASE_SERVICE_ACCOUNT_PATH=/usr/src/app/firebase-key.json
-
-worker:
-  volumes:
-    - /opt/meleflow/firebase-key.json:/usr/src/app/firebase-key.json:ro
-  environment:
-    - FIREBASE_SERVICE_ACCOUNT_PATH=/usr/src/app/firebase-key.json
-```
-
-4. Restart:
+2. Save the downloaded JSON file as `firebase-key.json` (overwriting the placeholder)
+3. Restart:
 ```bash
-docker compose pull && docker compose up -d
+docker compose up -d
 ```
 
 > ⚠️ **Multiple servers?** Each NAS/VPS needs its own `firebase-key.json`. The APK (`google-services.json`) is universal.
