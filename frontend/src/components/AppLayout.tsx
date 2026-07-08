@@ -76,7 +76,7 @@ export default function AppLayout({ title, children }: { title: string; children
           </div>
         </div>
       </header>
-      {updateInfo && (
+      {isNative() && updateInfo && (
         <UpdateBanner
           version={updateInfo.version}
           url={updateInfo.url}
