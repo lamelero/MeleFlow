@@ -191,6 +191,7 @@ export default function AdminPanel() {
       smtpUser: localSmtpUser,
       smtpPassword: localSmtpPassword || undefined,
       fromEmail: localFromEmail,
+      ...(localFromName ? { fromName: localFromName } : {}),
       emailSubject: localEmailSubject,
       emailEnabled: localEmailEnabled,
     });
