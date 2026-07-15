@@ -6,8 +6,18 @@
   --font-outfit: "Outfit", sans-serif;
   --font-urbanist: "Urbanist", sans-serif;
 
-  --color-primary: #14B8A6;
-  --color-primary-dark: #0D9488;
+  /* Typography scale (Outfit recommendations) */
+  --font-size-xs: 0.8125rem;
+  --font-size-sm: 0.9375rem;
+  --font-size-base: 1.0625rem;
+  --font-size-lg: 1.25rem;
+  --font-size-xl: 1.5rem;
+  --font-size-2xl: 2rem;
+  --font-size-3xl: 2.5rem;
+
+  --color-primary: #0857C3;
+  --color-primary-dark: #181851;
+  --color-primary-hover: #181851;
   --color-priority-urgent: #EF4444;
   --color-priority-high: #F59E0B;
   --color-priority-medium: #3B82F6;
@@ -51,4 +61,13 @@ html, body {
 
 body {
   font-family: "Urbanist", sans-serif;
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4 {
+  letter-spacing: -0.02em;
+}
+
+.text-xs, .caption {
+  letter-spacing: 0.01em;
 }
