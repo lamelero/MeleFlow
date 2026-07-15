@@ -20,10 +20,6 @@ export class AdminService {
         createdAt: true,
         storageUsed: true,
         storageQuota: true,
-        timezone: true,
-        sedeId: true,
-        diasVac: true,
-        sede: { select: { id: true, nombre: true } },
         _count: {
           select: { tasks: true, lists: true, habits: true },
         },
@@ -63,10 +59,6 @@ export class AdminService {
         ...(input.role !== undefined && { role: input.role }),
         ...(input.isActive !== undefined && { isActive: input.isActive }),
         ...(input.storageQuota !== undefined && { storageQuota: input.storageQuota }),
-        ...(input.timezone !== undefined && { timezone: input.timezone }),
-        ...(input.sedeId !== undefined && { sedeId: input.sedeId }),
-        ...(input.diasVac !== undefined && { diasVac: input.diasVac }),
-        ...(input.password !== undefined && { passwordHash: await bcrypt.hash(input.password, 12) }),
       },
       select: {
         id: true,
@@ -76,18 +68,8 @@ export class AdminService {
         role: true,
         isActive: true,
         storageQuota: true,
-        timezone: true,
-        sedeId: true,
-        diasVac: true,
       },
     });
-  }
-
-  async clearLoginAttempts(userId: string): Promise<{ cleared: number }> {
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw createError.NotFound("User not found");
-    const result = await prisma.failedLoginAttempt.deleteMany({ where: { email: user.email } });
-    return { cleared: result.count };
   }
 
   async deleteUser(currentUserId: string, targetUserId: string) {
@@ -98,26 +80,6 @@ export class AdminService {
     const user = await prisma.user.findUnique({ where: { id: targetUserId } });
     if (!user) {
       throw createError.NotFound( "User not found");
-    }
-
-    // Clean up related records before deleting the user (avoids cascade issues)
-    try {
-      await prisma.fichajeSesion.deleteMany({ where: { userId: targetUserId } });
-      await prisma.calendarioEmpleado.deleteMany({ where: { userId: targetUserId } });
-      await prisma.vacacion.deleteMany({ where: { userId: targetUserId } });
-      await prisma.bajaLaboral.deleteMany({ where: { userId: targetUserId } });
-      await prisma.refreshToken.deleteMany({ where: { userId: targetUserId } });
-      await prisma.deviceToken.deleteMany({ where: { userId: targetUserId } });
-
-      // Reassign projects and portfolio items created by the deleted user
-      await prisma.project.updateMany({ where: { createdBy: targetUserId }, data: { createdBy: currentUserId } });
-      await prisma.portfolioItem.updateMany({ where: { createdBy: targetUserId }, data: { createdBy: currentUserId } });
-
-      // Nullify references that don't cascade
-      await prisma.portfolioItem.updateMany({ where: { assignedTo: targetUserId }, data: { assignedTo: null } });
-      await prisma.vacacion.updateMany({ where: { approverId: targetUserId }, data: { approverId: null } });
-    } catch (err) {
-      console.error("[Admin] Error cleaning up user data:", err);
     }
 
     await prisma.user.delete({ where: { id: targetUserId } });
@@ -251,7 +213,7 @@ export class AdminService {
     }
 
     // Reset email transporter so new SMTP settings take effect immediately
-    if (input.smtpHost !== undefined || input.smtpPort !== undefined || input.smtpUser !== undefined || input.smtpPassword !== undefined || input.smtpPassword === "••••••••" || input.fromEmail !== undefined || input.emailEnabled !== undefined) {
+    if (input.smtpHost !== undefined || input.smtpPort !== undefined || input.smtpUser !== undefined || input.smtpPassword !== undefined || input.smtpPassword === "••••••••" || input.fromEmail !== undefined || input.fromName !== undefined || input.emailEnabled !== undefined) {
       const { resetTransport } = await import("../../lib/email-service");
       resetTransport();
     }
