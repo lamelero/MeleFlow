@@ -7,13 +7,17 @@ export const updateUserSchema = z.object({
   displayName: z.string().max(100).optional(),
   role: z.nativeEnum(Role).optional(),
   isActive: z.boolean().optional(),
-  storageQuota: z.number().int().min(1).max(1073741824).nullable().optional(),
+  storageQuota: z.number().int().min(1).max(1099511627776).nullable().optional(),
+  timezone: z.string().optional(),
+  sedeId: z.string().nullable().optional(),
+  diasVac: z.number().int().nullable().optional(),
+  password: z.string().min(6).max(128).optional(),
 });
 
 export const updateSettingsSchema = z.object({
   allowRegistration: z.boolean().optional(),
   maxUploadSize: z.number().int().min(1).max(200).optional(),
-  maxStoragePerUser: z.number().int().min(1).max(1073741824).optional(),
+  maxStoragePerUser: z.number().int().min(1).max(1099511627776).optional(),
   maxLoginAttempts: z.number().int().min(1).max(100).optional(),
   loginLockoutMinutes: z.number().int().min(1).max(1440).optional(),
   smtpHost: z.string().optional(),
@@ -21,6 +25,7 @@ export const updateSettingsSchema = z.object({
   smtpUser: z.string().optional(),
   smtpPassword: z.string().optional(),
   fromEmail: z.string().email().optional().or(z.literal("")),
+  fromName: z.string().max(100).optional(),
   emailEnabled: z.boolean().optional(),
   emailSubject: z.string().max(200).optional(),
   logoUrl: z.string().optional(),

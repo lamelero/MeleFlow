@@ -13,6 +13,10 @@ interface AdminUser {
   createdAt: string;
   storageUsed: string;
   storageQuota: string | null;
+  timezone?: string | null;
+  sedeId?: string | null;
+  sede?: { id: string; nombre: string } | null;
+  diasVac?: number | null;
   _count: { tasks: number; lists: number; habits: number };
 }
 
@@ -37,6 +41,7 @@ export interface SystemSettings {
   smtpUser: string;
   smtpPassword: string;
   fromEmail: string;
+  fromName: string;
   emailEnabled: boolean;
   emailSubject: string;
   logoUrl: string;
@@ -70,7 +75,7 @@ interface AdminState {
   fetchStats: () => Promise<void>;
   fetchSettings: () => Promise<void>;
   updateSettings: (data: Partial<SystemSettings>) => Promise<void>;
-  updateUser: (id: string, data: { email?: string; username?: string; displayName?: string; role?: string; isActive?: boolean; storageQuota?: number | null }) => Promise<void>;
+  updateUser: (id: string, data: { email?: string; username?: string; displayName?: string; role?: string; isActive?: boolean; storageQuota?: number | null; timezone?: string; sedeId?: string | null; diasVac?: number | null; password?: string }) => Promise<void>;
   deleteUser: (id: string) => Promise<void>;
   testEmail: (to?: string) => Promise<void>;
   uploadLogo: (file: File, variant?: "light" | "dark") => Promise<string>;
@@ -99,6 +104,7 @@ const defaultSettings: SystemSettings = {
   smtpUser: "",
   smtpPassword: "",
   fromEmail: "",
+  fromName: "MeleFlow",
   emailEnabled: false,
   emailSubject: "Reminder: {{title}} is due soon",
   logoUrl: "",
@@ -250,9 +256,18 @@ export const useAdminStore = create<AdminState>((set, get) => ({
 
   fetchBackupSettings: async () => {
     try {
-      const { data } = await client.get("/admin/backup-settings");
-      set({ backupSettings: data });
-    } catch { /* silent */ }
+      const res = await client.get("/admin/backup-settings?t=" + Date.now());
+      if (res?.data) {
+        set({ backupSettings: res.data });
+        try { localStorage.setItem("bcp_backupSettings", JSON.stringify(res.data)); } catch {}
+      }
+    } catch (e) {
+      console.error("[admin] fetchBackupSettings error:", e);
+      try {
+        const saved = localStorage.getItem("bcp_backupSettings");
+        if (saved) set({ backupSettings: JSON.parse(saved) });
+      } catch {}
+    }
   },
 
   createBackup: async (encrypted = false) => {
@@ -295,8 +310,11 @@ export const useAdminStore = create<AdminState>((set, get) => ({
 
   updateBackupSettings: async (data) => {
     try {
-      const res = await client.patch("/admin/backup-settings", data);
-      set({ backupSettings: { ...get().backupSettings, ...res.data } });
+      const res = await client.patch("/admin/backup-settings?t=" + Date.now(), data);
+      if (res?.data) {
+        set({ backupSettings: { ...get().backupSettings, ...res.data } });
+        try { localStorage.setItem("bcp_backupSettings", JSON.stringify(get().backupSettings)); } catch {}
+      }
       toast.success("Backup settings saved");
     } catch {
       toast.error("Failed to save backup settings");

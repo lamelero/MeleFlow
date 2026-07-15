@@ -15,13 +15,14 @@ export interface EmailConfig {
   smtpUser: string;
   smtpPassword: string;
   fromEmail: string;
+  fromName: string;
   emailEnabled: boolean;
   emailSubject: string;
 }
 
 async function getConfig(): Promise<EmailConfig | null> {
   const rows = await prisma.systemSetting.findMany({
-    where: { key: { in: ["smtpHost", "smtpPort", "smtpUser", "smtpPassword", "fromEmail", "emailEnabled", "emailSubject"] } },
+    where: { key: { in: ["smtpHost", "smtpPort", "smtpUser", "smtpPassword", "fromEmail", "fromName", "emailEnabled", "emailSubject"] } },
   });
   const map: Record<string, string> = {};
   for (const r of rows) map[r.key] = r.value;
@@ -35,6 +36,7 @@ async function getConfig(): Promise<EmailConfig | null> {
     smtpUser: map.smtpUser,
     smtpPassword: map.smtpPassword,
     fromEmail: map.fromEmail,
+    fromName: map.fromName || "MeleFlow",
     emailEnabled: true,
     emailSubject: map.emailSubject || "Reminder: {{title}} is due soon",
   };
@@ -66,31 +68,65 @@ export function buildOTPEmail(code: string, lang = "en"): string {
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Urbanist:wght@400;500;600&display=swap" rel="stylesheet">
-  <style>${baseStyle("#14B8A6", "#0D9488")}</style>
+  <style>${baseStyle("#0857C3", "#181851")}</style>
 </head>
 <body>
   <div class="outer">
     <div class="container">
       <div class="header">
-        <div style="width:36px;height:36px;border-radius:10px;background:rgba(0,0,0,0.12);text-align:center;line-height:36px;flex-shrink:0;min-width:36px;margin-right:16px;color:#fff;">
-          <span style="font-size:20px;line-height:36px;">✓</span>
-        </div>
-        <div class="header-text">
-          <h1>${t(lang, "otpSubject")}</h1>
-          <div class="sub">MeleFlow</div>
+        <div class="header-text" style="text-align:center;width:100%;">
+          <img src="https://bcproject.blu-castle.eu/logo-email.png?v=2" alt="BCProject" style="width:280px;height:auto;display:block;margin:0 auto 8px;" />
+          <h1 style="text-align:center;">${t(lang, "otpSubject")}</h1>
         </div>
       </div>
       <div class="body" style="text-align:center;">
         <p class="greeting" style="text-align:center;">${t(lang, "otpSubject")}</p>
-        <p style="color:#6b7280;font-size:16px;margin:24px 0 12px;text-align:center;">${t(lang, "otpBody").replace("{{code}}", `<span style="font-size:32px;font-weight:700;letter-spacing:8px;color:#14B8A6;font-family:monospace;">${code}</span>`)}</p>
-        <div style="background:#f0fdfa;border-radius:16px;padding:20px;margin:24px auto;max-width:240px;border:1px solid #ccfbf1;">
-          <div style="font-size:40px;font-weight:700;letter-spacing:12px;color:#14B8A6;font-family:monospace;text-align:center;">${code}</div>
+        <p style="color:#6b7280;font-size:16px;margin:24px 0 12px;text-align:center;">${t(lang, "otpBody").replace("{{code}}", `<span style="font-size:32px;font-weight:700;letter-spacing:8px;color:#0857C3;font-family:monospace;">${code}</span>`)}</p>
+        <div style="background:#eef2ff;border-radius:16px;padding:20px;margin:24px auto;max-width:240px;border:1px solid #c7d2fe;">
+          <div style="font-size:40px;font-weight:700;letter-spacing:12px;color:#0857C3;font-family:monospace;text-align:center;">${code}</div>
         </div>
         <p style="color:#9ca3af;font-size:13px;text-align:center;">${t(lang, "footerTagline")}</p>
       </div>
       <div class="divider"></div>
       <div class="footer">
         <p class="brand">${t(lang, "footerBrand")}</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
+export function buildGenericEmail(title: string, bodyHtml: string, lang = "es"): string {
+  return `<!DOCTYPE html>
+<html lang="${lang}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
+  <title>${title}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Urbanist:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>${baseStyle("#0857C3", "#181851")}</style>
+</head>
+<body>
+  <div class="outer">
+    <div class="container">
+      <div class="header">
+        <div class="header-text" style="text-align:center;width:100%;">
+          <img src="https://bcproject.blu-castle.eu/logo-email.png?v=2" alt="BCProject" style="width:280px;height:auto;display:block;margin:0 auto 8px;" />
+          <h1 style="text-align:center;">${title}</h1>
+        </div>
+      </div>
+      <div class="body">
+        ${bodyHtml}
+      </div>
+      <div class="divider"></div>
+      <div class="footer">
+        <p class="brand">BCProject</p>
+        <p>Blu-Castle &mdash; Corporate project management</p>
       </div>
     </div>
   </div>
@@ -107,7 +143,7 @@ export async function sendEmail(to: string, subject: string, html: string): Prom
       transporter = createTransporter(cfg);
     }
     await transporter.sendMail({
-      from: cfg.fromEmail,
+      from: `"${cfg.fromName}" <${cfg.fromEmail}>`,
       to,
       subject,
       html,
@@ -126,7 +162,7 @@ function baseStyle(headerFrom: string, headerTo: string): string {
     body { margin:0; padding:0; background-color:#f2f6f5; font-family:'Urbanist',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,Helvetica,arial,sans-serif; -webkit-font-smoothing:antialiased; }
     .outer { padding:32px 16px; background:#f4f7f6; }
     .container { max-width:520px; margin:0 auto; background:#ffffff; border-radius:20px; overflow:hidden; box-shadow:0 8px 40px rgba(0,0,0,0.06),0 2px 8px rgba(0,0,0,0.03); }
-    .header { background:linear-gradient(135deg,${headerFrom} 0%,${headerTo} 100%); padding:28px 36px; display:flex; align-items:center; gap:16px; }
+    .header { background-color:${headerFrom}; background:linear-gradient(135deg,${headerFrom} 0%,${headerTo} 100%); padding:28px 36px; display:flex; align-items:center; gap:16px; }
     .header-text { }
     .header h1 { margin:0; color:#ffffff; font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,Helvetica,arial,sans-serif; font-size:20px; font-weight:600; letter-spacing:-0.02em; line-height:1.3; }
     .header .sub { margin:2px 0 0; color:rgba(255,255,255,0.75); font-size:12px; font-weight:400; letter-spacing:0.04em; text-transform:uppercase; }
@@ -140,10 +176,10 @@ function baseStyle(headerFrom: string, headerTo: string): string {
     .card-meta { display:flex; align-items:center; gap:10px; margin-top:4px; flex-wrap:wrap; }
     .streak { display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:600; padding:2px 10px; border-radius:20px; }
     .btn-wrapper { margin:20px 0 4px; }
-    .btn { display:inline-block; background:linear-gradient(135deg,${headerFrom} 0%,${headerTo} 100%); color:#ffffff !important; text-decoration:none !important; padding:14px 36px; border-radius:12px; font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,Helvetica,arial,sans-serif; font-size:16px; font-weight:600; letter-spacing:-0.01em; box-shadow:0 6px 20px rgba(20,184,166,0.3); border:1px solid rgba(255,255,255,0.15); }
+    .btn { display:inline-block; background-color:#0857C3; background:linear-gradient(135deg,${headerFrom} 0%,${headerTo} 100%); color:#ffffff !important; text-decoration:none !important; padding:14px 36px; border-radius:12px; font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,Helvetica,arial,sans-serif; font-size:16px; font-weight:600; letter-spacing:-0.01em; box-shadow:0 6px 20px rgba(8,87,195,0.3); border:1px solid rgba(255,255,255,0.15); }
     .footer { padding:20px 36px 28px; text-align:center; }
     .footer p { margin:0; color:#9ca3af; font-size:12px; line-height:1.6; }
-    .footer .brand { font-weight:500; color:#14B8A6; font-size:13px; letter-spacing:0.02em; font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,Helvetica,arial,sans-serif; }
+    .footer .brand { font-weight:500; color:#0857C3; font-size:13px; letter-spacing:0.02em; font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,Helvetica,arial,sans-serif; }
     .divider { height:1px; background:linear-gradient(to right,transparent,#e5e7eb,transparent); margin:0 36px; }
     @media (prefers-color-scheme:dark) {
       body { background-color:#0a0f1a; }
@@ -182,18 +218,15 @@ export function buildReminderEmail(
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Urbanist:wght@400;500;600&display=swap" rel="stylesheet">
-  <style>${baseStyle("#14B8A6", "#0D9488")}</style>
+  <style>${baseStyle("#0857C3", "#181851")}</style>
 </head>
 <body>
   <div class="outer">
     <div class="container">
       <div class="header">
-        <div style="width:36px;height:36px;border-radius:10px;background:rgba(0,0,0,0.12);text-align:center;line-height:36px;flex-shrink:0;min-width:36px;margin-right:16px;color:#fff;">
-          <span style="font-size:20px;line-height:36px;">${icon.symbol}</span>
-        </div>
-        <div class="header-text">
-          <h1>${t(lang, "headerTitle")}</h1>
-          <div class="sub">MeleFlow</div>
+        <div class="header-text" style="text-align:center;width:100%;">
+          <img src="https://bcproject.blu-castle.eu/logo-email.png?v=2" alt="BCProject" style="width:280px;height:auto;display:block;margin:0 auto 8px;" />
+          <h1 style="text-align:center;">${t(lang, "headerTitle")}</h1>
         </div>
       </div>
       <div class="body">
@@ -274,12 +307,9 @@ export function buildHabitReminderEmail(
   <div class="outer">
     <div class="container">
       <div class="header">
-        <div style="width:36px;height:36px;border-radius:10px;background:rgba(0,0,0,0.12);text-align:center;line-height:36px;flex-shrink:0;min-width:36px;margin-right:16px;color:#fff;">
-          <span style="font-size:20px;line-height:36px;">${icon.symbol}</span>
-        </div>
-        <div class="header-text">
-          <h1>${habitName}</h1>
-          <div class="sub">MeleFlow</div>
+        <div class="header-text" style="text-align:center;width:100%;">
+          <img src="https://bcproject.blu-castle.eu/logo-email.png?v=2" alt="BCProject" style="width:280px;height:auto;display:block;margin:0 auto 8px;" />
+          <h1 style="text-align:center;">${habitName}</h1>
         </div>
       </div>
       <div class="body">
