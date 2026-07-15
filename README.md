@@ -11,17 +11,39 @@ Self-hosted task management web app with tasks, lists, tags, habits, Pomodoro ti
 
 ## Screenshots
 
-<p align="center">
-  <img src="screenshots/MainLiight.png" alt="Dashboard Light" width="45%" />
-  <img src="screenshots/MainDark.png" alt="Dashboard Dark" width="45%" />
+### Light Mode
+<p align="left">
+  <img src="screenshots/MainLight.png" alt="Dashboard Light" width="90%" />
 </p>
-<p align="center">
-  <img src="screenshots/admin.png" alt="Admin Panel" width="45%" />
-  <img src="screenshots/NewHabit.png" alt="New Habit" width="45%" />
+
+### Dark Mode
+<p align="left">
+  <img src="screenshots/MainDark.png" alt="Dashboard Dark" width="90%" />
 </p>
-<p align="center">
-  <img src="screenshots/Menu.png" alt="Navigation Menu" width="45%" />
-  <img src="screenshots/2FA.png" alt="Two-Factor Auth" width="45%" />
+
+### 2FA
+<p align="left">
+  <img src="screenshots/2FA.png" alt="Two-Factor Auth" width="40%" />
+</p>
+
+### User menu
+<p align="left">
+  <img src="screenshots/Menu.png" alt="Navigation Menu" width="40%" />
+</p>
+
+### New habit
+<p align="left">
+  <img src="screenshots/NewHabit.png" alt="New Habit" width="40%" />
+</p>
+
+### Full admin options
+<p align="left">
+  <img src="screenshots/admin.png" alt="Admin Panel" width="70%" />
+</p>
+
+### Android notifications
+<p align="left">
+  <img src="screenshots/Android_Notification.jpg" alt="Android Notifications" width="40%" />
 </p>
 
 ## Features
@@ -446,6 +468,7 @@ SMTP settings are configurable from the admin panel under "Email Configuration".
 ## Push Notifications (Android APK)
 
 MeleFlow supports **push notifications** via Firebase Cloud Messaging (FCM) for the Android APK, plus **browser notifications** (Web Notification API) for the web version. Notification preferences (email/push/browser) are configurable per user in Profile → General.
+
 
 ### One-time Firebase Setup
 
