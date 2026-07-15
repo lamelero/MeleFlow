@@ -7,13 +7,13 @@
   --font-urbanist: "Urbanist", sans-serif;
 
   /* Typography scale (Outfit recommendations) */
-  --font-size-xs: 0.8125rem;
-  --font-size-sm: 0.9375rem;
-  --font-size-base: 1.0625rem;
-  --font-size-lg: 1.25rem;
-  --font-size-xl: 1.5rem;
-  --font-size-2xl: 2rem;
-  --font-size-3xl: 2.5rem;
+  --font-size-xs: 0.875rem;
+  --font-size-sm: 1rem;
+  --font-size-base: 1.125rem;
+  --font-size-lg: 1.375rem;
+  --font-size-xl: 1.75rem;
+  --font-size-2xl: 2.25rem;
+  --font-size-3xl: 2.75rem;
 
   --color-primary: #0857C3;
   --color-primary-dark: #181851;
