@@ -28,14 +28,6 @@ export async function adminRoutes(app: FastifyInstance) {
     reply.send(await service.getUsers());
   });
 
-  s.post("/users", async (req, reply) => {
-    const { email, username, password } = req.body as { email: string; username: string; password: string };
-    if (!email || !username || !password) { reply.code(400).send({ error: "Email, username y password son requeridos" }); return; }
-    const passwordHash = await bcrypt.hash(password, 12);
-    const user = await prisma.user.create({ data: { email, username, passwordHash, role: "USER" } });
-    reply.code(201).send({ id: user.id, email: user.email, username: user.username, role: user.role });
-  });
-
   s.put("/users/:id", { schema: { body: updateUserSchema, params: userIdParams } }, async (req, reply) => {
     reply.send(await service.updateUser(req.user.sub, req.params.id, req.body));
   });
@@ -68,10 +60,12 @@ export async function adminRoutes(app: FastifyInstance) {
       reply.code(404).send({ error: "User not found" });
       return;
     }
-    const { sendEmail } = await import("../../lib/email-service");
+    const { sendEmail, getConfig } = await import("../../lib/email-service");
+    const cfg = await getConfig();
+    const subject = cfg?.emailSubject?.replace("{{title}}", "Test") || "Test email";
     const ok = await sendEmail(
       req.body.to || user.email,
-      "Test email from MeleFlow",
+      subject,
       "<p>If you're reading this, your SMTP configuration works!</p>",
     );
     if (ok) {
@@ -185,5 +179,93 @@ export async function adminRoutes(app: FastifyInstance) {
   s.post("/wipe", { schema: { body: wipeDataSchema } }, async (req, reply) => {
     await service.wipeAllData(req.user.sub, req.body.password);
     reply.send({ ok: true, message: "All data wiped. App is now fresh." });
+  });
+
+  // ── Module Management ────────────────────────────
+
+  s.get("/modules", async (_req, reply) => {
+    const modules = await prisma.userModule.findMany({
+      include: { user: { select: { id: true, email: true, username: true, role: true } } },
+      orderBy: [{ module: "asc" }, { user: { email: "asc" } }],
+    });
+    reply.send(modules);
+  });
+
+  app.put("/modules/:userId/:module", async (req, reply) => {
+    const { userId, module } = req.params as { userId: string; module: string };
+    const body = req.body as { enabled: boolean };
+    const result = await prisma.userModule.upsert({
+      where: { userId_module: { userId, module } },
+      update: { enabled: body.enabled },
+      create: { userId, module, enabled: body.enabled },
+    });
+    reply.send(result);
+  });
+
+  app.delete("/modules/:userId/:module", async (req, reply) => {
+    const { userId, module } = req.params as { userId: string; module: string };
+    await prisma.userModule.deleteMany({ where: { userId, module } });
+    reply.code(204).send();
+  });
+
+  app.post("/users", async (req, reply) => {
+    const { email, username, password } = req.body as { email: string; username: string; password: string };
+    const passwordHash = await bcrypt.hash(password, 12);
+    const user = await prisma.user.create({
+      data: { email, username, passwordHash, role: "USER", sedeId: "sede-madrid" },
+    });
+    reply.code(201).send({ id: user.id, email: user.email, username: user.username, role: user.role });
+  });
+
+  // ── Sedes ───────────────────────────────────────
+
+  s.get("/sedes", async (_req, reply) => {
+    const sedes = await prisma.sede.findMany({
+      include: { _count: { select: { users: true } } },
+      orderBy: { nombre: "asc" },
+    });
+    reply.send(sedes);
+  });
+
+  s.post("/sedes", async (req, reply) => {
+    const { nombre, pais, timezone, festivosIcsUrl } = req.body as any;
+    reply.code(201).send(await prisma.sede.create({ data: { nombre, pais, timezone, festivosIcsUrl } }));
+  });
+
+  s.patch("/sedes/:id", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const data = req.body as any;
+    reply.send(await prisma.sede.update({ where: { id }, data }));
+  });
+
+  s.delete("/sedes/:id", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    await prisma.user.updateMany({ where: { sedeId: id }, data: { sedeId: null } });
+    await prisma.sede.delete({ where: { id } });
+    reply.code(204).send();
+  });
+
+  s.post("/sedes/:id/import-festivos", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const sede = await prisma.sede.findUnique({ where: { id } });
+    if (!sede || !sede.festivosIcsUrl) throw new Error("Sede sin URL ICS");
+    const { FichajeService } = await import("../../modules/fichaje/fichaje.service");
+    const service = new FichajeService();
+    reply.send(await service.importFestivosFromIcs(sede.festivosIcsUrl, sede.id));
+  });
+
+  s.post("/clear-login-attempts/:id", { schema: { params: userIdParams } }, async (req, reply) => {
+    reply.send(await service.clearLoginAttempts(req.params.id));
+  });
+
+  s.post("/sedes/:id/import-festivos-text", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const { icsContent } = req.body as { icsContent: string };
+    if (!icsContent) throw new Error("Contenido ICS requerido");
+    const sede = await prisma.sede.findUnique({ where: { id } });
+    if (!sede) throw new Error("Sede no encontrada");
+    const { FichajeService } = await import("../../modules/fichaje/fichaje.service");
+    const service = new FichajeService();
+    reply.send(await service.importFestivosFromContent(icsContent, sede.id));
   });
 }

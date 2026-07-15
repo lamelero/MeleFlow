@@ -20,7 +20,7 @@ export interface EmailConfig {
   emailSubject: string;
 }
 
-async function getConfig(): Promise<EmailConfig | null> {
+export async function getConfig(): Promise<EmailConfig | null> {
   const rows = await prisma.systemSetting.findMany({
     where: { key: { in: ["smtpHost", "smtpPort", "smtpUser", "smtpPassword", "fromEmail", "fromName", "emailEnabled", "emailSubject"] } },
   });

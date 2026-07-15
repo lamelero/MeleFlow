@@ -57,6 +57,7 @@ export default function AdminPanel() {
   const [localSmtpUser, setLocalSmtpUser] = useState(settings.smtpUser);
   const [localSmtpPassword, setLocalSmtpPassword] = useState("");
   const [localFromEmail, setLocalFromEmail] = useState(settings.fromEmail);
+  const [localFromName, setLocalFromName] = useState(settings.fromName || "");
   const [localEmailSubject, setLocalEmailSubject] = useState(settings.emailSubject);
   const [localEmailEnabled, setLocalEmailEnabled] = useState(settings.emailEnabled);
   const logoLightInputRef = useRef<HTMLInputElement>(null);
@@ -177,6 +178,7 @@ export default function AdminPanel() {
     setLocalSmtpPort(settings.smtpPort);
     setLocalSmtpUser(settings.smtpUser);
     setLocalFromEmail(settings.fromEmail);
+    setLocalFromName(settings.fromName || "");
     setLocalEmailSubject(settings.emailSubject);
     setLocalEmailEnabled(settings.emailEnabled);
     setLocalFrontendUrl(settings.frontendUrl);
@@ -441,7 +443,8 @@ export default function AdminPanel() {
                     smtpPort: localSmtpPort,
                     smtpUser: localSmtpUser,
                     smtpPassword: localSmtpPassword || undefined,
-                    fromEmail: localFromEmail,
+      fromEmail: localFromEmail,
+      ...(localFromName ? { fromName: localFromName } : {}),
                     emailSubject: localEmailSubject,
                     emailEnabled: next,
                   });
@@ -524,6 +527,18 @@ export default function AdminPanel() {
                   value={localFromEmail}
                   onChange={(e) => setLocalFromEmail(e.target.value)}
                   placeholder={t("admin.fromPlaceholder")}
+                  className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+                />
+              </div>
+              <div>
+                <label className="font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {t("admin.fromName")}
+                </label>
+                <input
+                  type="text"
+                  value={localFromName}
+                  onChange={(e) => setLocalFromName(e.target.value)}
+                  placeholder={t("admin.fromNamePlaceholder")}
                   className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                 />
               </div>
