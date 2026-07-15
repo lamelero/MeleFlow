@@ -12,6 +12,7 @@ import { LocalNotifications } from "@capacitor/local-notifications";
 import { version as appVersion } from "../../../package.json";
 import { testBrowserNotification, getDiagnostics } from "../../lib/browserNotifications";
 import { reRegisterPushToken } from "../../capacitor/pushNotifications";
+import { showConfirm } from "../../components/ConfirmModal";
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -243,9 +244,10 @@ export default function Profile() {
     }
   }
 
-  function handleDeleteIcs(id: string) {
+  async function handleDeleteIcs(id: string) {
     const cal = icsCalendars.find((c) => c.id === id);
-    if (!confirm(t("profile.icsDeleteConfirm"))) return;
+    const ok = await showConfirm({ title: t("profile.icsDeleteConfirm"), message: "" });
+    if (!ok) return;
     removeCalendar(id);
   }
 

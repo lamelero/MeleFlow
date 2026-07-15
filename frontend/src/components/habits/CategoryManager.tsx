@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { HexColorPicker } from "react-colorful";
+import { showConfirm } from "../ConfirmModal";
 import { useHabitCategoryStore, type HabitCategoryItem } from "../../store/habitCategoryStore";
 import { HABIT_CATEGORIES, HABIT_CATEGORY_KEYS, getCategoryColor, setCategoryColor } from "../../lib/habit-categories";
 import { LIST_ICONS } from "../lists/listIcons";
@@ -158,8 +159,9 @@ export default function CategoryManager({ selectedId, onSelect }: CategoryManage
               </svg>
             </button>
             <button
-              onClick={() => {
-                if (window.confirm(`Delete "${cat.name}"?`)) deleteCategory(cat.id);
+              onClick={async () => {
+                const ok = await showConfirm({ title: `Delete "${cat.name}"?`, message: "" });
+                if (ok) deleteCategory(cat.id);
               }}
               className="shrink-0 rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20"
             >

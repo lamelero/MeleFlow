@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { showConfirm } from "../ConfirmModal";
 import toast from "react-hot-toast";
 import type { Habit } from "../../store/habitStore";
 import { useHabitStore } from "../../store/habitStore";
@@ -50,18 +51,18 @@ export default function HabitEditTab({ habit }: HabitEditTabProps) {
     navigate("/app/habits");
   }
 
-  function handleReset() {
-    if (window.confirm(t("habits.resetConfirm", { name: habit.name }))) {
-      resetProgress(habit.id);
-      toast.success("Progress reset");
-    }
+  async function handleReset() {
+    const ok = await showConfirm({ title: t("habits.resetConfirm", { name: habit.name }), message: "" });
+    if (!ok) return;
+    resetProgress(habit.id);
+    toast.success("Progress reset");
   }
 
-  function handleDelete() {
-    if (window.confirm(t("habits.deleteConfirm", { name: habit.name }))) {
-      deleteHabit(habit.id);
-      navigate("/app/habits");
-    }
+  async function handleDelete() {
+    const ok = await showConfirm({ title: t("habits.deleteConfirm", { name: habit.name }), message: "" });
+    if (!ok) return;
+    deleteHabit(habit.id);
+    navigate("/app/habits");
   }
 
   return (

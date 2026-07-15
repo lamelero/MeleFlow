@@ -10,6 +10,7 @@ import StatsCards from "../../components/admin/StatsCards";
 import UsersTable from "../../components/admin/UsersTable";
 import AppLayout from "../../components/AppLayout";
 import { client, getAccessToken } from "../../api/client";
+import { showConfirm } from "../../components/ConfirmModal";
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -549,8 +550,8 @@ export default function AdminPanel() {
               </button>
               <button
                 onClick={async () => {
-                  const email = window.prompt(t("admin.sendTestEmailPrompt"), user?.email || "");
-                  if (email) testEmail(email);
+                  const email = await showConfirm({ title: t("admin.sendTestEmailPrompt"), message: "", input: true, inputPlaceholder: user?.email || "", inputValue: user?.email || "" });
+                  if (typeof email === "string" && email) testEmail(email);
                 }}
                 disabled={!settings.smtpHost || !settings.emailEnabled}
                 className="rounded-xl bg-gray-100 px-5 py-2.5 font-urbanist text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"

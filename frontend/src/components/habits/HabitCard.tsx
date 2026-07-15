@@ -6,6 +6,7 @@ import type { Habit } from "../../store/habitStore";
 import { useHabitStore } from "../../store/habitStore";
 import { HABIT_CATEGORIES, getCategoryColor } from "../../lib/habit-categories";
 import { useHabitCategoryStore } from "../../store/habitCategoryStore";
+import { showConfirm } from "../ConfirmModal";
 import { LIST_ICONS } from "../lists/listIcons";
 
 interface HabitCardProps {
@@ -152,17 +153,17 @@ export default function HabitCard({ habit, onEdit }: HabitCardProps) {
     setPending(false);
   }
 
-  function handleDelete() {
-    if (window.confirm(t("habits.deleteConfirm", { name: habit.name }))) {
-      deleteHabit(habit.id);
-    }
+  async function handleDelete() {
+    const ok = await showConfirm({ title: t("habits.deleteConfirm", { name: habit.name }), message: "" });
+    if (!ok) return;
+    deleteHabit(habit.id);
     setMenuOpen(false);
   }
 
-  function handleReset() {
-    if (window.confirm(t("habits.resetConfirm", { name: habit.name }))) {
-      resetProgress(habit.id);
-    }
+  async function handleReset() {
+    const ok = await showConfirm({ title: t("habits.resetConfirm", { name: habit.name }), message: "" });
+    if (!ok) return;
+    resetProgress(habit.id);
     setMenuOpen(false);
   }
 

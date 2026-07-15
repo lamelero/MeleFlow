@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useTagStore, type Tag } from "../../store/tagStore";
 import { HexColorPicker } from "react-colorful";
+import { showConfirm } from "../../components/ConfirmModal";
 import TagPill from "../../components/tags/TagPill";
 import AppLayout from "../../components/AppLayout";
 
@@ -56,9 +57,9 @@ export default function TagManager() {
   }
 
   async function handleDelete(tag: Tag) {
-    if (window.confirm(t("tags.deleteConfirm", { name: tag.name }))) {
-      await deleteTag(tag.id);
-    }
+    const ok = await showConfirm({ title: t("tags.deleteConfirm", { name: tag.name }), message: "" });
+    if (!ok) return;
+    await deleteTag(tag.id);
   }
 
   if (tags.length === 0) {

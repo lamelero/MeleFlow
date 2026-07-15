@@ -7,6 +7,7 @@ import UserMenu from "./UserMenu";
 import BottomTabBar from "./navigation/BottomTabBar";
 import RightNavBar from "./navigation/RightNavBar";
 import UpdateBanner from "./UpdateBanner";
+import ConfirmModal from "./ConfirmModal";
 import { useBrandingStore } from "../store/brandingStore";
 import { useThemeStore } from "../store/themeStore";
 import { isNative } from "../capacitor/register";
@@ -84,6 +85,7 @@ export default function AppLayout({ title, children }: { title: string; children
           onDismiss={() => setUpdateInfo(null)}
         />
       )}
+      <ConfirmModal />
       <div className="flex-1 overflow-y-auto">
         {children}
       </div>

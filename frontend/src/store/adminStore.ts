@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import toast from "react-hot-toast";
 import { client } from "../api/client";
+import { showConfirm } from "../components/ConfirmModal";
 
 interface AdminUser {
   id: string;
@@ -277,7 +278,8 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   },
 
   restoreBackup: async (name) => {
-    if (!window.confirm("Restore will overwrite all current data. Users will need to log in again. Continue?")) return;
+    const ok = await showConfirm({ title: "Restore backup", message: "Restore will overwrite all current data. Users will need to log in again. Continue?" });
+    if (!ok) return;
     try {
       const { data } = await client.post(`/admin/restore/${encodeURIComponent(name)}`);
       if (data.warnings?.length > 0) {
