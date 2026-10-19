@@ -5,6 +5,8 @@ RUN npm ci
 
 FROM node:20-alpine AS build
 WORKDIR /usr/src/app
+ARG APP_VERSION=dev
+ENV APP_VERSION=${APP_VERSION}
 COPY --from=deps /usr/src/app/node_modules ./node_modules
 COPY frontend/package.json frontend/package-lock.json frontend/tsconfig.json frontend/vite.config.ts frontend/index.html ./
 COPY frontend/src/ ./src/

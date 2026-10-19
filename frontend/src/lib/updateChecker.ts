@@ -8,8 +8,10 @@ const CACHED_DOWNLOAD_URL_KEY = "update_cached_download_url";
 const APP_VERSION_KEY = "update_app_version";
 const ONE_DAY = 24 * 60 * 60 * 1000;
 
-// Change this to "0.0.1" to test the update checker
-const CURRENT_VERSION = "1.2.0";
+// Injected at build time (see `define` in vite.config.ts): the Docker release
+// build passes APP_VERSION (the git tag); local/native builds fall back to the
+// package.json version. Override locally to test the update checker.
+const CURRENT_VERSION = __APP_VERSION__;
 
 export interface UpdateInfo {
   available: boolean;
