@@ -16,6 +16,7 @@ import AdminPanel from "./views/app/AdminPanel";
 import TagManager from "./views/app/TagManager";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ServerConfig from "./components/ServerConfig";
+import PwaUpdater from "./pwa/PwaUpdater";
 import { isNative, getServerUrl, setupAppListeners, setupStatusBar, getFontSize, getBoldFont, requestNotificationPermission, createNotificationChannel, requestExactAlarmPermission } from "./capacitor/register";
 import { requestBrowserPermission } from "./lib/browserNotifications";
 import { registerPushNotifications } from "./capacitor/pushNotifications";
@@ -127,6 +128,8 @@ export default function App() {
 
   return (
     <div className={sizeClass}>
+      {/* Web-only: register the service worker so the app shell loads offline. */}
+      {import.meta.env.PROD && !isNative() && <PwaUpdater />}
       <Toaster
         position="bottom-right"
         toastOptions={{
