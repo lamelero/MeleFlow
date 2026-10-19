@@ -79,9 +79,10 @@ if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
 fi
 
 if git rev-parse -q --verify "refs/remotes/origin/$MAIN_BRANCH" >/dev/null; then
-  LOCAL="$(git rev-parse @)"
-  REMOTE="$(git rev-parse "origin/$MAIN_BRANCH")"
-  [ "$LOCAL" = "$REMOTE" ] || die "'$MAIN_BRANCH' no esta al dia con 'origin/$MAIN_BRANCH' (haz pull primero)"
+  # Must contain the last fetched origin/<main> (being ahead is fine: that is the
+  # normal state right after merging, before pushing).
+  git merge-base --is-ancestor "origin/$MAIN_BRANCH" HEAD \
+    || die "'$MAIN_BRANCH' no contiene 'origin/$MAIN_BRANCH' (estas por detras o divergida; haz pull primero)"
 fi
 ok "rama='$MAIN_BRANCH' arbol limpio tag='$TAG'"
 
