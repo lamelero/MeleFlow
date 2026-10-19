@@ -74,8 +74,15 @@ BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 [ -z "$(git status --porcelain)" ] || die "el arbol de trabajo no esta limpio; haz commit o stash primero"
 
 TAG="v$VERSION"
+ALREADY_TAGGED=false
 if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
-  die "el tag '$TAG' ya existe"
+  if [ "$PUSH" = true ] && [ "$(git rev-list -n1 "$TAG")" = "$(git rev-parse HEAD)" ]; then
+    # An earlier dry-run already cut this tag on HEAD: skip bump/commit/tag and
+    # go straight to build + push.
+    ALREADY_TAGGED=true
+  else
+    die "el tag '$TAG' ya existe (usa otra version, o 'git tag -d $TAG' para rehacerlo)"
+  fi
 fi
 
 if git rev-parse -q --verify "refs/remotes/origin/$MAIN_BRANCH" >/dev/null; then
@@ -86,26 +93,29 @@ if git rev-parse -q --verify "refs/remotes/origin/$MAIN_BRANCH" >/dev/null; then
 fi
 ok "rama='$MAIN_BRANCH' arbol limpio tag='$TAG'"
 
-# -- 2. bump version ---------------------------------------------------------
-# package.json is the fallback source for local/native builds; the Docker image
-# gets the version via the APP_VERSION build-arg. Keep both in sync.
-info "Bump de version a $VERSION"
-for dir in frontend backend; do
-  ( cd "$dir" && npm version "$VERSION" --no-git-tag-version --allow-same-version >/dev/null )
-  ok "$dir/package.json -> $VERSION"
-done
+# -- 2 & 3. bump version + tag (skipped when resuming a tagged dry-run) -------
+if [ "$ALREADY_TAGGED" = true ]; then
+  ok "el tag $TAG ya apunta a HEAD: se omite el bump/commit/tag"
+else
+  # package.json is the fallback source for local/native builds; the Docker image
+  # gets the version via the APP_VERSION build-arg. Keep both in sync.
+  info "Bump de version a $VERSION"
+  for dir in frontend backend; do
+    ( cd "$dir" && npm version "$VERSION" --no-git-tag-version --allow-same-version >/dev/null )
+    ok "$dir/package.json -> $VERSION"
+  done
 
-git add frontend/package.json backend/package.json
-if [ -f frontend/package-lock.json ]; then git add frontend/package-lock.json; fi
-if [ -f backend/package-lock.json ]; then git add backend/package-lock.json; fi
+  git add frontend/package.json backend/package.json
+  if [ -f frontend/package-lock.json ]; then git add frontend/package-lock.json; fi
+  if [ -f backend/package-lock.json ]; then git add backend/package-lock.json; fi
 
-git commit -m "chore(release): $VERSION"
-ok "commit: chore(release): $VERSION"
+  git commit -m "chore(release): $VERSION"
+  ok "commit: chore(release): $VERSION"
 
-# -- 3. tag ------------------------------------------------------------------
-info "Creando tag anotado $TAG"
-git tag -a "$TAG" -m "MeleFlow $TAG"
-ok "tag: $TAG"
+  info "Creando tag anotado $TAG"
+  git tag -a "$TAG" -m "MeleFlow $TAG"
+  ok "tag: $TAG"
+fi
 
 if [ "$PUSH" != true ]; then
   echo
