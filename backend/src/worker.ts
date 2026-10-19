@@ -58,6 +58,7 @@ cron.schedule("* * * * *", async () => {
       const tasks = await prisma.task.findMany({
         where: {
           isCompleted: false,
+          deletedAt: null,
           dueDate: { gte: now, lte: in24h },
         },
         include: {
@@ -118,6 +119,7 @@ cron.schedule("* * * * *", async () => {
       const recurringTasks = await prisma.task.findMany({
         where: {
           isCompleted: false,
+          deletedAt: null,
           reminderEnabled: true,
           reminderConfig: { not: null },
         },

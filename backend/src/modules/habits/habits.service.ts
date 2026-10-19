@@ -101,23 +101,29 @@ export class HabitService {
     const habits = await prisma.habit.findMany({
       where: {
         userId,
+        deletedAt: null,
         ...(includeArchived ? {} : { isArchived: false }),
       },
       include: {
         logs: {
-          where: { date: { gte: threeMonthsAgo } },
+          where: { date: { gte: threeMonthsAgo }, deletedAt: null },
           orderBy: { date: "desc" },
           select: { date: true, status: true },
         },
-        habitCategory: true,
-        _count: { select: { logs: { where: { status: "completed" } } } },
+        habitCategory: { omit: { syncVersion: true, deletedAt: true } },
+        _count: {
+          select: {
+            logs: { where: { status: "completed", deletedAt: null } },
+          },
+        },
       },
+      omit: { syncVersion: true, deletedAt: true },
       orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
     });
 
     // Recalculate streak for all habits from all logs
     const allLogs = await prisma.habitLog.findMany({
-      where: { habit: { userId } },
+      where: { habit: { userId, deletedAt: null }, deletedAt: null },
       select: { habitId: true, date: true, status: true },
     });
     const streakByHabit = new Map<string, number>();
@@ -144,15 +150,21 @@ export class HabitService {
   async findById(userId: string, id: string) {
     const todayStart = normalizeDate(new Date());
     const habit = await prisma.habit.findFirst({
-      where: { id, userId },
+      where: { id, userId, deletedAt: null },
       include: {
         logs: {
+          where: { deletedAt: null },
           orderBy: { date: "desc" },
           select: { date: true, status: true },
         },
-        habitCategory: true,
-        _count: { select: { logs: { where: { status: "completed" } } } },
+        habitCategory: { omit: { syncVersion: true, deletedAt: true } },
+        _count: {
+          select: {
+            logs: { where: { status: "completed", deletedAt: null } },
+          },
+        },
       },
+      omit: { syncVersion: true, deletedAt: true },
     });
     if (!habit) throw createError.NotFound( "Habit not found");
     return {
@@ -164,6 +176,8 @@ export class HabitService {
   }
 
   async create(userId: string, input: CreateHabitInput) {
+    await this.assertCategory(userId, input.categoryId);
+
     const data: Record<string, unknown> = {
       userId,
       name: input.name,
@@ -178,14 +192,17 @@ export class HabitService {
 
     const habit = await prisma.habit.create({
       data: data as Parameters<typeof prisma.habit.create>[0]["data"],
-      include: { habitCategory: true },
+      include: { habitCategory: { omit: { syncVersion: true, deletedAt: true } } },
+      omit: { syncVersion: true, deletedAt: true },
     });
     return { ...habit, logs: [] };
   }
 
   async update(userId: string, id: string, input: UpdateHabitInput) {
-    const existing = await prisma.habit.findFirst({ where: { id, userId } });
+    const existing = await prisma.habit.findFirst({ where: { id, userId, deletedAt: null } });
     if (!existing) throw createError.NotFound( "Habit not found");
+
+    await this.assertCategory(userId, input.categoryId);
 
     const data: Record<string, unknown> = {};
     if (input.name !== undefined) data.name = input.name;
@@ -201,14 +218,15 @@ export class HabitService {
     const habit = await prisma.habit.update({
       where: { id },
       data: data as Parameters<typeof prisma.habit.update>[0]["data"],
-      include: { habitCategory: true },
+      include: { habitCategory: { omit: { syncVersion: true, deletedAt: true } } },
+      omit: { syncVersion: true, deletedAt: true },
     });
     return habit;
   }
 
   async checkIn(userId: string, habitId: string, dateStr?: string, statusVal?: string) {
     const habit = await prisma.habit.findFirst({
-      where: { id: habitId, userId },
+      where: { id: habitId, userId, deletedAt: null },
     });
     if (!habit) throw createError.NotFound( "Habit not found");
 
@@ -217,96 +235,132 @@ export class HabitService {
 
     const status = statusVal === "skipped" || statusVal === "failed" ? statusVal : "completed";
 
-    const existing = await prisma.habitLog.findUnique({
-      where: { habitId_date: { habitId, date } },
-    });
+    return prisma.$transaction(async (tx) => {
+      const existing = await tx.habitLog.findUnique({
+        where: { habitId_date: { habitId, date } },
+      });
 
-    if (existing) {
-      if (existing.status === status) {
-        // Same status - nothing to do
-        const totalDays = await prisma.habitLog.count({ where: { habitId, status: "completed" } });
+      if (existing && existing.deletedAt === null && existing.status === status) {
+        const totalDays = await tx.habitLog.count({
+          where: { habitId, status: "completed", deletedAt: null },
+        });
         return { alreadyCheckedIn: true, streak: habit.streakCount, totalDays };
       }
-      // Update existing log to new status
-      await prisma.habitLog.update({
-        where: { id: existing.id },
-        data: { status },
+
+      if (existing) {
+        await tx.habitLog.update({
+          where: { id: existing.id },
+          data: { status, deletedAt: null },
+        });
+      } else {
+        await tx.habitLog.create({
+          data: { habitId, userId, date, status },
+        });
+      }
+
+      // Recalculate streak from all active logs
+      const logs = await tx.habitLog.findMany({
+        where: { habitId, deletedAt: null },
+        orderBy: { date: "desc" },
+        select: { date: true, status: true },
       });
-    } else {
-      await prisma.habitLog.create({
-        data: { habitId, date, status },
+
+      const streak = calculateStreak(logs, habit.frequency);
+      await tx.habit.update({
+        where: { id: habitId },
+        data: { streakCount: streak },
       });
-    }
 
-    // Recalculate streak from all logs
-    const logs = await prisma.habitLog.findMany({
-      where: { habitId },
-      orderBy: { date: "desc" },
-      select: { date: true, status: true },
+      const totalDays = await tx.habitLog.count({
+        where: { habitId, status: "completed", deletedAt: null },
+      });
+
+      return { alreadyCheckedIn: false, streak, totalDays };
     });
-
-    const streak = calculateStreak(logs, habit.frequency);
-    await prisma.habit.update({
-      where: { id: habitId },
-      data: { streakCount: streak },
-    });
-
-    const totalDays = await prisma.habitLog.count({ where: { habitId, status: "completed" } });
-
-    return { alreadyCheckedIn: false, streak, totalDays };
   }
 
   async undoCheckIn(userId: string, habitId: string, dateStr?: string) {
     const habit = await prisma.habit.findFirst({
-      where: { id: habitId, userId },
+      where: { id: habitId, userId, deletedAt: null },
     });
     if (!habit) throw createError.NotFound( "Habit not found");
 
     const date = dateStr ? normalizeDate(new Date(dateStr + "T00:00:00Z")) : normalizeDate(new Date());
     if (isNaN(date.getTime())) throw createError.BadRequest( "Invalid date");
 
-    await prisma.habitLog.deleteMany({
-      where: { habitId, date },
+    return prisma.$transaction(async (tx) => {
+      await tx.habitLog.updateMany({
+        where: { habitId, date, deletedAt: null },
+        data: { deletedAt: new Date() },
+      });
+
+      const logs = await tx.habitLog.findMany({
+        where: { habitId, deletedAt: null },
+        orderBy: { date: "desc" },
+        select: { date: true, status: true },
+      });
+
+      const streak = calculateStreak(logs, habit.frequency);
+      await tx.habit.update({
+        where: { id: habitId },
+        data: { streakCount: streak },
+      });
+
+      const totalDays = await tx.habitLog.count({
+        where: { habitId, status: "completed", deletedAt: null },
+      });
+
+      return { streak, totalDays };
     });
-
-    const logs = await prisma.habitLog.findMany({
-      where: { habitId },
-      orderBy: { date: "desc" },
-      select: { date: true, status: true },
-    });
-
-    const streak = calculateStreak(logs, habit.frequency);
-    await prisma.habit.update({
-      where: { id: habitId },
-      data: { streakCount: streak },
-    });
-
-    const totalDays = await prisma.habitLog.count({ where: { habitId, status: "completed" } });
-
-    return { streak, totalDays };
   }
 
   async resetProgress(userId: string, habitId: string) {
     const habit = await prisma.habit.findFirst({
-      where: { id: habitId, userId },
+      where: { id: habitId, userId, deletedAt: null },
     });
     if (!habit) throw createError.NotFound( "Habit not found");
 
-    await prisma.habitLog.deleteMany({ where: { habitId } });
-    await prisma.habit.update({
-      where: { id: habitId },
-      data: { streakCount: 0 },
-    });
+    const now = new Date();
+    await prisma.$transaction([
+      prisma.habitLog.updateMany({
+        where: { habitId, deletedAt: null },
+        data: { deletedAt: now },
+      }),
+      prisma.habit.update({
+        where: { id: habitId },
+        data: { streakCount: 0 },
+      }),
+    ]);
 
     return { streak: 0, totalDays: 0 };
   }
 
   async delete(userId: string, habitId: string) {
     const habit = await prisma.habit.findFirst({
-      where: { id: habitId, userId },
+      where: { id: habitId, userId, deletedAt: null },
     });
     if (!habit) throw createError.NotFound( "Habit not found");
-    await prisma.habit.delete({ where: { id: habitId } });
+
+    const now = new Date();
+    await prisma.$transaction([
+      prisma.habitLog.updateMany({
+        where: { habitId, deletedAt: null },
+        data: { deletedAt: now },
+      }),
+      prisma.habit.update({
+        where: { id: habitId },
+        data: { deletedAt: now },
+      }),
+    ]);
+  }
+
+  private async assertCategory(userId: string, categoryId: string | null | undefined) {
+    if (!categoryId) return;
+
+    const category = await prisma.habitCategoryModel.findFirst({
+      where: { id: categoryId, userId, deletedAt: null },
+    });
+    if (!category) throw createError.NotFound( "Habit category not found");
   }
 
   async findHabitsDueForReminder() {
@@ -315,6 +369,7 @@ export class HabitService {
     const habits = await prisma.habit.findMany({
       where: {
         isArchived: false,
+        deletedAt: null,
         frequency: { not: null },
         startDate: { lte: now },
         OR: [{ endDate: null }, { endDate: { gte: now } }],

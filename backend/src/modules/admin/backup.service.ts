@@ -159,6 +159,31 @@ async function clearDatabase() {
   }
 }
 
+async function resetSyncMetadata() {
+  // After a restore, triggers have assigned fresh revisions during import.
+  // Align each user's counter with the highest revision present so future
+  // increments cannot collide with rows already pulled by clients.
+  await prisma.$executeRaw`
+    INSERT INTO "SyncState" ("userId", "revision")
+    SELECT u."id", GREATEST(
+      COALESCE((SELECT MAX("syncVersion") FROM "Task" WHERE "userId" = u."id"), 0::bigint),
+      COALESCE((SELECT MAX("syncVersion") FROM "List" WHERE "userId" = u."id"), 0::bigint),
+      COALESCE((SELECT MAX("syncVersion") FROM "Tag" WHERE "userId" = u."id"), 0::bigint),
+      COALESCE((SELECT MAX("syncVersion") FROM "ChecklistItem" WHERE "userId" = u."id"), 0::bigint),
+      COALESCE((SELECT MAX("syncVersion") FROM "TaskTag" WHERE "userId" = u."id"), 0::bigint),
+      COALESCE((SELECT MAX("syncVersion") FROM "Habit" WHERE "userId" = u."id"), 0::bigint),
+      COALESCE((SELECT MAX("syncVersion") FROM "HabitCategoryModel" WHERE "userId" = u."id"), 0::bigint),
+      COALESCE((SELECT MAX("syncVersion") FROM "HabitLog" WHERE "userId" = u."id"), 0::bigint)
+    )
+    FROM "User" u
+    ON CONFLICT ("userId") DO UPDATE
+      SET "revision" = EXCLUDED."revision";
+  `;
+
+  await prisma.syncOperation.deleteMany();
+  await prisma.syncDevice.deleteMany();
+}
+
 async function importDatabase(dbJson: Record<string, unknown[]>): Promise<{ warnings: string[] }> {
   const order = [
     "systemSetting",
@@ -327,6 +352,9 @@ export class BackupService {
 
       console.log("[Backup] Importing database...");
       const { warnings } = await importDatabase(dbJson);
+
+      console.log("[Backup] Reconciling sync metadata...");
+      await resetSyncMetadata();
 
       if (warnings.length > 0) {
         console.warn(`[Backup] Restore completed with ${warnings.length} warning(s):`, warnings.join("; "));

@@ -22,6 +22,7 @@ import { notificationRoutes } from "./modules/notifications/notifications.routes
 import { adminRoutes } from "./modules/admin/admin.routes";
 import { settingsRoutes } from "./modules/settings/settings.routes";
 import { icsCalendarRoutes } from "./modules/ics-calendars/ics-calendars.routes";
+import { syncRoutes } from "./modules/sync/sync.routes";
 
 // BigInt serialization for JSON responses (Prisma uses BigInt for storage counts)
 // Using toString() for values > MAX_SAFE_INTEGER to avoid precision loss
@@ -175,6 +176,7 @@ export async function buildApp(opts: Record<string, unknown> = {}) {
   await app.register(adminRoutes, { prefix: "/api/admin" });
   await app.register(settingsRoutes, { prefix: "/api" });
   await app.register(icsCalendarRoutes, { prefix: "/api/ics-calendars" });
+  await app.register(syncRoutes, { prefix: "/api/sync" });
 
   return app;
 }

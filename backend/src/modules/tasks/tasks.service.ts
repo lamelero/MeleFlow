@@ -8,12 +8,26 @@ const subTaskOrder = [{ priority: "asc" as const }, { createdAt: "desc" as const
 
 const taskInclude = {
   subTasks: {
+    where: { deletedAt: null },
+    omit: { syncVersion: true, deletedAt: true },
     orderBy: subTaskOrder,
-    include: { tags: { include: { tag: true } } },
+    include: {
+      tags: {
+        where: { deletedAt: null, tag: { deletedAt: null } },
+        include: { tag: { omit: { syncVersion: true, deletedAt: true } } },
+      },
+    },
   },
-  tags: { include: { tag: true } },
+  tags: {
+    where: { deletedAt: null, tag: { deletedAt: null } },
+    include: { tag: { omit: { syncVersion: true, deletedAt: true } } },
+  },
   attachments: { orderBy: { uploadDate: "desc" as const } },
-  checklistItems: { orderBy: { position: "asc" as const } },
+  checklistItems: {
+    where: { deletedAt: null },
+    omit: { syncVersion: true, deletedAt: true },
+    orderBy: { position: "asc" as const },
+  },
   user: { select: { id: true, username: true, displayName: true, language: true, notificationEmail: true, email: true } },
   collaborators: {
     include: {
@@ -64,12 +78,14 @@ export class TaskService {
     const task = await prisma.task.findFirst({
       where: {
         id: taskId,
+        deletedAt: null,
         OR: [
           { userId },
           { collaborators: { some: { userId } } },
         ],
       },
       include: taskInclude,
+      omit: { syncVersion: true, deletedAt: true },
     });
     if (!task) throw createError.NotFound("Task not found");
     return { isOwner: task.userId === userId, task };
@@ -79,6 +95,7 @@ export class TaskService {
     const where: Record<string, unknown> = {
       userId,
       parentTaskId: null,
+      deletedAt: null,
     };
 
     if (query.listId) where.listId = query.listId;
@@ -86,7 +103,13 @@ export class TaskService {
     if (query.status === "pending") where.isCompleted = false;
     if (query.priority) where.priority = query.priority;
     if (query.tagId) {
-      where.tags = { some: { tagId: query.tagId } };
+      where.tags = {
+        some: {
+          tagId: query.tagId,
+          deletedAt: null,
+          tag: { deletedAt: null },
+        },
+      };
     }
 
     if (query.dueDateFrom || query.dueDateTo) {
@@ -98,6 +121,7 @@ export class TaskService {
     const tasks = await prisma.task.findMany({
       where,
       include: taskInclude,
+      omit: { syncVersion: true, deletedAt: true },
       orderBy: [{ priority: "asc" }, { createdAt: "desc" }],
     });
 
@@ -110,8 +134,10 @@ export class TaskService {
         userId: { not: userId },
         collaborators: { some: { userId } },
         parentTaskId: null,
+        deletedAt: null,
       },
       include: taskInclude,
+      omit: { syncVersion: true, deletedAt: true },
       orderBy: [{ priority: "asc" }, { createdAt: "desc" }],
     });
     return tasks.map(formatTask);
@@ -121,9 +147,11 @@ export class TaskService {
     const tasks = await prisma.task.findMany({
       where: {
         userId,
+        deletedAt: null,
         title: { contains: query, mode: "insensitive" },
       },
       include: taskInclude,
+      omit: { syncVersion: true, deletedAt: true },
       orderBy: { createdAt: "desc" },
       take: 10,
     });
@@ -138,7 +166,7 @@ export class TaskService {
   async create(userId: string, input: CreateTaskInput) {
     if (input.parentTaskId) {
       const parent = await prisma.task.findFirst({
-        where: { id: input.parentTaskId, userId },
+        where: { id: input.parentTaskId, userId, deletedAt: null },
       });
       if (!parent) {
         throw createError.NotFound("Parent task not found");
@@ -147,7 +175,7 @@ export class TaskService {
 
     if (input.listId) {
       const list = await prisma.list.findFirst({
-        where: { id: input.listId, userId },
+        where: { id: input.listId, userId, deletedAt: null },
       });
       if (!list) {
         throw createError.NotFound("List not found");
@@ -171,6 +199,7 @@ export class TaskService {
         ...(input.checklistItems && {
           checklistItems: {
             create: input.checklistItems.map((item, i) => ({
+              userId,
               text: item.text,
               isCompleted: item.isCompleted,
               position: item.position ?? i,
@@ -192,7 +221,7 @@ export class TaskService {
         throw createError.BadRequest("A task cannot be its own parent");
       }
       const parent = await prisma.task.findFirst({
-        where: { id: input.parentTaskId, userId },
+        where: { id: input.parentTaskId, userId, deletedAt: null },
       });
       if (!parent) {
         throw createError.NotFound("Parent task not found");
@@ -201,7 +230,7 @@ export class TaskService {
 
     if (input.listId) {
       const list = await prisma.list.findFirst({
-        where: { id: input.listId, userId },
+        where: { id: input.listId, userId, deletedAt: null },
       });
       if (!list) {
         throw createError.NotFound("List not found");
@@ -227,50 +256,59 @@ export class TaskService {
       ...(input.reminderConfig !== undefined && { reminderConfig: input.reminderConfig }),
     };
 
-    if (input.checklistItems !== undefined) {
-      const existing = await prisma.checklistItem.findMany({
-        where: { taskId },
-        select: { id: true },
-      });
-      const existingIds = new Set(existing.map((c) => c.id));
-      const incomingIds = new Set(
-        input.checklistItems.filter((c) => c.id).map((c) => c.id!),
-      );
-
-      const toDelete = [...existingIds].filter((id) => !incomingIds.has(id));
-      if (toDelete.length > 0) {
-        await prisma.checklistItem.deleteMany({
-          where: { id: { in: toDelete }, taskId },
+    const task = await prisma.$transaction(async (tx) => {
+      if (input.checklistItems !== undefined) {
+        const existing = await tx.checklistItem.findMany({
+          where: { taskId },
+          select: { id: true, deletedAt: true },
         });
-      }
+        const existingById = new Map(existing.map((c) => [c.id, c]));
+        const incomingIds = new Set(
+          input.checklistItems.filter((c) => c.id).map((c) => c.id!),
+        );
 
-      for (const item of input.checklistItems) {
-        if (item.id && existingIds.has(item.id)) {
-          await prisma.checklistItem.update({
-            where: { id: item.id },
-            data: {
-              text: item.text,
-              isCompleted: item.isCompleted,
-              position: item.position,
-            },
-          });
-        } else {
-          await prisma.checklistItem.create({
-            data: {
-              taskId,
-              text: item.text,
-              isCompleted: item.isCompleted,
-              position: item.position,
-            },
+        const toDelete = existing
+          .filter((c) => c.deletedAt === null && !incomingIds.has(c.id))
+          .map((c) => c.id);
+
+        if (toDelete.length > 0) {
+          await tx.checklistItem.updateMany({
+            where: { id: { in: toDelete }, taskId, deletedAt: null },
+            data: { deletedAt: new Date() },
           });
         }
-      }
-    }
 
-    const task = await prisma.task.update({
-      where: { id: taskId },
-      include: taskInclude,
-      data,
+        for (const item of input.checklistItems) {
+          if (item.id && existingById.has(item.id)) {
+            await tx.checklistItem.update({
+              where: { id: item.id },
+              data: {
+                text: item.text,
+                isCompleted: item.isCompleted,
+                position: item.position,
+                deletedAt: null,
+              },
+            });
+          } else {
+            await tx.checklistItem.create({
+              data: {
+                taskId,
+                userId,
+                text: item.text,
+                isCompleted: item.isCompleted,
+                position: item.position,
+              },
+            });
+          }
+        }
+      }
+
+      return tx.task.update({
+        where: { id: taskId },
+        include: taskInclude,
+        omit: { syncVersion: true, deletedAt: true },
+        data,
+      });
     });
 
     return formatTask(task as unknown as RawTask);
@@ -280,9 +318,36 @@ export class TaskService {
     const { isOwner } = await this.canAccessTask(userId, taskId);
     if (!isOwner) throw createError.Forbidden("Only the task owner can delete this task");
 
+    const now = new Date();
+
     await prisma.$transaction(async (tx) => {
-      await tx.task.deleteMany({ where: { parentTaskId: taskId } });
-      await tx.task.delete({ where: { id: taskId } });
+      const rows = await tx.$queryRaw<{ id: string }[]>`
+        WITH RECURSIVE tree AS (
+          SELECT "id" FROM "Task"
+          WHERE "id" = ${taskId} AND "userId" = ${userId} AND "deletedAt" IS NULL
+          UNION
+          SELECT t."id"
+          FROM "Task" t
+          JOIN tree ON t."parentTaskId" = tree."id" AND t."userId" = ${userId}
+        )
+        SELECT "id" FROM tree
+      `;
+      const taskIds = rows.map((r) => r.id);
+
+      if (taskIds.length === 0) return;
+
+      await tx.task.updateMany({
+        where: { id: { in: taskIds }, userId, deletedAt: null },
+        data: { deletedAt: now },
+      });
+      await tx.checklistItem.updateMany({
+        where: { taskId: { in: taskIds }, userId, deletedAt: null },
+        data: { deletedAt: now },
+      });
+      await tx.taskTag.updateMany({
+        where: { taskId: { in: taskIds }, userId, deletedAt: null },
+        data: { deletedAt: now },
+      });
     });
   }
 
@@ -356,14 +421,14 @@ export class TaskService {
     await this.canAccessTask(userId, taskId);
 
     const tag = await prisma.tag.findFirst({
-      where: { id: tagId, userId },
+      where: { id: tagId, userId, deletedAt: null },
     });
     if (!tag) throw createError.NotFound("Tag not found");
 
     await prisma.taskTag.upsert({
       where: { taskId_tagId: { taskId, tagId } },
-      create: { taskId, tagId },
-      update: {},
+      create: { taskId, tagId, userId },
+      update: { deletedAt: null },
     });
 
     return this.findById(userId, taskId);
@@ -372,8 +437,9 @@ export class TaskService {
   async removeTag(userId: string, taskId: string, tagId: string) {
     await this.canAccessTask(userId, taskId);
 
-    await prisma.taskTag.deleteMany({
-      where: { taskId, tagId },
+    await prisma.taskTag.updateMany({
+      where: { taskId, tagId, deletedAt: null },
+      data: { deletedAt: new Date() },
     });
 
     return this.findById(userId, taskId);

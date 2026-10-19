@@ -247,10 +247,10 @@ export class AdminService {
       totalPomodoros,
     ] = await Promise.all([
       prisma.user.count(),
-      prisma.task.count(),
-      prisma.task.count({ where: { isCompleted: true } }),
-      prisma.list.count(),
-      prisma.habit.count(),
+      prisma.task.count({ where: { deletedAt: null } }),
+      prisma.task.count({ where: { isCompleted: true, deletedAt: null } }),
+      prisma.list.count({ where: { deletedAt: null } }),
+      prisma.habit.count({ where: { deletedAt: null } }),
       prisma.pomodoroSession.count({ where: { state: "COMPLETED" } }),
     ]);
 
@@ -275,6 +275,9 @@ export class AdminService {
     const uploadDir = path.resolve("uploads");
 
     await prisma.$transaction([
+      prisma.syncOperation.deleteMany(),
+      prisma.syncDevice.deleteMany(),
+      prisma.syncState.deleteMany(),
       prisma.taskCollaborator.deleteMany(),
       prisma.taskTag.deleteMany(),
       prisma.checklistItem.deleteMany(),

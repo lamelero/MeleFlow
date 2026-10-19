@@ -36,6 +36,7 @@ export class AttachmentService {
     const task = await prisma.task.findFirst({
       where: {
         id: taskId,
+        deletedAt: null,
         OR: [
           { userId },
           { collaborators: { some: { userId } } },
@@ -105,6 +106,7 @@ export class AttachmentService {
     const task = await prisma.task.findFirst({
       where: {
         id: taskId,
+        deletedAt: null,
         OR: [
           { userId },
           { collaborators: { some: { userId } } },
@@ -123,6 +125,7 @@ export class AttachmentService {
     const task = await prisma.task.findFirst({
       where: {
         id: taskId,
+        deletedAt: null,
         OR: [
           { userId },
           { collaborators: { some: { userId } } },

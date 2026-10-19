@@ -40,52 +40,60 @@ enum TaskType {
 // ── User ─────────────────────────────────────────
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  username     String   @unique
+  id           String  @id @default(cuid())
+  email        String  @unique
+  username     String  @unique
   passwordHash String
-  role         Role     @default(USER)
-  isActive     Boolean  @default(true)
-  language     String   @default("en")
-  storageUsed  BigInt   @default(0)
+  role         Role    @default(USER)
+  isActive     Boolean @default(true)
+  language     String  @default("en")
+  storageUsed  BigInt  @default(0)
   storageQuota BigInt?
 
   // Profile
-  displayName      String?
-  avatarUrl        String?
+  displayName       String?
+  avatarUrl         String?
   notificationEmail String?
-  bio              String?
-  timezone         String?
+  bio               String?
+  timezone          String?
   notificationPrefs String? @default("{\"email\":true,\"push\":true,\"browser\":true}")
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // 2FA
-  twoFactorSecret      String? // AES-256-GCM encrypted
-  isTwoFactorEnabled   Boolean @default(false)
-  recoveryCodes        String? // JSON array of bcrypt hashed recovery codes
+  twoFactorSecret    String? // AES-256-GCM encrypted
+  isTwoFactorEnabled Boolean @default(false)
+  recoveryCodes      String? // JSON array of bcrypt hashed recovery codes
 
   // Pomodoro preferences
-  pomodoroWork        Int @default(25)
-  pomodoroShortBreak  Int @default(5)
-  pomodoroLongBreak   Int @default(15)
-  pomodoroCycles      Int @default(4)
+  pomodoroWork       Int @default(25)
+  pomodoroShortBreak Int @default(5)
+  pomodoroLongBreak  Int @default(15)
+  pomodoroCycles     Int @default(4)
 
-  tasks            Task[]
-  lists            List[]
-  habits           Habit[]
-  habitCategories  HabitCategoryModel[]
-  tags             Tag[]
-  pomodoroSessions PomodoroSession[]
-  refreshTokens    RefreshToken[]
-  securityLogs     SecurityLog[]
-  collaborations   TaskCollaborator[]
+  tasks             Task[]
+  lists             List[]
+  habits            Habit[]
+  habitCategories   HabitCategoryModel[]
+  tags              Tag[]
+  pomodoroSessions  PomodoroSession[]
+  refreshTokens     RefreshToken[]
+  securityLogs      SecurityLog[]
+  collaborations    TaskCollaborator[]
   verificationCodes VerificationCode[]
   trustedDevices    TrustedDevice[]
   icsCalendars      IcsCalendar[]
   icsEvents         IcsEvent[]
   deviceTokens      DeviceToken[]
+
+  // Sync
+  checklistItems ChecklistItem[]
+  taskTags       TaskTag[]
+  habitLogs      HabitLog[]
+  syncState      SyncState?
+  syncDevices    SyncDevice[]
+  syncOperations SyncOperation[]
 }
 
 // ── Task (with subtask self-reference) ───────────
@@ -98,46 +106,57 @@ model Task {
   status      String    @default("todo") // "todo" | "in_progress" | "completed"
   type        TaskType  @default(TEXT)
   dueDate     DateTime? @default(now())
-  rrule       String?   // RRULE string for recurrence (RFC 5545)
+  rrule       String? // RRULE string for recurrence (RFC 5545)
   isCompleted Boolean   @default(false)
   createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  updatedAt   DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  syncVersion BigInt    @default(0)
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   listId String?
-  list   List?  @relation(fields: [listId], references: [id], onDelete: SetNull)
+  list   List?   @relation(fields: [listId], references: [id], onDelete: SetNull)
 
   parentTaskId String?
-  parentTask   Task?  @relation("SubTask", fields: [parentTaskId], references: [id], onDelete: Cascade)
-  subTasks     Task[] @relation("SubTask")
+  parentTask   Task?   @relation("SubTask", fields: [parentTaskId], references: [id], onDelete: Cascade)
+  subTasks     Task[]  @relation("SubTask")
 
   tags             TaskTag[]
   pomodoroSessions PomodoroSession[]
   attachments      Attachment[]
   checklistItems   ChecklistItem[]
-  reminderEnabled  Boolean   @default(false)
-  reminderConfig   String?   // JSON: {"type":"daily"|"weekly","days":[1,3,5],"reminderTime":"09:00"}
+  reminderEnabled  Boolean           @default(false)
+  reminderConfig   String? // JSON: {"type":"daily"|"weekly","days":[1,3,5],"reminderTime":"09:00"}
 
   collaborators TaskCollaborator[]
 
   @@index([userId, isCompleted])
   @@index([userId, dueDate])
   @@index([listId])
+  @@index([userId, syncVersion])
+  @@index([deletedAt])
 }
 
 model ChecklistItem {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
+  userId      String
   text        String
-  isCompleted Boolean  @default(false)
-  position    Int      @default(0)
-  createdAt   DateTime @default(now())
+  isCompleted Boolean   @default(false)
+  position    Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  syncVersion BigInt    @default(0)
 
   taskId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@index([taskId])
+  @@index([userId, syncVersion])
+  @@index([deletedAt])
 }
 
 model Attachment {
@@ -155,46 +174,66 @@ model Attachment {
 // ── List (task group) ────────────────────────────
 
 model List {
-  id        String   @id @default(cuid())
-  name      String
-  color     String   @default("#14B8A6")
-  icon      String?
-  isSmart   Boolean  @default(false) // Today, Tomorrow, Inbox
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String    @id @default(cuid())
+  name        String
+  color       String    @default("#14B8A6")
+  icon        String?
+  isSmart     Boolean   @default(false) // Today, Tomorrow, Inbox
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  syncVersion BigInt    @default(0)
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   tasks Task[]
 
-  @@unique([userId, name])
+  // Unique name per active user is enforced by a partial index in SQL:
+  // "List_userId_name_active_key" WHERE "deletedAt" IS NULL
+  @@index([userId, syncVersion])
+  @@index([deletedAt])
 }
 
 // ── Tag (M:N with Task) ─────────────────────────
 
 model Tag {
-  id        String   @id @default(cuid())
-  name      String
-  color     String   @default("#14B8A6")
-  createdAt DateTime @default(now())
+  id          String    @id @default(cuid())
+  name        String
+  color       String    @default("#14B8A6")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  syncVersion BigInt    @default(0)
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   tasks TaskTag[]
 
-  @@unique([userId, name])
+  // Unique name per active user is enforced by a partial index in SQL:
+  // "Tag_userId_name_active_key" WHERE "deletedAt" IS NULL
+  @@index([userId, syncVersion])
+  @@index([deletedAt])
 }
 
 model TaskTag {
   taskId String
-  task   Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   tagId String
-  tag   Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  tag   Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  syncVersion BigInt    @default(0)
 
   @@id([taskId, tagId])
+  @@index([userId, syncVersion])
+  @@index([deletedAt])
 }
 
 // ── Habit ────────────────────────────────────────
@@ -205,56 +244,74 @@ model Habit {
   description String?
   category    HabitCategory @default(OTROS)
   priority    Int           @default(1)
-  frequency   String?       // null = daily no constraints; JSON: {"type":"weekly","days":[1,3,5],"reminderTime":"09:00"}
+  frequency   String? // null = daily no constraints; JSON: {"type":"weekly","days":[1,3,5],"reminderTime":"09:00"}
   startDate   DateTime      @default(now())
   endDate     DateTime?
   isArchived  Boolean       @default(false)
   streakCount Int           @default(0)
   createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  updatedAt   DateTime      @updatedAt @db.Timestamptz(6)
+  deletedAt   DateTime?     @db.Timestamptz(6)
+  syncVersion BigInt        @default(0)
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  categoryId String?
+  categoryId    String?
   habitCategory HabitCategoryModel? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
   logs HabitLog[]
+
+  @@index([userId, syncVersion])
+  @@index([deletedAt])
 }
 
 // ── HabitCategory (user-defined categories) ───────
 
 model HabitCategoryModel {
-  id        String   @id @default(cuid())
-  userId    String
-  name      String
-  icon      String   // name from LIST_ICONS
-  color     String   // hex color
-  order     Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String    @id @default(cuid())
+  userId      String
+  name        String
+  icon        String // name from LIST_ICONS
+  color       String // hex color
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  syncVersion BigInt    @default(0)
 
-  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   habits Habit[]
 
-  @@unique([userId, name])
+  // Unique name per active user is enforced by a partial index in SQL:
+  // "HabitCategoryModel_userId_name_active_key" WHERE "deletedAt" IS NULL
   @@index([userId, order])
+  @@index([userId, syncVersion])
+  @@index([deletedAt])
 }
 
 // ── HabitLog (daily check-in) ────────────────────
 
 model HabitLog {
-  id        String   @id @default(cuid())
-  date      DateTime @db.Date
-  status    String   @default("completed") // "completed" | "skipped"
-  note      String?
-  createdAt DateTime @default(now())
+  id          String    @id @default(cuid())
+  userId      String
+  date        DateTime  @db.Date
+  status      String    @default("completed") // "completed" | "skipped" | "failed"
+  note        String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  syncVersion BigInt    @default(0)
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  habit Habit @relation(fields: [habitId], references: [id], onDelete: Cascade)
 
   habitId String
-  habit   Habit  @relation(fields: [habitId], references: [id], onDelete: Cascade)
 
   @@unique([habitId, date])
   @@index([date])
+  @@index([userId, syncVersion])
+  @@index([deletedAt])
 }
 
 // ── Refresh Tokens (DB-backed, httpOnly cookie) ──
@@ -290,8 +347,8 @@ model SecurityLog {
   id        String   @id @default(cuid())
   userId    String?
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  action    String   // LOGIN_FAILED, LOGIN_SUCCESS, LOGOUT, 2FA_ENABLED, 2FA_DISABLED, etc.
-  details   String?  // JSON with extra context
+  action    String // LOGIN_FAILED, LOGIN_SUCCESS, LOGOUT, 2FA_ENABLED, 2FA_DISABLED, etc.
+  details   String? // JSON with extra context
   ip        String?
   userAgent String?
   createdAt DateTime @default(now())
@@ -314,9 +371,9 @@ model SystemSetting {
 model PomodoroSession {
   id            String    @id @default(cuid())
   state         String    @default("RUNNING") // RUNNING | PAUSED | COMPLETED | CANCELLED
-  type          String    @default("FOCUS")   // FOCUS | SHORT_BREAK | LONG_BREAK
+  type          String    @default("FOCUS") // FOCUS | SHORT_BREAK | LONG_BREAK
   duration      Int       @default(25) // minutes
-  breakDuration Int       @default(5)  // minutes
+  breakDuration Int       @default(5) // minutes
   startedAt     DateTime  @default(now())
   pausedAt      DateTime?
   completedAt   DateTime?
@@ -327,7 +384,7 @@ model PomodoroSession {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   taskId String?
-  task   Task?  @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  task   Task?   @relation(fields: [taskId], references: [id], onDelete: SetNull)
 
   @@index([userId, state])
 }
@@ -335,14 +392,14 @@ model PomodoroSession {
 // ── Verification Codes (OTP, email auth, etc.) ──
 
 model VerificationCode {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String
-  code      String   // bcrypt hashed
-  type      String   @default("LOGIN_OTP")
+  code      String // bcrypt hashed
+  type      String    @default("LOGIN_OTP")
   expiresAt DateTime
-  attempts  Int      @default(0)
+  attempts  Int       @default(0)
   usedAt    DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -386,19 +443,19 @@ model TrustedDevice {
 // ── ICS Calendar Feeds ──────────────────────
 
 model IcsCalendar {
-  id                String   @id @default(cuid())
-  userId            String
-  name              String
-  url               String
-  color             String   @default("#6366f1")
-  lastSyncedAt      DateTime?
-  isActive          Boolean  @default(true)
-  reminderBefore    Int      @default(0)
-  allDayReminderTime String  @default("09:00")
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                 String    @id @default(cuid())
+  userId             String
+  name               String
+  url                String
+  color              String    @default("#6366f1")
+  lastSyncedAt       DateTime?
+  isActive           Boolean   @default(true)
+  reminderBefore     Int       @default(0)
+  allDayReminderTime String    @default("09:00")
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  user   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   events IcsEvent[]
 
   @@index([userId])
@@ -438,4 +495,44 @@ model DeviceToken {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+// ── Sync metadata ─────────────────────────────────
+
+model SyncState {
+  userId   String @id
+  revision BigInt @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SyncDevice {
+  id         String   @id @default(cuid())
+  userId     String
+  deviceId   String
+  platform   String?
+  lastCursor BigInt   @default(0)
+  lastSeenAt DateTime @default(now()) @db.Timestamptz(6)
+  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, deviceId])
+  @@index([userId])
+}
+
+model SyncOperation {
+  id          String   @id @default(cuid())
+  userId      String
+  operationId String
+  entity      String
+  entityId    String
+  status      String
+  result      Json?
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, operationId])
+  @@index([userId, createdAt])
 }
