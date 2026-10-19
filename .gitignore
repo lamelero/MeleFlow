@@ -39,3 +39,6 @@ redis-data/
 
 # Paquetes npm
 *.tgz
+
+CHANGELOG.md
+CONTEXT.md
