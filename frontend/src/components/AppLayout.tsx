@@ -8,6 +8,7 @@ import BottomTabBar from "./navigation/BottomTabBar";
 import RightNavBar from "./navigation/RightNavBar";
 import UpdateBanner from "./UpdateBanner";
 import ConfirmModal from "./ConfirmModal";
+import SyncStatusBadge from "./SyncStatusBadge";
 import { useBrandingStore } from "../store/brandingStore";
 import { useThemeStore } from "../store/themeStore";
 import { isNative } from "../capacitor/register";
@@ -73,6 +74,7 @@ export default function AppLayout({ title, children }: { title: string; children
           </div>
           <div className="flex items-center gap-3">
             {!isNative() && <PomodoroTimer />}
+            <SyncStatusBadge />
             <UserMenu />
           </div>
         </div>

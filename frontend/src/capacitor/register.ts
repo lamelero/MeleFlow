@@ -112,8 +112,37 @@ export async function setPersistedRefreshToken(token: string | null): Promise<vo
   }
 }
 
-const BOLD_FONT_KEY = "boldFont";
+// Persisted user profile, so the app can open and work offline without a
+// round-trip to /auth/me. Preferences uses localStorage on web.
+const CACHED_USER_KEY = "cachedUser";
 
+export async function getCachedUser(): Promise<unknown | null> {
+  try {
+    const { value } = await Preferences.get({ key: CACHED_USER_KEY });
+    return value ? JSON.parse(value) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function setCachedUser(user: unknown): Promise<void> {
+  try {
+    await Preferences.set({ key: CACHED_USER_KEY, value: JSON.stringify(user) });
+  } catch {
+    // Persisting the session cache is best-effort.
+  }
+}
+
+export async function clearCachedUser(): Promise<void> {
+  try {
+    await Preferences.remove({ key: CACHED_USER_KEY });
+  } catch {
+    // ignore
+  }
+}
+
+
+const BOLD_FONT_KEY = "boldFont";
 export async function getBoldFont(): Promise<boolean> {
   if (!isNative()) return false;
   const { value } = await Preferences.get({ key: BOLD_FONT_KEY });

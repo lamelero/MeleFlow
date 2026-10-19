@@ -20,6 +20,7 @@ import { isNative, getServerUrl, setupAppListeners, setupStatusBar, getFontSize,
 import { requestBrowserPermission } from "./lib/browserNotifications";
 import { registerPushNotifications } from "./capacitor/pushNotifications";
 import { useThemeStore } from "./store/themeStore";
+import { useSyncStore } from "./sync/syncStore";
 import { initClientBaseUrl } from "./api/client";
 import { startEventAutoRefresh } from "./store/icsCalendarStore";
 import "./i18n";
@@ -28,6 +29,7 @@ export default function App() {
   const location = useLocation();
   const initialize = useAuthStore((s) => s.initialize);
   const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [ready, setReady] = useState(false);
   const [needsConfig, setNeedsConfig] = useState(false);
   const [fontSize, setFontSize] = useState("normal");
@@ -82,6 +84,15 @@ export default function App() {
   }, [initialize]);
 
   const theme = useThemeStore((s) => s.theme);
+
+  // Start the offline sync engine once a session exists, stop it on logout.
+  useEffect(() => {
+    if (isAuthenticated && user?.id) {
+      void useSyncStore.getState().start(user.id);
+    } else if (!isAuthenticated) {
+      useSyncStore.getState().stop();
+    }
+  }, [isAuthenticated, user?.id]);
 
   useEffect(() => {
     setupStatusBar(theme === "dark");

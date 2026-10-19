@@ -34,7 +34,7 @@ interface TaskDetailPanelProps {
 
 export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps) {
   const { i18n, t: trans } = useTranslation();
-  const { updateTask, replaceTask, addCollaborator, removeCollaborator } = useTaskStore();
+  const { updateTask, replaceTask, addTag, removeTag, addCollaborator, removeCollaborator } = useTaskStore();
   const { lists, fetchLists } = useListStore();
   const currentUser = useAuthStore((s) => s.user);
   const { tags, fetchTags, createTag } = useTagStore();
@@ -136,6 +136,24 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
     })();
   }, [t?.id]);
 
+  // Attachments are online-only and not part of the sync payload, so fetch
+  // them when the panel opens and merge them into the local task view.
+  useEffect(() => {
+    if (!t?.id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await client.get(`/tasks/${t.id}`);
+        if (cancelled || !Array.isArray(data.attachments)) return;
+        const current = useTaskStore.getState().tasks.find((x) => x.id === t.id) ?? t;
+        replaceTask({ ...current, attachments: data.attachments });
+      } catch { /* offline: attachments unavailable */ }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [t?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (!shareSearchQuery.trim() || shareSearchQuery.length < 2) {
       setShareSearchResults([]);
@@ -166,8 +184,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
 
   async function handleAddTag(tag: Tag) {
     try {
-      const { data } = await client.post(`/tasks/${t.id}/tags`, { tagId: tag.id });
-      replaceTask(data);
+      await addTag(t.id, tag.id);
       setTagInput("");
       setTagDropdownOpen(false);
       tagInputRef.current?.focus();
@@ -178,8 +195,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
 
   async function handleRemoveTag(tagId: string) {
     try {
-      const { data } = await client.delete(`/tasks/${t.id}/tags/${tagId}`);
-      replaceTask(data);
+      await removeTag(t.id, tagId);
     } catch {
       toast.error(trans("common.toasts.failedRemoveTag"));
     }

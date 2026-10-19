@@ -1,24 +1,18 @@
 import { create } from "zustand";
 import toast from "react-hot-toast";
-import { client } from "../api/client";
-
-const CACHE_KEY = "meleflow_habit_categories";
-const CACHE_TTL = 30 * 60 * 1000;
-
-function loadCache(): { data: HabitCategoryItem[]; ts: number } | null {
-  try {
-    const raw = localStorage.getItem(CACHE_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-}
-
-function saveCache(data: HabitCategoryItem[]) {
-  try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ data, ts: Date.now() }));
-  } catch {}
-}
+import { newId } from "../sync/ids";
+import { coalesceUpdate, enqueue, enqueueDelete, patchPendingWhere } from "../sync/queue";
+import {
+  deleteRow,
+  getAllRows,
+  getRow,
+  knownBaseVersion,
+  localMeta,
+  putRow,
+  selectCategories,
+} from "../sync/repository";
+import { useSyncStore } from "../sync/syncStore";
+import type { HabitCategoryRow, HabitRow } from "../sync/types";
 
 export interface HabitCategoryItem {
   id: string;
@@ -42,65 +36,83 @@ interface HabitCategoryStore {
 }
 
 export const useHabitCategoryStore = create<HabitCategoryStore>((set, get) => ({
-  categories: loadCache()?.data ?? [],
+  categories: [],
   isLoading: false,
   colorVersion: 0,
 
   fetchCategories: async () => {
-    const cached = loadCache();
-    if (cached && Date.now() - cached.ts < CACHE_TTL) {
-      if (get().categories.length === 0) set({ categories: cached.data });
-      return;
-    }
     set({ isLoading: true });
     try {
-      const { data } = await client.get("/habit-categories");
-      set({ categories: data, isLoading: false });
-      saveCache(data);
+      set({ categories: await selectCategories(), isLoading: false });
+      const { initialized, online, scheduleSync } = useSyncStore.getState();
+      if (initialized && online) scheduleSync(300);
     } catch {
       set({ isLoading: false });
     }
   },
 
   createCategory: async (input) => {
-    try {
-      const { data } = await client.post("/habit-categories", input);
-      const updated = [...get().categories, data];
-      set({ categories: updated });
-      saveCache(updated);
-      toast.success("Category created");
-      return data;
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || "Failed to create category";
-      toast.error(msg);
-      return null;
-    }
+    const id = newId();
+    const maxOrder = get().categories.reduce((max, c) => Math.max(max, c.order), -1);
+    const row: HabitCategoryRow = {
+      ...localMeta(),
+      id,
+      name: input.name,
+      icon: input.icon,
+      color: input.color,
+      order: maxOrder + 1,
+    };
+    await putRow("habitCategories", row);
+    await enqueue({
+      entity: "habitCategory",
+      action: "create",
+      entityId: id,
+      data: { name: row.name, icon: row.icon, color: row.color, order: row.order },
+    });
+    useSyncStore.getState().scheduleSync();
+    set({ categories: await selectCategories() });
+    toast.success("Category created");
+    return { ...row, userId: "", _count: { habits: 0 } };
   },
 
   updateCategory: async (id, input) => {
-    try {
-      const { data } = await client.patch(`/habit-categories/${id}`, input);
-      const updated = get().categories.map((c) => (c.id === id ? { ...c, ...data } : c));
-      set({ categories: updated });
-      saveCache(updated);
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || "Failed to update category";
-      toast.error(msg);
-    }
+    const existing = await getRow<HabitCategoryRow>("habitCategories", id);
+    if (!existing) return;
+    const data: Record<string, unknown> = {};
+    if (input.name !== undefined) data.name = input.name;
+    if (input.icon !== undefined) data.icon = input.icon;
+    if (input.color !== undefined) data.color = input.color;
+    if (input.order !== undefined) data.order = input.order;
+
+    await putRow("habitCategories", { ...existing, ...data, updatedAt: new Date().toISOString() });
+    await coalesceUpdate("habitCategory", id, data, knownBaseVersion(existing.version));
+    useSyncStore.getState().scheduleSync();
+    set({ categories: await selectCategories() });
   },
 
   bumpColorVersion: () => set((s) => ({ colorVersion: s.colorVersion + 1 })),
 
   deleteCategory: async (id) => {
-    try {
-      await client.delete(`/habit-categories/${id}`);
-      const updated = get().categories.filter((c) => c.id !== id);
-      set({ categories: updated });
-      saveCache(updated);
-      toast.success("Category deleted");
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || "Failed to delete category";
-      toast.error(msg);
-    }
+    const existing = await getRow<HabitCategoryRow>("habitCategories", id);
+    // Local cascade: habits lose the category, like the server does.
+    const habits = await getAllRows<HabitRow>("habits");
+    await Promise.all(
+      habits
+        .filter((h) => h.categoryId === id)
+        .map((h) => putRow("habits", { ...h, categoryId: null, updatedAt: new Date().toISOString() })),
+    );
+    await deleteRow("habitCategories", id);
+    // Pending habit creates/updates must not reference a removed category.
+    await patchPendingWhere("habit", (op) => op.data?.categoryId === id, { categoryId: null });
+    await enqueueDelete("habitCategory", id, knownBaseVersion(existing?.version));
+    useSyncStore.getState().scheduleSync();
+    set({ categories: await selectCategories() });
+    toast.success("Category deleted");
   },
 }));
+
+useSyncStore.subscribe((state, prev) => {
+  if (state.dataVersion !== prev.dataVersion) {
+    void selectCategories().then((categories) => useHabitCategoryStore.setState({ categories }));
+  }
+});

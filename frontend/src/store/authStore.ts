@@ -1,7 +1,14 @@
 import { create } from "zustand";
 import { isNative } from "../capacitor/register";
-import { getPersistedRefreshToken, setPersistedRefreshToken } from "../capacitor/register";
+import {
+  getPersistedRefreshToken,
+  setPersistedRefreshToken,
+  getCachedUser,
+  setCachedUser,
+  clearCachedUser,
+} from "../capacitor/register";
 import { client, setAccessToken, getAccessToken, setRefreshToken, getRefreshToken } from "../api/client";
+import { useSyncStore } from "../sync/syncStore";
 
 export interface User {
   id: string;
@@ -55,12 +62,24 @@ export const useAuthStore = create<AuthState>((set) => ({
   initialize: async () => {
     if (_initializing) return;
     _initializing = true;
+    const online = typeof navigator === "undefined" ? true : navigator.onLine !== false;
+
+    async function restoreCachedSession(): Promise<boolean> {
+      const cached = await getCachedUser();
+      if (cached) {
+        set({ user: cached as User, isAuthenticated: true, isLoading: false });
+        return true;
+      }
+      return false;
+    }
+
     try {
       const existingToken = getAccessToken();
       if (existingToken) {
         try {
           const { data } = await client.get("/auth/me");
           set({ user: data, isAuthenticated: true, isLoading: false });
+          await setCachedUser(data);
           return;
         } catch {
           setAccessToken(null);
@@ -72,13 +91,21 @@ export const useAuthStore = create<AuthState>((set) => ({
           setRefreshToken(persisted);
         }
       }
+
+      // Offline boot: serve the cached profile without hitting the network.
+      if (!online && (await restoreCachedSession())) return;
+
       const rt = getRefreshToken();
       const { data } = await client.post("/auth/refresh", { rememberMe: true, refreshToken: rt || undefined });
       setAccessToken(data.accessToken);
       setRefreshToken(data.refreshToken);
       setPersistedRefreshToken(data.refreshToken);
       set({ user: data.user, isAuthenticated: true, isLoading: false });
-    } catch {
+      await setCachedUser(data.user);
+    } catch (err) {
+      // A rejected token means the session is gone; a network error does not.
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status !== 401 && status !== 403 && (await restoreCachedSession())) return;
       set({ user: null, isAuthenticated: false, isLoading: false });
     } finally {
       _initializing = false;
@@ -103,6 +130,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       setRefreshToken(data.refreshToken);
       setPersistedRefreshToken(data.refreshToken);
       set({ user: data.user, isAuthenticated: true, isLoading: false, error: null });
+      await setCachedUser(data.user);
       return { accessToken: data.accessToken, user: data.user };
     } catch (err: unknown) {
       const message =
@@ -121,6 +149,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       setRefreshToken(data.refreshToken);
       setPersistedRefreshToken(data.refreshToken);
       set({ user: data.user, isAuthenticated: true, isLoading: false, error: null });
+      await setCachedUser(data.user);
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: string } } })?.response?.data
@@ -155,6 +184,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       setRefreshToken(data.refreshToken);
       setPersistedRefreshToken(data.refreshToken);
       set({ user: data.user, isAuthenticated: true, isLoading: false, error: null });
+      await setCachedUser(data.user);
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: string } } })?.response?.data
@@ -173,6 +203,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       setAccessToken(null);
       setRefreshToken(null);
       setPersistedRefreshToken(null);
+      useSyncStore.getState().stop();
+      await clearCachedUser();
+      await useSyncStore.getState().clearLocalData();
       set({ user: null, isAuthenticated: false, error: null });
     }
   },
