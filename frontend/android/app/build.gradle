@@ -7,8 +7,11 @@ android {
         applicationId "com.meleflow.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2
-        versionName "1.1"
+        versionCode 3
+        versionName "1.3.0"
+        // Capacitor's plugin modules don't declare the app's custom `version`
+        // flavor dimension; tell AGP which flavor to match them against.
+        missingDimensionStrategy "version", "normal"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
