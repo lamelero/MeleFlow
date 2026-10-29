@@ -8,6 +8,7 @@ x-shared: &shared-node
     - ./backend/package.json:/usr/src/app/package.json
     - ./backend/package-lock.json:/usr/src/app/package-lock.json
     - ./backend/tsconfig.json:/usr/src/app/tsconfig.json
+    - ./backend/prisma.config.ts:/usr/src/app/prisma.config.ts
     - ./backend/vitest.config.ts:/usr/src/app/vitest.config.ts
     - meleflow_backend_node_modules:/usr/src/app/node_modules
   restart: unless-stopped
@@ -75,6 +76,7 @@ services:
       - ./backend/package.json:/usr/src/app/package.json
       - ./backend/package-lock.json:/usr/src/app/package-lock.json
       - ./backend/tsconfig.json:/usr/src/app/tsconfig.json
+      - ./backend/prisma.config.ts:/usr/src/app/prisma.config.ts
       - ./backend/vitest.config.ts:/usr/src/app/vitest.config.ts
       - ./backend/vitest.global.ts:/usr/src/app/vitest.global.ts
       - ./backend/uploads:/usr/src/app/uploads

@@ -1,6 +1,7 @@
 import { LocalNotifications, Weekday } from "@capacitor/local-notifications";
 import type { LocalNotificationSchema } from "@capacitor/local-notifications";
 import { isNative } from "./register";
+import { logger } from "../lib/logger";
 
 async function hasPermission(): Promise<boolean> {
   try {
@@ -59,7 +60,7 @@ export async function scheduleTaskReminders(
     await LocalNotifications.cancel({
       notifications: pending.notifications.map((n) => ({ id: n.id })),
     });
-    console.log(`[localNotifications] cancelled ${pending.notifications.length} existing`);
+    logger.debug(`[localNotifications] cancelled ${pending.notifications.length} existing`);
   }
 
   const notifs: LocalNotificationSchema[] = [];
@@ -218,13 +219,13 @@ export async function scheduleTaskReminders(
   }
 
   if (notifs.length === 0) {
-    console.log("[localNotifications] no notifications to schedule");
+    logger.debug("[localNotifications] no notifications to schedule");
     return;
   }
 
   try {
     await LocalNotifications.schedule({ notifications: notifs });
-    console.log(`[localNotifications] scheduled ${notifs.length} notifications`);
+    logger.debug(`[localNotifications] scheduled ${notifs.length} notifications`);
   } catch (err) {
     console.error("[localNotifications] schedule error:", err);
   }
@@ -237,7 +238,7 @@ export async function clearAllNotifications() {
     await LocalNotifications.cancel({
       notifications: pending.notifications.map((n) => ({ id: n.id })),
     });
-    console.log(`[localNotifications] cleared ${pending.notifications.length} notifications`);
+    logger.debug(`[localNotifications] cleared ${pending.notifications.length} notifications`);
   }
 }
 
@@ -307,7 +308,7 @@ export async function scheduleEventReminders(
 
   try {
     await LocalNotifications.schedule({ notifications: notifs });
-    console.log(`[localNotifications] scheduled ${notifs.length} event notifications`);
+    logger.debug(`[localNotifications] scheduled ${notifs.length} event notifications`);
   } catch (err) {
     console.error("[localNotifications] event schedule error:", err);
   }

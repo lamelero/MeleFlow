@@ -5,7 +5,7 @@ RUN npm ci --omit=dev
 
 FROM node:22-alpine AS build
 WORKDIR /usr/src/app
-COPY backend/package.json backend/package-lock.json backend/tsconfig.json ./
+COPY backend/package.json backend/package-lock.json backend/tsconfig.json backend/prisma.config.ts ./
 COPY backend/src/ ./src/
 RUN npm ci \
   && npx prisma generate \
@@ -24,6 +24,7 @@ COPY --from=build /usr/src/app/node_modules/tsx ./node_modules/tsx
 COPY --from=build /usr/src/app/node_modules/esbuild ./node_modules/esbuild
 COPY --from=build /usr/src/app/dist ./dist
 COPY backend/src/prisma ./src/prisma
+COPY backend/prisma.config.ts ./prisma.config.ts
 COPY backend/package.json ./
 
 EXPOSE 3000

@@ -1,3 +1,4 @@
+import axios from "axios";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -48,7 +49,12 @@ export default function AdminPanel() {
       setShowUserForm(false);
       setNewUserEmail(""); setNewUserUsername(""); setNewUserPassword("");
       fetchUsers();
-    } catch (err: any) { toast.error(err.response?.data?.error || "Error al crear usuario"); }
+    } catch (err: unknown) {
+      const message = axios.isAxiosError<{ error?: string }>(err)
+        ? err.response?.data?.error
+        : undefined;
+      toast.error(message || "Error al crear usuario");
+    }
   };
 
   // Email settings local state

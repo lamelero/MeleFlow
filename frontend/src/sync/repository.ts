@@ -1,4 +1,5 @@
-import { getDB, ENTITY_STORES, type EntityStore } from "./db";
+import { getDB, ENTITY_STORES, type EntityStore, type MeleFlowDB } from "./db";
+import type { IDBPDatabase, IDBPTransaction } from "idb";
 import type {
   ChecklistItemRow,
   HabitCategoryRow,
@@ -52,10 +53,17 @@ const ENTITY_TO_STORE: Record<SyncEntity, EntityStore> = {
 
 // ── Generic local row access ─────────────────────
 
+// A store name is a union, so idb cannot infer the row type from it. These
+// helpers keep the store name dynamic while callers guarantee `T` matches.
+type LooseDB = IDBPDatabase<unknown>;
+
+async function getLooseDB(): Promise<LooseDB> {
+  return (await getDB()) as unknown as LooseDB;
+}
+
 export async function putRow<T extends { id: string }>(store: EntityStore, row: T): Promise<void> {
-  const db = await getDB();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await db.put(store, row as any);
+  const db = await getLooseDB();
+  await db.put(store, row);
 }
 
 export async function deleteRow(store: EntityStore, id: string): Promise<void> {
@@ -64,15 +72,13 @@ export async function deleteRow(store: EntityStore, id: string): Promise<void> {
 }
 
 export async function getAllRows<T>(store: EntityStore): Promise<T[]> {
-  const db = await getDB();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (await db.getAll(store)) as any as T[];
+  const db = await getLooseDB();
+  return (await db.getAll(store)) as T[];
 }
 
 export async function getRow<T>(store: EntityStore, id: string): Promise<T | undefined> {
-  const db = await getDB();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (await db.get(store, id)) as any as T | undefined;
+  const db = await getLooseDB();
+  return (await db.get(store, id)) as T | undefined;
 }
 
 /** Stores a canonical server row (after a create/update push). */
@@ -91,11 +97,17 @@ export async function removeEntity(entity: SyncEntity, id: string): Promise<void
 
 // ── Pull application ─────────────────────────────
 
-type Group<T> = { rows: T[]; store: EntityStore };
+type SyncRow = { id: string; deletedAt?: string | null };
+type Group<T extends SyncRow> = { rows: T[]; store: EntityStore };
+type EntityTx = IDBPTransaction<MeleFlowDB, typeof ENTITY_STORES, "readwrite">;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function putGroup(tx: any, group: Group<any>, ops: Promise<unknown>[]): Promise<void> {
-  const store = tx.objectStore(group.store);
+async function putGroup<T extends SyncRow>(tx: EntityTx, group: Group<T>, ops: IDBRequest[]): Promise<void> {
+  // `group.store` is a union of store names; narrow to the raw object-store
+  // shape we need (put/delete return IDBRequest, not a promise).
+  const store = tx.objectStore(group.store) as unknown as {
+    put(value: unknown): IDBRequest;
+    delete(key: IDBValidKey): IDBRequest;
+  };
   for (const row of group.rows) {
     if (row.deletedAt) {
       ops.push(store.delete(row.id));
@@ -116,7 +128,7 @@ export async function applyPull(changes: PullChanges, reset: boolean): Promise<v
   if (reset) {
     for (const store of ENTITY_STORES) tx.objectStore(store).clear();
   }
-  const ops: Promise<unknown>[] = [];
+  const ops: IDBRequest[] = [];
   await Promise.all([
     putGroup(tx, { rows: changes.lists, store: "lists" }, ops),
     putGroup(tx, { rows: changes.tags, store: "tags" }, ops),

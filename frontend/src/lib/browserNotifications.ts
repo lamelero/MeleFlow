@@ -1,4 +1,5 @@
 import { useAuthStore } from "../store/authStore";
+import { logger } from "./logger";
 
 let timers: number[] = [];
 let cachedTasks: TaskLike[] = [];
@@ -187,7 +188,7 @@ function scheduleAll() {
   // Respect notification preferences
   const prefs = useAuthStore.getState().user?.notificationPrefs;
   if (prefs && prefs.browser === false) {
-    console.log("[browserNotifications] browser notifications disabled by user");
+    logger.debug("[browserNotifications] browser notifications disabled by user");
     return;
   }
 

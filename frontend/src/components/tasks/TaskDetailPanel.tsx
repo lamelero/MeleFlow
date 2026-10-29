@@ -1083,7 +1083,7 @@ function ReminderForm({ initial, onSave, onCancel, trans }: {
   initial: { id: string; time: string; frequency: "always" | "weekly" | "before_due"; days?: number[]; beforeDays?: number };
   onSave: (data: { time: string; frequency: "always" | "weekly" | "before_due"; days?: number[]; beforeDays?: number }) => void;
   onCancel: () => void;
-  trans: (key: string, options?: any) => string;
+  trans: (key: string, options?: Record<string, unknown>) => string;
 }) {
   const [time, setTime] = useState(initial.time);
   const [frequency, setFrequency] = useState<"always" | "weekly" | "before_due">(initial.frequency);

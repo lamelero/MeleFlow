@@ -2,6 +2,7 @@ import { Capacitor } from "@capacitor/core";
 import { App } from "@capacitor/app";
 import { Preferences } from "@capacitor/preferences";
 import { LocalNotifications } from "@capacitor/local-notifications";
+import { logger } from "../lib/logger";
 
 const backHandlers: (() => boolean)[] = [];
 
@@ -22,7 +23,7 @@ export async function requestNotificationPermission(): Promise<boolean> {
   try {
     const { display } = await LocalNotifications.requestPermissions();
     const granted = display === "granted";
-    console.log("[notifications] permission:", granted ? "granted" : "denied");
+    logger.debug("[notifications] permission:", granted ? "granted" : "denied");
     return granted;
   } catch (err) {
     console.error("[notifications] permission error:", err);
@@ -42,7 +43,7 @@ export async function createNotificationChannel() {
       sound: "default",
       vibration: true,
     });
-    console.log("[notifications] channel created");
+    logger.debug("[notifications] channel created");
   } catch (err) {
     console.error("[notifications] channel error:", err);
   }
@@ -53,7 +54,7 @@ export async function requestExactAlarmPermission() {
   try {
     const perm = await LocalNotifications.checkPermissions();
     if (perm.display === "granted") {
-      console.log("[notifications] exact alarm permission: granted");
+      logger.debug("[notifications] exact alarm permission: granted");
     }
   } catch {
     // SCHEDULE_EXACT_ALARM is declared in manifest
@@ -69,10 +70,18 @@ export async function setServerUrl(url: string): Promise<void> {
   await Preferences.set({ key: "serverUrl", value: url });
 }
 
+interface StatusBarPlugin {
+  setStyle(options: { style: string }): Promise<void>;
+  setBackgroundColor(options: { color: string }): Promise<void>;
+  setOverlaysWebView(options: { overlay: boolean }): Promise<void>;
+}
+
 export async function setupStatusBar(isDark = true) {
   if (!isNative()) return;
   try {
-    const StatusBar = (window as any).Capacitor?.Plugins?.StatusBar;
+    const StatusBar = (window as Window & {
+      Capacitor?: { Plugins?: { StatusBar?: StatusBarPlugin } };
+    }).Capacitor?.Plugins?.StatusBar;
     if (StatusBar) {
       await StatusBar.setStyle({ style: isDark ? "DARK" : "LIGHT" });
       await StatusBar.setBackgroundColor({ color: "transparent" });

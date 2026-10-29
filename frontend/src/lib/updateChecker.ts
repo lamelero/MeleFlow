@@ -20,6 +20,52 @@ export interface UpdateInfo {
   downloadUrl: string;
 }
 
+export interface ParsedVersion {
+  major: number;
+  minor: number;
+  patch: number;
+  /** Pre-release tag (e.g. "beta.1"), or null for a final release. */
+  pre: string | null;
+}
+
+/**
+ * Parses `X.Y.Z` or `X.Y.Z-pre` (an optional leading `v` is ignored).
+ * Returns null when the string has no usable numeric core (e.g. "dev").
+ */
+export function parseVersion(version: string): ParsedVersion | null {
+  const m = version.trim().replace(/^v/, "").match(/^(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:[-+](.+))?$/);
+  if (!m) return null;
+  return {
+    major: Number(m[1]),
+    minor: Number(m[2] ?? 0),
+    patch: Number(m[3] ?? 0),
+    pre: m[4] ?? null,
+  };
+}
+
+/**
+ * Compares two versions: >0 if `a` is newer, <0 if older, 0 if equal or
+ * unparseable (unparseable versions never trigger an update offer).
+ */
+export function compareVersions(a: string, b: string): number {
+  const pa = parseVersion(a);
+  const pb = parseVersion(b);
+  if (!pa || !pb) return 0;
+  if (pa.major !== pb.major) return pa.major - pb.major;
+  if (pa.minor !== pb.minor) return pa.minor - pb.minor;
+  if (pa.patch !== pb.patch) return pa.patch - pb.patch;
+  // A final release outranks its pre-releases (1.3.1 > 1.3.1-beta).
+  if (pa.pre === pb.pre) return 0;
+  if (pa.pre === null) return 1;
+  if (pb.pre === null) return -1;
+  return pa.pre < pb.pre ? -1 : 1;
+}
+
+/** True only when `remote` is strictly newer than `current`. */
+export function isNewer(remote: string, current: string): boolean {
+  return compareVersions(remote, current) > 0;
+}
+
 function getCachedVersion(): string | null {
   try {
     return localStorage.getItem(CACHED_VERSION_KEY);
@@ -113,7 +159,7 @@ export async function checkForUpdate(): Promise<UpdateInfo> {
     const cachedUrl = getCachedUrl();
     const cachedDownloadUrl = getCachedDownloadUrl();
     if (cachedVersion && cachedUrl) {
-      return { available: cachedVersion !== CURRENT_VERSION, version: cachedVersion, url: cachedUrl, downloadUrl: cachedDownloadUrl || "" };
+      return { available: isNewer(cachedVersion, CURRENT_VERSION), version: cachedVersion, url: cachedUrl, downloadUrl: cachedDownloadUrl || "" };
     }
   }
 
@@ -126,7 +172,7 @@ export async function checkForUpdate(): Promise<UpdateInfo> {
       const cachedUrl = getCachedUrl();
       const cachedDownloadUrl = getCachedDownloadUrl();
       if (cachedVersion && cachedUrl) {
-        return { available: cachedVersion !== CURRENT_VERSION, version: cachedVersion, url: cachedUrl, downloadUrl: cachedDownloadUrl || "" };
+        return { available: isNewer(cachedVersion, CURRENT_VERSION), version: cachedVersion, url: cachedUrl, downloadUrl: cachedDownloadUrl || "" };
       }
       return { available: false, version: "", url: "", downloadUrl: "" };
     }
@@ -135,13 +181,13 @@ export async function checkForUpdate(): Promise<UpdateInfo> {
     const url = data.html_url || "";
     const downloadUrl = extractDownloadUrl(data, version);
     setCache(version, url, downloadUrl);
-    return { available: version !== CURRENT_VERSION && version !== "", version, url, downloadUrl };
+    return { available: isNewer(version, CURRENT_VERSION), version, url, downloadUrl };
   } catch {
     const cachedVersion = getCachedVersion();
     const cachedUrl = getCachedUrl();
     const cachedDownloadUrl = getCachedDownloadUrl();
     if (cachedVersion && cachedUrl) {
-      return { available: cachedVersion !== CURRENT_VERSION, version: cachedVersion, url: cachedUrl, downloadUrl: cachedDownloadUrl || "" };
+      return { available: isNewer(cachedVersion, CURRENT_VERSION), version: cachedVersion, url: cachedUrl, downloadUrl: cachedDownloadUrl || "" };
     }
     return { available: false, version: "", url: "", downloadUrl: "" };
   }

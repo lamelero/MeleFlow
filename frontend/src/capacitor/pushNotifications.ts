@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { isNative } from "./register";
 import { ensureChannel } from "./localNotifications";
 import { client } from "../api/client";
+import { logger } from "../lib/logger";
 
 const PUSH_TOKEN_KEY = "meleflow_push_token";
 
@@ -35,7 +36,7 @@ export async function reRegisterPushToken() {
 
   try {
     await client.post("/notifications/register-token", { token });
-    console.log("[push] token re-registered");
+    logger.debug("[push] token re-registered");
   } catch (err) {
     console.error("[push] re-register failed:", err);
   }
@@ -46,13 +47,13 @@ export async function registerPushNotifications() {
 
   let permStatus = await LocalNotifications.checkPermissions();
   if (permStatus.display === "denied") {
-    console.log("[push] notification permission denied");
+    logger.debug("[push] notification permission denied");
     return;
   }
   if (permStatus.display === "prompt") {
     permStatus = await LocalNotifications.requestPermissions();
     if (permStatus.display !== "granted") {
-      console.log("[push] permission not granted");
+      logger.debug("[push] permission not granted");
       return;
     }
   }
@@ -61,13 +62,13 @@ export async function registerPushNotifications() {
     listenersReady = true;
 
     PushNotifications.addListener("registration", async (token) => {
-      console.log("[push] FCM token received");
+      logger.debug("[push] FCM token received");
       lastToken = token.value;
       await setStoredToken(token.value);
       await ensureChannel();
       try {
         await client.post("/notifications/register-token", { token: token.value });
-        console.log("[push] token sent to backend");
+        logger.debug("[push] token sent to backend");
         toast.success("Push notifications ready", { duration: 2000 });
       } catch (err) {
         console.error("[push] failed to send token:", err);
@@ -79,7 +80,7 @@ export async function registerPushNotifications() {
     });
 
     PushNotifications.addListener("pushNotificationReceived", async (notification) => {
-      console.log("[push] received in foreground:", notification);
+      logger.debug("[push] received in foreground:", notification);
       try {
         await LocalNotifications.schedule({
           notifications: [{
@@ -106,7 +107,7 @@ export async function registerPushNotifications() {
 
   try {
     await PushNotifications.register();
-    console.log("[push] registered with FCM");
+    logger.debug("[push] registered with FCM");
   } catch (err) {
     console.error("[push] registration failed:", err);
     toast.error("Push registration failed");
