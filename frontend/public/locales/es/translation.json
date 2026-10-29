@@ -486,7 +486,8 @@
     "categoryName": "Nombre de categoría",
     "createCategory": "Crear",
     "customCategories": "Categorías personalizadas",
-    "skipped": "Omitido"
+    "skipped": "Omitido",
+    "systemCategories": "Categorías del sistema"
   },
   "pomodoro": {
     "focus": "Enfoque",

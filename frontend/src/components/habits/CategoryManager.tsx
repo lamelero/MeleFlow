@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { HexColorPicker } from "react-colorful";
 import { showConfirm } from "../ConfirmModal";
 import { useHabitCategoryStore, type HabitCategoryItem } from "../../store/habitCategoryStore";
-import { HABIT_CATEGORIES, HABIT_CATEGORY_KEYS, getCategoryColor, setCategoryColor } from "../../lib/habit-categories";
+import { HABIT_CATEGORIES, HABIT_CATEGORY_KEYS, categoryLabel, getCategoryColor, setCategoryColor } from "../../lib/habit-categories";
 import { LIST_ICONS } from "../lists/listIcons";
 import IconPicker from "../lists/IconPicker";
 
@@ -13,7 +13,7 @@ interface CategoryManagerProps {
 }
 
 export default function CategoryManager({ selectedId, onSelect }: CategoryManagerProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { categories, createCategory, updateCategory, deleteCategory, bumpColorVersion } = useHabitCategoryStore();
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -78,7 +78,7 @@ export default function CategoryManager({ selectedId, onSelect }: CategoryManage
     <div className="space-y-2">
       {/* Predefined system categories */}
       <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-2 dark:border-gray-700 dark:bg-gray-800/50">
-        <p className="mb-1.5 px-1 font-urbanist text-[10px] font-semibold uppercase tracking-wider text-gray-400">Categorías del sistema</p>
+        <p className="mb-1.5 px-1 font-urbanist text-[10px] font-semibold uppercase tracking-wider text-gray-400">{t("habits.systemCategories", "System categories")}</p>
         <div className="space-y-0.5">
           {HABIT_CATEGORY_KEYS.map((key) => {
             const info = HABIT_CATEGORIES[key];
@@ -86,7 +86,7 @@ export default function CategoryManager({ selectedId, onSelect }: CategoryManage
             return (
               <div key={key} className="flex items-center gap-2 rounded-lg px-2 py-1">
                 <span style={{ color: currentColor }}>{info.icon()}</span>
-                <span className="flex-1 font-urbanist text-xs text-gray-600 dark:text-gray-400">{info.labelEs}</span>
+                <span className="flex-1 font-urbanist text-xs text-gray-600 dark:text-gray-400">{categoryLabel(info, i18n.language)}</span>
                 <div className="relative">
                   <div className="h-4 w-4 cursor-pointer rounded-full border border-gray-300"
                     style={{ backgroundColor: currentColor }}

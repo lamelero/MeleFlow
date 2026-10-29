@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { HABIT_CATEGORIES, HABIT_CATEGORY_KEYS } from "../../lib/habit-categories";
+import { HABIT_CATEGORIES, HABIT_CATEGORY_KEYS, categoryLabel } from "../../lib/habit-categories";
 import type { Habit } from "../../store/habitStore";
 import { useHabitCategoryStore } from "../../store/habitCategoryStore";
 import { LIST_ICONS } from "../lists/listIcons";
@@ -46,7 +46,7 @@ export default function HabitFormModal({
   onSave,
   habit,
 }: HabitFormModalProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { categories: dynamicCats } = useHabitCategoryStore();
   const dayHeaders = t("calendar.dayHeaders", { returnObjects: true }) as string[];
   const WEEK_DAYS = [
@@ -201,7 +201,7 @@ export default function HabitFormModal({
                           >
                             <info.icon />
                             <span className="font-urbanist text-[10px] text-gray-500 leading-tight text-center dark:text-gray-400">
-                              {info.labelEs}
+                              {categoryLabel(info, i18n.language)}
                             </span>
                           </button>
                         );

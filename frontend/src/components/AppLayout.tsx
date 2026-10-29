@@ -43,6 +43,10 @@ export default function AppLayout({ title, children }: { title: string; children
       : { paddingBottom: "calc(64px + env(safe-area-inset-bottom, 0px))" }
     : undefined;
 
+  // On the web the sidebar (Dashboard) is `hidden` below `lg`, so the bottom
+  // tab bar must take over on small screens too — not only in the native app.
+  const showBottomTabBar = !isNative();
+
   return (
     <div className="flex h-dvh flex-col" style={navStyle}>
       <header
@@ -88,14 +92,16 @@ export default function AppLayout({ title, children }: { title: string; children
         />
       )}
       <ConfirmModal />
-      <div className="flex-1 overflow-y-auto">
+      <div className={`flex-1 overflow-y-auto ${showBottomTabBar ? "pb-16 lg:pb-0" : ""}`}>
         {children}
       </div>
       <div className={`flex items-center justify-center gap-1 opacity-40 ${isLandscape ? "py-1" : "py-2"}`}>
         <img src="/meleflow-logo.svg" alt="" className="h-3 w-3" />
         <span className="text-xs text-gray-400 dark:text-gray-400">MeleFlow</span>
       </div>
-      {isNative() && (isLandscape ? <RightNavBar /> : <BottomTabBar />)}
+      {isNative()
+        ? (isLandscape ? <RightNavBar /> : <BottomTabBar />)
+        : <BottomTabBar />}
     </div>
   );
 }

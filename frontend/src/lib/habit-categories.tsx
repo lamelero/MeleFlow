@@ -13,6 +13,11 @@ export interface HabitCategoryInfo {
   bgColor: string;
 }
 
+/** Localized label for a predefined category, based on the active language. */
+export function categoryLabel(info: HabitCategoryInfo, language: string): string {
+  return language.startsWith("es") ? info.labelEs : info.label;
+}
+
 function IconComp(Icon: typeof Ban) {
   return () => <Icon size={20} strokeWidth={1.5} />;
 }
