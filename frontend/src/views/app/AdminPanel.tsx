@@ -218,7 +218,7 @@ export default function AdminPanel() {
         transition={{ duration: 0.2 }}
       >
 
-      <div className="mx-auto max-w-6xl space-y-6 p-4">
+      <div className="mx-auto w-full max-w-[1440px] space-y-6 px-4 py-6 sm:px-6 lg:px-8">
         <Link
           to="/app"
           className="inline-flex items-center gap-1.5 rounded-xl bg-gray-100 px-4 py-2 font-urbanist text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"

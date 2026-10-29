@@ -182,8 +182,8 @@ export default function Dashboard() {
         exit={{ opacity: 0, y: -12 }}
         transition={{ duration: 0.2 }}
       >
-        <div className="mx-auto flex h-full w-full max-w-6xl gap-6 p-4">
-        <aside className={`relative shrink-0 space-y-4 transition-all duration-200 ${isNative() ? "hidden" : "hidden lg:block"} ${sidebarOpen ? "w-56" : "w-16"}`}>
+        <div className="mx-auto flex h-full w-full max-w-[1440px] gap-6 px-4 py-6 sm:px-6 lg:gap-8 lg:px-8">
+        <aside className={`relative shrink-0 space-y-4 transition-all duration-200 ${isNative() ? "hidden" : "hidden lg:block"} ${sidebarOpen ? "w-60" : "w-16"}`}>
           <button
             onClick={() => { setSidebarOpen(!sidebarOpen); localStorage.setItem("sidebarOpen", String(!sidebarOpen)); }}
             className={`absolute -right-3 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400 shadow-sm transition-colors hover:bg-gray-50 hover:text-gray-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-300 ${sidebarOpen ? "" : "rotate-180"}`}
@@ -473,11 +473,11 @@ export default function Dashboard() {
           )}
         </aside>
 
-        <main className="min-w-0 flex-1 overflow-y-auto">
+        <main className="min-w-0 flex-1 overflow-y-auto p-1">
           {view === "calendar" ? (
             <CalendarContent standalone={false} />
           ) : view === "habits" ? (
-            <div className="space-y-6 p-4">
+            <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h1 className="font-outfit text-lg font-semibold text-gray-900 dark:text-gray-100">
                   {t("dashboard.habits")}

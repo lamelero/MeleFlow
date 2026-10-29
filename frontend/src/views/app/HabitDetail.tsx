@@ -76,7 +76,7 @@ export default function HabitDetail() {
 
   return (
     <AppLayout title={habit.name}>
-      <div className="mx-auto w-full max-w-2xl p-4">
+      <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-4 flex items-center gap-3">
           <button

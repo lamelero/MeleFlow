@@ -284,7 +284,7 @@ export default function Profile() {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -12 }}
         transition={{ duration: 0.2 }}
-        className="mx-auto max-w-2xl p-4"
+        className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 lg:px-8"
       >
         {/* Header */}
         <div className="mb-8 flex items-start justify-between">
