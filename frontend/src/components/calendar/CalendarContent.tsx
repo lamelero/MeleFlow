@@ -462,7 +462,7 @@ export default function CalendarContent({ standalone = true }: CalendarContentPr
 
   if (standalone) {
     return (
-      <div className="mx-auto w-full max-w-6xl p-4">
+      <div className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8">
         {content}
       </div>
     );

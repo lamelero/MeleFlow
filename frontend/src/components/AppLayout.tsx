@@ -44,12 +44,12 @@ export default function AppLayout({ title, children }: { title: string; children
     : undefined;
 
   return (
-    <div className="flex h-screen flex-col" style={navStyle}>
+    <div className="flex h-dvh flex-col" style={navStyle}>
       <header
         className="sticky top-0 z-10 shrink-0 border-b border-gray-200 bg-white/80 backdrop-blur-sm dark:border-gray-800 dark:bg-gray-900/80"
         style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
       >
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
+        <div className="mx-auto flex h-16 w-full max-w-[1440px] items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
             <Link to="/app" className="no-underline">
               <div className="flex items-center gap-2">

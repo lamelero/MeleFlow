@@ -62,7 +62,7 @@ export default function Statistics() {
 
   return (
     <AppLayout title={t("statistics.title")}>
-      <div className="mx-auto w-full max-w-2xl p-4">
+      <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 lg:px-8">
         <div className="mb-4 flex gap-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-800">
           {(["week", "month"] as const).map((p) => (
             <button
