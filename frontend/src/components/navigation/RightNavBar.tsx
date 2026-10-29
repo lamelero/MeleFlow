@@ -60,7 +60,7 @@ export default function RightNavBar() {
               onClick={() => navigate(tab.path)}
               className={`flex items-center justify-center rounded-xl p-2.5 transition-colors ${
                 active
-                  ? "bg-primary/10 text-primary"
+                  ? "bg-primary/10 text-primary-text"
                   : "text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
               }`}
               title={t(tab.labelKey)}

@@ -161,7 +161,7 @@ export default function TwoFactorVerify() {
             type="checkbox"
             checked={trustDevice}
             onChange={(e) => setTrustDevice(e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary dark:border-gray-600"
+            className="h-4 w-4 rounded border-gray-300 text-primary-text focus:ring-primary dark:border-gray-600"
           />
           <span className="font-urbanist text-sm text-gray-600 dark:text-gray-400">
             {t("auth.trustDevice")}
@@ -171,7 +171,7 @@ export default function TwoFactorVerify() {
         <button
           type="submit"
           disabled={submitting || code.join("").length !== 6}
-          className="w-full rounded-xl bg-primary px-4 py-2.5 font-outfit font-semibold text-white transition-colors hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full rounded-xl bg-primary px-4 py-2.5 font-outfit font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting ? t("auth.verifying") || "Verifying..." : t("auth.verify")}
         </button>

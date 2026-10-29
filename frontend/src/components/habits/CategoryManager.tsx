@@ -125,7 +125,7 @@ export default function CategoryManager({ selectedId, onSelect }: CategoryManage
                 onClick={() => onSelect?.(cat)}
                 className={`flex flex-1 items-center gap-2 rounded px-2 py-1 font-urbanist text-xs transition-colors ${
                   selectedId === cat.id
-                    ? "bg-primary/10 font-medium text-primary"
+                    ? "bg-primary/10 font-medium text-primary-text"
                     : "text-gray-700 dark:text-gray-300"
                 }`}
               >

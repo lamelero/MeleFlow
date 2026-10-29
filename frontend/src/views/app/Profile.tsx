@@ -291,7 +291,7 @@ export default function Profile() {
           <div className="flex items-center gap-5">
             <div className="relative">
               <div
-                className="flex h-16 w-16 cursor-pointer items-center justify-center overflow-hidden rounded-2xl bg-primary/10 text-xl font-bold text-primary transition-all duration-200 hover:brightness-95"
+                className="flex h-16 w-16 cursor-pointer items-center justify-center overflow-hidden rounded-2xl bg-primary/10 text-xl font-bold text-primary-text transition-all duration-200 hover:brightness-95"
                 onClick={() => fileRef.current?.click()}
               >
                 {user?.avatarUrl ? (
@@ -311,7 +311,7 @@ export default function Profile() {
               </div>
               <button
                 onClick={() => fileRef.current?.click()}
-                className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-primary text-white shadow-sm transition-colors hover:bg-teal-600 dark:border-gray-900"
+                className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-primary text-white shadow-sm transition-colors hover:bg-primary-hover dark:border-gray-900"
               >
                 <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
@@ -434,7 +434,7 @@ export default function Profile() {
               <button
                 onClick={handleSaveProfile}
                 disabled={saving}
-                className="rounded-xl bg-primary px-6 py-2.5 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-60"
+                className="rounded-xl bg-primary px-6 py-2.5 font-urbanist text-sm font-medium text-white transition-colors hover:bg-primary-hover disabled:opacity-60"
               >
                 {saving ? t("common.saving") : t("profile.saveChanges")}
               </button>
@@ -558,7 +558,7 @@ export default function Profile() {
                 </p>
                 <button
                   onClick={handleSetup2FA}
-                  className="rounded-xl bg-primary px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600"
+                  className="rounded-xl bg-primary px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-primary-hover"
                 >
                   {t("profile.twoFactor.setup")}
                 </button>
@@ -596,7 +596,7 @@ export default function Profile() {
                     <button
                       onClick={handleEnable2FA}
                       disabled={setupCode.length !== 6}
-                      className="rounded-xl bg-primary px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
+                      className="rounded-xl bg-primary px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
                     >
                       {t("profile.twoFactor.enable")}
                     </button>
@@ -737,7 +737,7 @@ export default function Profile() {
               <button
                 onClick={handleAddIcs}
                 disabled={addingIcs || !icsName.trim() || !icsUrl.trim()}
-                className="rounded-xl bg-primary px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
+                className="rounded-xl bg-primary px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
               >
                 {addingIcs ? t("common.saving") : t("profile.icsAdd")}
               </button>
@@ -791,7 +791,7 @@ export default function Profile() {
                             <button
                               onClick={() => syncCalendar(cal.id)}
                               disabled={syncing.has(cal.id)}
-                              className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 font-urbanist text-[11px] font-medium text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
+                              className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 font-urbanist text-[11px] font-medium text-primary-text transition-colors hover:bg-primary/10 disabled:opacity-50"
                             >
                               {syncing.has(cal.id) ? (
                                 <span className="flex items-center gap-1">
@@ -910,7 +910,7 @@ export default function Profile() {
                   toast.success(t("update.upToDate") || "Up to date");
                 }
               }}
-              className="rounded-lg px-2 py-1 font-urbanist text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+              className="rounded-lg px-2 py-1 font-urbanist text-xs font-medium text-primary-text transition-colors hover:bg-primary/10"
             >
               {t("profile.checkForUpdates") || "Check"}
             </button>
@@ -969,7 +969,7 @@ export default function Profile() {
                   console.error("[profile]", err);
                 }
               }}
-              className="mt-2 w-full rounded-lg bg-primary px-3 py-2 font-urbanist text-xs font-medium text-white transition-colors hover:bg-teal-600"
+              className="mt-2 w-full rounded-lg bg-primary px-3 py-2 font-urbanist text-xs font-medium text-white transition-colors hover:bg-primary-hover"
             >
               {t("profile.testPush") || "Send test push"}
             </button>

@@ -62,7 +62,7 @@ export default function IconPicker({ selected, onSelect, color }: IconPickerProp
                 type="button"
                 onClick={() => { onSelect(def.name); setOpen(false); }}
                 className={`flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 ${
-                  selected === def.name ? "bg-primary/10 text-primary ring-2 ring-primary" : ""
+                  selected === def.name ? "bg-primary/10 text-primary-text ring-2 ring-primary" : ""
                 }`}
               >
                 <def.icon className="h-4 w-4" />

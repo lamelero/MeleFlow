@@ -72,7 +72,7 @@ export default function BottomTabBar() {
               onClick={() => navigate(tab.path)}
               className={`flex flex-col items-center gap-0.5 px-3 py-1 transition-colors ${
                 active
-                  ? "text-primary"
+                  ? "text-primary-text"
                   : "text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
               }`}
             >

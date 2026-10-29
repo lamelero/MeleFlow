@@ -124,7 +124,7 @@ export default function PomodoroTimer() {
           onClick={handleOpen}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="flex items-center gap-1.5 rounded-xl bg-primary/10 px-3 py-1.5 font-urbanist text-xs font-medium text-primary transition-colors hover:bg-primary/20 dark:bg-primary/20"
+          className="flex items-center gap-1.5 rounded-xl bg-primary/10 px-3 py-1.5 font-urbanist text-xs font-medium text-primary-text transition-colors hover:bg-primary/20 dark:bg-primary/20"
         >
           {nextLabel.icon}
           <span>{nextLabel.label}</span>

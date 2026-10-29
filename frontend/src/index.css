@@ -15,9 +15,12 @@
   --font-size-2xl: 2.25rem;
   --font-size-3xl: 2.75rem;
 
-  --color-primary: #0857C3;
-  --color-primary-dark: #181851;
-  --color-primary-hover: #181851;
+  /* Brand — teal. Text/links use primary-text so contrast works in both themes. */
+  --color-brand: #0D9488;
+  --color-primary: #0D9488;
+  --color-primary-dark: #115E59;
+  --color-primary-hover: #0F766E;
+  --color-primary-text: #0F766E;
   --color-priority-urgent: #EF4444;
   --color-priority-high: #F59E0B;
   --color-priority-medium: #3B82F6;
@@ -40,6 +43,11 @@
 }
 
 .dark {
+  /* Brighter teal for text on dark surfaces; fills keep teal-600. */
+  --color-brand: #2DD4BF;
+  --color-primary-hover: #14B8A6;
+  --color-primary-text: #5EEAD4;
+
   --color-bg: #070d19;
   --color-surface: #0f1a2e;
   --color-surface-hover: #162240;

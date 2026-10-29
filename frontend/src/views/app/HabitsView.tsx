@@ -72,7 +72,7 @@ export default function HabitsView() {
               </h1>
               <button
                 onClick={() => { setEditingHabit(null); setFormOpen(true); }}
-                className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600"
+                className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-primary-hover"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -91,7 +91,7 @@ export default function HabitsView() {
                 action={
                   <button
                     onClick={() => { setEditingHabit(null); setFormOpen(true); }}
-                    className="rounded-xl bg-primary px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600"
+                    className="rounded-xl bg-primary px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-primary-hover"
                   >
                     {t("dashboard.newHabit")}
                   </button>
