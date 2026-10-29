@@ -1,5 +1,5 @@
 x-shared: &shared-node
-  image: node:20-alpine
+  image: node:22-alpine
   working_dir: /usr/src/app
   environment:
     NODE_ENV: development
@@ -100,7 +100,7 @@ services:
 
   # ── Frontend (Vite Dev Server) ───────────────
   frontend:
-    image: node:20-alpine
+    image: node:22-alpine
     container_name: meleflow-frontend
     working_dir: /usr/src/app
     restart: unless-stopped

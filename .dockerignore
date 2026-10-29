@@ -1,0 +1,47 @@
+# Build context is the repository root (see scripts/release.sh and the
+# Dockerfiles in frontend/ and backend/). Without this file a local
+# `docker build .` sends the whole tree, including node_modules (~900 MB).
+
+# Version control / tooling
+.git
+.gitignore
+.github
+.agents
+skills-lock.json
+.vscode
+.idea
+
+# Dependencies and build output
+**/node_modules
+**/dist
+**/.output
+**/*.tsbuildinfo
+
+# Local env and secrets (keep the example for documentation)
+**/.env
+**/.env.*
+!**/.env.example
+**/google-services.json
+**/firebase-key.json
+
+# Runtime data that must never leak into an image
+backend/uploads
+backend/backups
+backend/src/prisma/dev.db
+backend/src/prisma/dev.db-journal
+pgdata
+redis-data
+*.tgz
+
+# Android project: only needed for local APK builds, not for Docker images
+frontend/android/.gradle
+frontend/android/app/build
+frontend/android/build
+frontend/android/local.properties
+
+# Docs and assets not required by the images
+docs
+screenshots
+images
+releases
+*.md
