@@ -1,19 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AnimatePresence, MotionConfig } from "framer-motion";
 import { Toaster } from "react-hot-toast";
 import { useAuthStore } from "./store/authStore";
 import i18n from "./i18n";
-import Login from "./views/auth/Login";
-import Register from "./views/auth/Register";
-import TwoFactorVerify from "./views/auth/TwoFactorVerify";
-import Dashboard from "./views/app/Dashboard";
-import HabitDetail from "./views/app/HabitDetail";
-import Statistics from "./views/app/Statistics";
-import TimerView from "./views/app/TimerView";
-import Profile from "./views/app/Profile";
-import AdminPanel from "./views/app/AdminPanel";
-import TagManager from "./views/app/TagManager";
+// Route-level code splitting: each view is downloaded on first visit.
+const Login = lazy(() => import("./views/auth/Login"));
+const Register = lazy(() => import("./views/auth/Register"));
+const TwoFactorVerify = lazy(() => import("./views/auth/TwoFactorVerify"));
+const Dashboard = lazy(() => import("./views/app/Dashboard"));
+const HabitDetail = lazy(() => import("./views/app/HabitDetail"));
+const Statistics = lazy(() => import("./views/app/Statistics"));
+const TimerView = lazy(() => import("./views/app/TimerView"));
+const Profile = lazy(() => import("./views/app/Profile"));
+const AdminPanel = lazy(() => import("./views/app/AdminPanel"));
+const TagManager = lazy(() => import("./views/app/TagManager"));
 import ProtectedRoute from "./components/ProtectedRoute";
 import ServerConfig from "./components/ServerConfig";
 import PwaUpdater from "./pwa/PwaUpdater";
@@ -26,8 +27,17 @@ import { initClientBaseUrl } from "./api/client";
 import { startEventAutoRefresh } from "./store/icsCalendarStore";
 import "./i18n";
 
-export default function App() {
-  const location = useLocation();
+// Minimal fallback while a lazily-loaded route chunk is fetched. It keeps the
+// layout stable instead of flashing a blank page on slow connections.
+function RouteFallback() {
+  return (
+    <div className="flex h-[60vh] items-center justify-center" role="status" aria-label="Loading">
+      <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-200 border-t-primary dark:border-gray-700 dark:border-t-primary" />
+    </div>
+  );
+}
+
+export default function App() {  const location = useLocation();
   const initialize = useAuthStore((s) => s.initialize);
   const user = useAuthStore((s) => s.user);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -161,76 +171,78 @@ export default function App() {
         }}
       />
       <AnimatePresence mode="wait">
-        <Routes location={location} key={location.pathname}>
-          <Route path="/login" element={<Login />} />
-          <Route path="/login/2fa" element={<TwoFactorVerify />} />
-          <Route path="/register" element={<Register />} />
-          <Route
-            path="/app"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/app/calendar"
-            element={<Navigate to="/app?view=calendar" replace />}
-          />
-          <Route
-            path="/app/profile"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/tags"
-            element={
-              <ProtectedRoute>
-                <TagManager />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute>
-                <AdminPanel />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/app/habits"
-            element={<Navigate to="/app?view=habits" replace />}
-          />
-          <Route
-            path="/app/habits/:id"
-            element={
-              <ProtectedRoute>
-                <HabitDetail />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/app/statistics"
-            element={
-              <ProtectedRoute>
-                <Statistics />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/app/timer"
-            element={
-              <ProtectedRoute>
-                <TimerView />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="*" element={<Navigate to="/app" replace />} />
-        </Routes>
+        <Suspense fallback={<RouteFallback />}>
+          <Routes location={location} key={location.pathname}>
+            <Route path="/login" element={<Login />} />
+            <Route path="/login/2fa" element={<TwoFactorVerify />} />
+            <Route path="/register" element={<Register />} />
+            <Route
+              path="/app"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/app/calendar"
+              element={<Navigate to="/app?view=calendar" replace />}
+            />
+            <Route
+              path="/app/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tags"
+              element={
+                <ProtectedRoute>
+                  <TagManager />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <AdminPanel />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/app/habits"
+              element={<Navigate to="/app?view=habits" replace />}
+            />
+            <Route
+              path="/app/habits/:id"
+              element={
+                <ProtectedRoute>
+                  <HabitDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/app/statistics"
+              element={
+                <ProtectedRoute>
+                  <Statistics />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/app/timer"
+              element={
+                <ProtectedRoute>
+                  <TimerView />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="*" element={<Navigate to="/app" replace />} />
+          </Routes>
+        </Suspense>
       </AnimatePresence>
     </div>
     </MotionConfig>

@@ -1,6 +1,5 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, lazy, Suspense } from "react";
 import { Link, useNavigate, useSearchParams, useLocation } from "react-router-dom";
-import CalendarContent from "../../components/calendar/CalendarContent";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useListStore } from "../../store/listStore";
@@ -10,14 +9,9 @@ import { useHabitCategoryStore } from "../../store/habitCategoryStore";
 import { useTagStore } from "../../store/tagStore";
 import TaskList from "../../components/tasks/TaskList";
 import TaskFilters from "../../components/tasks/TaskFilters";
-import KanbanView from "../../components/tasks/KanbanView";
-import EisenhowerMatrix from "../../components/tasks/EisenhowerMatrix";
 import type { FilterPreset } from "../../components/tasks/TaskFilters";
 import TaskCard from "../../components/tasks/TaskCard";
-import TaskDetailPanel from "../../components/tasks/TaskDetailPanel";
 import HabitCard from "../../components/habits/HabitCard";
-import HabitFormModal from "../../components/habits/HabitFormModal";
-import CategoryManager from "../../components/habits/CategoryManager";
 import AppLayout from "../../components/AppLayout";
 import EmptyState from "../../components/EmptyState";
 import IconPicker from "../../components/lists/IconPicker";
@@ -27,6 +21,19 @@ import { HexColorPicker } from "react-colorful";
 import { LayoutList, CheckSquare, Heart, Calendar } from "lucide-react";
 import { parseTaskInput } from "../../lib/nlp";
 import { registerShortcuts, clearShortcuts } from "../../lib/keyboardShortcuts";
+
+// Heavy, view-specific pieces are loaded on demand so the initial dashboard
+// chunk stays small (react-datepicker, react-markdown, dnd-kit, etc.).
+const CalendarContent = lazy(() => import("../../components/calendar/CalendarContent"));
+const TaskDetailPanel = lazy(() => import("../../components/tasks/TaskDetailPanel"));
+const HabitFormModal = lazy(() => import("../../components/habits/HabitFormModal"));
+const CategoryManager = lazy(() => import("../../components/habits/CategoryManager"));
+const KanbanView = lazy(() => import("../../components/tasks/KanbanView"));
+const EisenhowerMatrix = lazy(() => import("../../components/tasks/EisenhowerMatrix"));
+
+function SectionFallback() {
+  return <div className="h-40 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />;
+}
 
 export default function Dashboard() {
   const { t } = useTranslation();
@@ -475,7 +482,9 @@ export default function Dashboard() {
 
         <main className="min-w-0 flex-1 overflow-y-auto p-1">
           {view === "calendar" ? (
-            <CalendarContent standalone={false} />
+            <Suspense fallback={<SectionFallback />}>
+              <CalendarContent standalone={false} />
+            </Suspense>
           ) : view === "habits" ? (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
@@ -538,7 +547,9 @@ export default function Dashboard() {
                 <h2 className="mb-3 font-outfit text-sm font-semibold text-gray-900 dark:text-gray-100">
                   {t("habits.categories") || "Categories"}
                 </h2>
-                <CategoryManager />
+                <Suspense fallback={null}>
+                  <CategoryManager />
+                </Suspense>
               </div>
             </div>
           ) : (
@@ -594,17 +605,21 @@ export default function Dashboard() {
                   />
                 )}
                 {viewMode === "kanban" && (
-                  <KanbanView
-                    tasks={tasks}
-                    filter={{ listId: activeListId, tagId: activeTagId, preset: filterPreset }}
-                    onTaskClick={setSelectedTask}
-                  />
+                  <Suspense fallback={<SectionFallback />}>
+                    <KanbanView
+                      tasks={tasks}
+                      filter={{ listId: activeListId, tagId: activeTagId, preset: filterPreset }}
+                      onTaskClick={setSelectedTask}
+                    />
+                  </Suspense>
                 )}
                 {viewMode === "matrix" && (
-                  <EisenhowerMatrix
-                    tasks={tasks}
-                    onTaskClick={setSelectedTask}
-                  />
+                  <Suspense fallback={<SectionFallback />}>
+                    <EisenhowerMatrix
+                      tasks={tasks}
+                      onTaskClick={setSelectedTask}
+                    />
+                  </Suspense>
                 )}
               </section>
 
@@ -711,23 +726,27 @@ export default function Dashboard() {
             </div>
           )}
 
-          <HabitFormModal
-            isOpen={habitFormOpen}
-            onClose={() => {
-              setHabitFormOpen(false);
-              setEditingHabit(null);
-            }}
-            onSave={handleSaveHabit}
-            habit={editingHabit}
-          />
+          <Suspense fallback={null}>
+            <HabitFormModal
+              isOpen={habitFormOpen}
+              onClose={() => {
+                setHabitFormOpen(false);
+                setEditingHabit(null);
+              }}
+              onSave={handleSaveHabit}
+              habit={editingHabit}
+            />
+          </Suspense>
         </main>
       </div>
 
       {selectedTask && (
-        <TaskDetailPanel
-          task={selectedTask}
-          onClose={() => setSelectedTask(null)}
-        />
+        <Suspense fallback={null}>
+          <TaskDetailPanel
+            task={selectedTask}
+            onClose={() => setSelectedTask(null)}
+          />
+        </Suspense>
       )}
 
       {deleteConfirmListId && (

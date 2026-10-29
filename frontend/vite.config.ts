@@ -80,6 +80,24 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    // Keep the entry chunk small: split long-lived vendor code so it can be
+    // cached independently from app code (and from lazily-loaded views).
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor-react": ["react", "react-dom", "react-router-dom"],
+          "vendor-i18n": [
+            "i18next",
+            "react-i18next",
+            "i18next-browser-languagedetector",
+            "i18next-http-backend",
+          ],
+          "vendor-motion": ["framer-motion"],
+        },
+      },
+    },
+  },
   server: {
     port: 5173,
     host: true,
