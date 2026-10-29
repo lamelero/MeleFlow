@@ -132,7 +132,7 @@ export default function HabitEditTab({ habit }: HabitEditTabProps) {
             </div>
             <button
               onClick={() => setFormOpen(true)}
-              className="rounded-md bg-primary/10 px-2 py-1 font-urbanist text-[11px] font-medium text-primary"
+              className="rounded-md bg-primary/10 px-2 py-1 font-urbanist text-[11px] font-medium text-primary-text"
             >
               {t("habits.change") || "Change"}
             </button>

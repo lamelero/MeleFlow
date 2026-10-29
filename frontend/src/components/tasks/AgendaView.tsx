@@ -134,7 +134,7 @@ export default function AgendaView({
                   {day.dayName}
                 </span>
                 {day.isToday && (
-                  <span className="rounded-full bg-primary/10 px-2 py-0.5 font-urbanist text-[10px] font-medium text-primary">
+                  <span className="rounded-full bg-primary/10 px-2 py-0.5 font-urbanist text-[10px] font-medium text-primary-text">
                     {t("calendar.today")}
                   </span>
                 )}

@@ -202,7 +202,7 @@ export default function Dashboard() {
                 onClick={() => { navigate("/app"); setActiveListId(undefined); setActiveTagId(undefined); }}
                 className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-[15px] transition-colors ${sidebarOpen ? "" : "justify-center"} ${
                   view === "all"
-                    ? "bg-primary/10 font-medium text-primary"
+                    ? "bg-primary/10 font-medium text-primary-text"
                     : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
                 }`}
               >
@@ -213,7 +213,7 @@ export default function Dashboard() {
                 onClick={() => { navigate("/app?view=tasks"); setActiveListId(undefined); setActiveTagId(undefined); }}
                 className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-[15px] transition-colors ${sidebarOpen ? "" : "justify-center"} ${
                   view === "tasks"
-                    ? "bg-primary/10 font-medium text-primary"
+                    ? "bg-primary/10 font-medium text-primary-text"
                     : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
                 }`}
               >
@@ -224,7 +224,7 @@ export default function Dashboard() {
                 onClick={() => navigate("/app?view=habits")}
                 className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-[15px] transition-colors ${sidebarOpen ? "" : "justify-center"} ${
                   view === "habits"
-                    ? "bg-primary/10 font-medium text-primary"
+                    ? "bg-primary/10 font-medium text-primary-text"
                     : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
                 }`}
               >
@@ -235,7 +235,7 @@ export default function Dashboard() {
                 onClick={() => navigate("/app?view=calendar")}
                 className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-[15px] transition-colors ${sidebarOpen ? "" : "justify-center"} ${
                   view === "calendar"
-                    ? "bg-primary/10 font-medium text-primary"
+                    ? "bg-primary/10 font-medium text-primary-text"
                     : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
                 }`}
               >
@@ -253,7 +253,7 @@ export default function Dashboard() {
               {sidebarOpen && (
               <button
                 onClick={() => { setShowNewList(!showNewList); setNewListIcon(null); setNewListColor("#14B8A6"); }}
-                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-primary dark:hover:bg-gray-800"
+                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-primary-text dark:hover:bg-gray-800"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -320,7 +320,7 @@ export default function Dashboard() {
                             }}
                             className={`flex items-center rounded-lg font-urbanist text-[15px] transition-colors ${sidebarOpen ? "flex-1 px-3 py-2 text-left" : "justify-center px-0 w-full h-8"} ${
                               activeListId === list.id
-                                ? "bg-primary/10 font-medium text-primary"
+                                ? "bg-primary/10 font-medium text-primary-text"
                                 : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
                             }`}
                           >
@@ -442,7 +442,7 @@ export default function Dashboard() {
                 </h2>}
                 {sidebarOpen && <Link
                   to="/tags"
-                  className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-primary dark:hover:bg-gray-800"
+                  className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-primary-text dark:hover:bg-gray-800"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -457,7 +457,7 @@ export default function Dashboard() {
                     onClick={() => handleTagClick(tag.id)}
                   className={`flex items-center w-full rounded-lg font-urbanist text-[15px] transition-colors ${sidebarOpen ? "px-3 py-2 text-left" : "justify-center px-0 h-8"} ${
                       activeTagId === tag.id
-                        ? "bg-primary/10 font-medium text-primary"
+                        ? "bg-primary/10 font-medium text-primary-text"
                         : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
                     }`}
                   >
@@ -484,7 +484,7 @@ export default function Dashboard() {
                 </h1>
                 <button
                   onClick={() => { setEditingHabit(null); setHabitFormOpen(true); }}
-                  className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600"
+                  className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-primary-hover"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -500,7 +500,7 @@ export default function Dashboard() {
                   action={
                     <button
                       onClick={() => { setHabitFormOpen(true); setEditingHabit(null); }}
-                      className="rounded-xl bg-primary px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600"
+                      className="rounded-xl bg-primary px-4 py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-primary-hover"
                     >
                       {t("dashboard.newHabit")}
                     </button>

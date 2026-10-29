@@ -232,7 +232,7 @@ export default function Register() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full rounded-xl bg-primary px-4 py-2.5 font-outfit font-semibold text-white transition-colors hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full rounded-xl bg-primary px-4 py-2.5 font-outfit font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting ? t("auth.creatingAccount") : t("auth.createAccount")}
         </button>
@@ -242,7 +242,7 @@ export default function Register() {
         {t("auth.hasAccount")}{" "}
         <Link
           to="/login"
-          className="font-medium text-primary hover:underline"
+          className="font-medium text-primary-text hover:underline"
         >
           {t("auth.signIn")}
         </Link>

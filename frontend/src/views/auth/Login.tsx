@@ -180,7 +180,7 @@ export default function Login() {
             type="checkbox"
             checked={rememberMe}
             onChange={(e) => setRememberMe(e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary/20 dark:border-gray-600"
+            className="h-4 w-4 rounded border-gray-300 text-primary-text focus:ring-primary/20 dark:border-gray-600"
           />
           <span className="font-urbanist text-sm text-gray-600 dark:text-gray-400">{t("auth.rememberMe")}</span>
         </label>
@@ -215,7 +215,7 @@ export default function Login() {
                   <button
                     type="button"
                     onClick={handleSaveServerUrl}
-                    className="rounded-lg bg-primary px-2 py-1 font-urbanist text-xs font-medium text-white transition-colors hover:bg-teal-600"
+                    className="rounded-lg bg-primary px-2 py-1 font-urbanist text-xs font-medium text-white transition-colors hover:bg-primary-hover"
                   >
                     Save
                   </button>
@@ -235,7 +235,7 @@ export default function Login() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full rounded-xl bg-primary px-4 py-2.5 font-outfit font-semibold text-white transition-colors hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full rounded-xl bg-primary px-4 py-2.5 font-outfit font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting ? t("auth.signingIn") : t("auth.signIn")}
         </button>
@@ -246,7 +246,7 @@ export default function Login() {
           {t("auth.noAccount")}{" "}
           <Link
             to="/register"
-            className="font-medium text-primary hover:underline"
+            className="font-medium text-primary-text hover:underline"
           >
             {t("auth.signUp")}
           </Link>

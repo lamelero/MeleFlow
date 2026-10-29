@@ -623,7 +623,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
                 <div className="absolute left-0 right-0 top-full z-10 mt-1 rounded-xl border border-gray-200 bg-white p-3 shadow-lg dark:border-gray-700 dark:bg-gray-800">
                   <button
                     onClick={() => handleCreateAndAddTag(tagInput)}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-sm text-primary transition-colors hover:bg-primary/5"
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-sm text-primary-text transition-colors hover:bg-primary/5"
                   >
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -705,7 +705,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
                 <button
                   onClick={handleAddChecklistItem}
                   disabled={!newChecklistText.trim()}
-                  className="rounded-xl bg-primary px-4 py-2.5 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
+                  className="rounded-xl bg-primary px-4 py-2.5 font-urbanist text-sm font-medium text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
                 >
                   {trans("common.add")}
                 </button>
@@ -862,7 +862,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
               </label>
               <button
                 onClick={() => setEditingReminder({ id: "", time: "09:00", frequency: "always" })}
-                className="rounded-lg px-3 py-1.5 font-urbanist text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+                className="rounded-lg px-3 py-1.5 font-urbanist text-xs font-medium text-primary-text transition-colors hover:bg-primary/10"
               >
                 + {trans("common.addReminder")}
               </button>
@@ -939,7 +939,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
               type="file"
               onChange={handleFileUpload}
               disabled={uploading}
-              className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-1.5 file:font-urbanist file:text-xs file:font-medium file:text-primary hover:file:bg-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:file:text-primary"
+              className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-1.5 file:font-urbanist file:text-xs file:font-medium file:text-primary-text hover:file:bg-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:file:text-primary-text"
             />
             {uploading && (
               <div className="mt-2 flex items-center gap-2 text-xs text-gray-400">
@@ -962,7 +962,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
                       download={att.fileName}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex-1 truncate font-urbanist text-sm text-gray-700 hover:text-primary dark:text-gray-300"
+                      className="flex-1 truncate font-urbanist text-sm text-gray-700 hover:text-primary-text dark:text-gray-300"
                     >
                       {att.fileName}
                     </a>
@@ -1011,7 +1011,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
                         onClick={() => handleAddCollaborator(user.username)}
                         className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-urbanist text-sm text-gray-700 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
                       >
-                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
+                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary-text">
                           {(user.displayName || user.username)[0].toUpperCase()}
                         </span>
                         <span>{user.displayName || user.username}</span>
@@ -1034,7 +1034,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
                     key={user.id}
                     className="group flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 px-3 py-2 dark:border-gray-800 dark:bg-gray-800"
                   >
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary-text">
                       {(user.displayName || user.username)[0].toUpperCase()}
                     </span>
                     <span className="flex-1 font-urbanist text-sm text-gray-700 dark:text-gray-300">
@@ -1066,7 +1066,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
             <button
               onClick={handleSaveDescription}
               disabled={saving}
-              className="w-full rounded-xl bg-primary px-4 py-2.5 font-outfit font-semibold text-white transition-colors hover:bg-teal-600 disabled:opacity-60"
+              className="w-full rounded-xl bg-primary px-4 py-2.5 font-outfit font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-60"
             >
               {saving ? trans("common.saving") : trans("common.save")}
             </button>
@@ -1172,7 +1172,7 @@ function ReminderForm({ initial, onSave, onCancel, trans }: {
             if (frequency === "weekly" && days.length === 0) return;
             onSave({ time, frequency, days: frequency === "weekly" ? days : undefined, beforeDays: frequency === "before_due" ? beforeDays : undefined });
           }}
-          className="flex-1 rounded-lg bg-primary py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600"
+          className="flex-1 rounded-lg bg-primary py-2 font-urbanist text-sm font-medium text-white transition-colors hover:bg-primary-hover"
         >
           {trans("common.save")}
         </button>

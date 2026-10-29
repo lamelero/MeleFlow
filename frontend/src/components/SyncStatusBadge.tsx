@@ -33,7 +33,7 @@ export default function SyncStatusBadge() {
   } else if (status === "syncing") {
     icon = <RefreshCw className="h-4 w-4 animate-spin" />;
     label = t("sync.syncing", "Syncing");
-    className = "bg-primary/10 text-primary";
+    className = "bg-primary/10 text-primary-text";
     title = t("sync.syncingHint", "Synchronizing with the server");
   } else if (status === "error") {
     icon = <AlertCircle className="h-4 w-4" />;

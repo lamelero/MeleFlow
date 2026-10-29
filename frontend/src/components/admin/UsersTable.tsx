@@ -314,7 +314,7 @@ export default function UsersTable() {
                 <button
                   onClick={() => handleSaveEdit(editingUser)}
                   disabled={updating === editingUser}
-                  className="rounded-xl bg-primary px-5 py-2.5 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
+                  className="rounded-xl bg-primary px-5 py-2.5 font-urbanist text-sm font-medium text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
                 >
                   {updating === editingUser ? t("admin.saving") : t("admin.save")}
                 </button>

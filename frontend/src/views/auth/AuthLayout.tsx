@@ -84,7 +84,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
             initial={{ y: -6, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.15 }}
-            className={`font-outfit font-bold tracking-tight ${activeLogo ? "text-xl text-primary" : "text-3xl text-[#1a1a2e] dark:text-white"}`}
+            className={`font-outfit font-bold tracking-tight ${activeLogo ? "text-xl text-brand" : "text-3xl text-brand"}`}
           >
             {t("auth.taskflow")}
           </motion.h1>

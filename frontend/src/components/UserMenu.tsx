@@ -54,7 +54,7 @@ export default function UserMenu() {
     <div ref={menuRef} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-primary/10 text-sm font-bold text-primary transition-all hover:brightness-95 hover:ring-2 hover:ring-primary/30"
+        className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-primary/10 text-sm font-bold text-primary-text transition-all hover:brightness-95 hover:ring-2 hover:ring-primary/30"
       >
         {user?.avatarUrl ? (
           <img src={resolveImageUrl(user.avatarUrl)} alt="" className="h-full w-full object-cover" />
@@ -82,7 +82,7 @@ export default function UserMenu() {
               className="absolute right-0 top-full z-50 mt-2 w-64 origin-top-right overflow-hidden rounded-2xl border border-gray-200/60 bg-white shadow-xl shadow-black/5 dark:border-gray-700/50 dark:bg-gray-900/90 dark:shadow-black/20 dark:backdrop-blur-xl"
             >
               <div className="flex items-center gap-3 px-4 py-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary/10 text-sm font-bold text-primary">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary/10 text-sm font-bold text-primary-text">
                   {user?.avatarUrl ? (
                     <img src={resolveImageUrl(user.avatarUrl)} alt="" className="h-full w-full object-cover" />
                   ) : (

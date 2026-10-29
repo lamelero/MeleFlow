@@ -58,7 +58,7 @@ export default function AppLayout({ title, children }: { title: string; children
                 ) : (
                   <>
                     <img src="/meleflow-logo.svg" alt="" className="h-6 w-6" />
-                    <span className="font-outfit text-xl font-bold text-primary">{t("auth.taskflow")}</span>
+                    <span className="font-outfit text-xl font-bold text-brand">{t("auth.taskflow")}</span>
                   </>
                 )}
               </div>

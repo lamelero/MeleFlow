@@ -301,7 +301,7 @@ export default function AdminPanel() {
                     }
                   }}
                   disabled={localUploadSize === settings.maxUploadSize}
-                  className="rounded-xl bg-primary px-3 py-1.5 font-urbanist text-xs font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
+                  className="rounded-xl bg-primary px-3 py-1.5 font-urbanist text-xs font-medium text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
                 >
                   {t("admin.save")}
                 </button>
@@ -333,7 +333,7 @@ export default function AdminPanel() {
                     updateSettings({ maxStoragePerUser: gb * 1024 * 1024 * 1024 });
                   }}
                   disabled={localStorageQuota === Math.round(settings.maxStoragePerUser / (1024 * 1024 * 1024))}
-                  className="rounded-xl bg-primary px-3 py-1.5 font-urbanist text-xs font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
+                  className="rounded-xl bg-primary px-3 py-1.5 font-urbanist text-xs font-medium text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
                 >
                   {t("admin.save")}
                 </button>
@@ -361,7 +361,7 @@ export default function AdminPanel() {
                 <button
                   onClick={() => updateSettings({ maxLoginAttempts: localMaxAttempts })}
                   disabled={localMaxAttempts === settings.maxLoginAttempts}
-                  className="rounded-xl bg-primary px-3 py-1.5 font-urbanist text-xs font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
+                  className="rounded-xl bg-primary px-3 py-1.5 font-urbanist text-xs font-medium text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
                 >
                   {t("admin.save")}
                 </button>
@@ -389,7 +389,7 @@ export default function AdminPanel() {
                 <button
                   onClick={() => updateSettings({ loginLockoutMinutes: localLockoutMinutes })}
                   disabled={localLockoutMinutes === settings.loginLockoutMinutes}
-                  className="rounded-xl bg-primary px-3 py-1.5 font-urbanist text-xs font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
+                  className="rounded-xl bg-primary px-3 py-1.5 font-urbanist text-xs font-medium text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
                 >
                   {t("admin.save")}
                 </button>
@@ -416,7 +416,7 @@ export default function AdminPanel() {
                 <button
                   onClick={() => updateSettings({ frontendUrl: localFrontendUrl })}
                   disabled={localFrontendUrl === settings.frontendUrl}
-                  className="rounded-xl bg-primary px-3 py-1.5 font-urbanist text-xs font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
+                  className="rounded-xl bg-primary px-3 py-1.5 font-urbanist text-xs font-medium text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
                 >
                   {t("admin.save")}
                 </button>
@@ -560,7 +560,7 @@ export default function AdminPanel() {
             <div className="flex items-center gap-3 pt-2">
               <button
                 onClick={saveEmailSettings}
-                className="rounded-xl bg-primary px-5 py-2.5 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600"
+                className="rounded-xl bg-primary px-5 py-2.5 font-urbanist text-sm font-medium text-white transition-colors hover:bg-primary-hover"
               >
                 {t("admin.saveEmail")}
               </button>
@@ -626,7 +626,7 @@ export default function AdminPanel() {
                     <button
                       onClick={() => logoLightInputRef.current?.click()}
                       disabled={logoUploadingLight}
-                      className="rounded-lg bg-primary px-3 py-1.5 font-urbanist text-xs font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
+                      className="rounded-lg bg-primary px-3 py-1.5 font-urbanist text-xs font-medium text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
                     >
                       {logoUploadingLight ? t("admin.uploading") : t("admin.uploadLogo")}
                     </button>
@@ -676,7 +676,7 @@ export default function AdminPanel() {
                     <button
                       onClick={() => logoDarkInputRef.current?.click()}
                       disabled={logoUploadingDark}
-                      className="rounded-lg bg-primary px-3 py-1.5 font-urbanist text-xs font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
+                      className="rounded-lg bg-primary px-3 py-1.5 font-urbanist text-xs font-medium text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
                     >
                       {logoUploadingDark ? t("admin.uploading") : t("admin.uploadLogo")}
                     </button>
@@ -761,7 +761,7 @@ export default function AdminPanel() {
             <button
               onClick={() => createBackup(backupSettings.backupEncrypted)}
               disabled={backupCreating}
-              className="rounded-xl bg-primary px-5 py-2.5 font-urbanist text-sm font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-60"
+              className="rounded-xl bg-primary px-5 py-2.5 font-urbanist text-sm font-medium text-white transition-colors hover:bg-primary-hover disabled:opacity-60"
             >
               {backupCreating ? (
                 <span className="flex items-center gap-2">
@@ -789,7 +789,7 @@ export default function AdminPanel() {
                   className="group flex items-center gap-4 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-800/50"
                 >
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-                    <svg className="h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg className="h-4 w-4 text-primary-text" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 8l5-5m0 0l5 5m-5-5v12" />
                     </svg>
                   </div>
