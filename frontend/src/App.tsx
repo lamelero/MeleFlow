@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, MotionConfig } from "framer-motion";
 import { Toaster } from "react-hot-toast";
 import { useAuthStore } from "./store/authStore";
 import i18n from "./i18n";
@@ -105,6 +105,24 @@ export default function App() {
     }
   }, [user?.language]);
 
+  // Keep <html lang> in sync with the active language (a11y + correct hyphenation).
+  useEffect(() => {
+    const updateLang = () => {
+      document.documentElement.lang = i18n.language;
+    };
+    updateLang();
+    i18n.on("languageChanged", updateLang);
+    return () => {
+      i18n.off("languageChanged", updateLang);
+    };
+  }, []);
+
+  // Match the browser/Android chrome colour to the active theme.
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", theme === "dark" ? "#070D19" : "#FAFAFA");
+  }, [theme]);
+
   const sizeClass =
     fontSize === "small" ? "text-sm" :
     fontSize === "large" ? "text-lg" :
@@ -127,6 +145,7 @@ export default function App() {
   }
 
   return (
+    <MotionConfig reducedMotion="user">
     <div className={sizeClass}>
       {/* Web-only: register the service worker so the app shell loads offline. */}
       {import.meta.env.PROD && !isNative() && <PwaUpdater />}
@@ -214,5 +233,6 @@ export default function App() {
         </Routes>
       </AnimatePresence>
     </div>
+    </MotionConfig>
   );
 }
