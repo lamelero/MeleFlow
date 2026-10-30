@@ -986,12 +986,8 @@ export default function Profile() {
                       (next ? ` · próx:${new Date(next).toLocaleString()}` : ""),
                     { duration: 12000 },
                   );
-                  console.info("[diag] pending", JSON.stringify(
-                    pending.notifications.map((n) => ({ id: n.id, title: n.title, at: n.schedule?.at })),
-                  ));
-                  console.info("[diag] habits", JSON.stringify(
-                    useHabitStore.getState().habits.map((h) => ({ name: h.name, frequency: h.frequency, isArchived: h.isArchived })),
-                  ));
+                  logger.debug("[diag] pending:", pending.notifications.map((n) => ({ id: n.id, title: n.title, at: n.schedule?.at })));
+                  logger.debug("[diag] habits:", useHabitStore.getState().habits.map((h) => ({ name: h.name, frequency: h.frequency, isArchived: h.isArchived })));
                 } catch (err) {
                   toast.error("Error checking notifications");
                   console.error("[profile]", err);

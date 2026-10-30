@@ -62,6 +62,7 @@ export async function setupNotificationActions(): Promise<void> {
       } catch (err) {
         console.error("[notifications] habit completion from notification failed:", err);
       }
+      navigateTo("/app?view=habits");
       return;
     }
 
@@ -72,6 +73,7 @@ export async function setupNotificationActions(): Promise<void> {
       } catch (err) {
         console.error("[notifications] habit skip from notification failed:", err);
       }
+      navigateTo("/app?view=habits");
       return;
     }
 
