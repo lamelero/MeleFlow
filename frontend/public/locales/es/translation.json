@@ -692,6 +692,7 @@
     "lastSync": "Última sincronización"
   },
   "notifications": {
-    "complete": "Completar"
+    "complete": "Completar",
+    "skip": "Descartar"
   }
 }

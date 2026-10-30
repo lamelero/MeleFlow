@@ -269,9 +269,9 @@ cron.schedule("* * * * *", async () => {
           }
         }
 
-        if (await shouldNotify(habit.user, "push")) {
-          await sendPushToUser(habit.user.id, habit.name, t(lang, "habitBody") || "Habit reminder", { kind: "habit", id: habit.id });
-        }
+        // Habit reminders are scheduled locally on the device (AlarmManager) so
+        // they can carry "Complete"/"Skip" actions and work with the app closed.
+        // The server only sends the email above; sending a push too duplicated it.
 
         await redis.set(reminderKey, "1", "EX", 86400);
       }

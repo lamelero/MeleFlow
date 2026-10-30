@@ -65,13 +65,17 @@ export async function scheduleTaskReminders(
   }
 
   const notifs: LocalNotificationSchema[] = [];
+  // All date maths happens in the device's local time zone: reminder times are
+  // wall-clock times ("09:00 means 09:00 here"), so using UTC shifted them.
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
   for (const task of tasks) {
     if (task.isCompleted) continue;
     if (!task.reminderEnabled || !task.reminderConfig) continue;
 
     // Reminders are tagged so a tap can route to the right section, and habit
-    // reminders get a "Complete" action button.
+    // reminders get action buttons (complete / skip).
     const kind: "task" | "habit" = task.kind === "habit" ? "habit" : "task";
     const extra = { kind, id: task.id };
     const actionTypeId = kind === "habit" ? HABIT_ACTION_TYPE : undefined;
@@ -96,9 +100,6 @@ export async function scheduleTaskReminders(
     }
 
     const dueDate = task.dueDate ? new Date(task.dueDate) : null;
-    const now = new Date();
-    const todayUTC = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
-    const nowMs = now.getTime();
 
     for (let ri = 0; ri < reminders.length; ri++) {
       const rem = reminders[ri];
@@ -107,130 +108,51 @@ export async function scheduleTaskReminders(
       const minute = parseInt(minuteStr, 10);
       if (isNaN(hour) || isNaN(minute)) continue;
 
-      if (rem.frequency === "always") {
-        if (dueDate) {
-          const dueUTC = Date.UTC(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
-          if (dueUTC < todayUTC) continue;
+      const timeLabel = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 
-          let cursor = new Date(todayUTC);
-          cursor.setUTCHours(hour, minute, 0, 0);
-          if (cursor.getTime() <= nowMs) cursor.setUTCDate(cursor.getUTCDate() + 1);
-          cursor.setUTCHours(hour, minute, 0, 0);
+      const push = (at: Date, body: string, dayOffset: number) => {
+        notifs.push({
+          title: task.title,
+          body,
+          id: makeId(task.id, ri, dayOffset),
+          schedule: { at, allowWhileIdle: true },
+          smallIcon: "ic_stat_icon",
+          iconColor: "#14B8A6",
+          channelId: "meleflow-default",
+          sound: "default",
+          extra,
+          ...(actionTypeId ? { actionTypeId } : {}),
+        });
+      };
 
-          const dueEnd = new Date(dueUTC);
-          let dayOffset = 0;
-          while (cursor.getTime() <= dueEnd.getTime()) {
-            const at = new Date(cursor);
-              notifs.push({
-                title: task.title,
-                body: `⏰ ${at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
-                id: makeId(task.id, ri, dayOffset),
-                schedule: { at, allowWhileIdle: true },
-              smallIcon: "ic_stat_icon",
-              iconColor: "#14B8A6",
-              extra,
-              ...(actionTypeId ? { actionTypeId } : {}),
-              channelId: "meleflow-default",
-              sound: "default",
-            });
-            cursor.setUTCDate(cursor.getUTCDate() + 1);
-            cursor.setUTCHours(hour, minute, 0, 0);
-            dayOffset++;
-          }
-        } else {
-          for (let d = 0; d < 30; d++) {
-            const at = new Date(todayUTC);
-            at.setUTCDate(at.getUTCDate() + d);
-            at.setUTCHours(hour, minute, 0, 0);
-            if (at.getTime() <= nowMs) continue;
-              notifs.push({
-                title: task.title,
-                body: `📅 ${at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
-                id: makeId(task.id, ri, d),
-                schedule: { at, allowWhileIdle: true },
-              smallIcon: "ic_stat_icon",
-              iconColor: "#14B8A6",
-              extra,
-              ...(actionTypeId ? { actionTypeId } : {}),
-              channelId: "meleflow-default",
-              sound: "default",
-            });
-          }
+      // Default window is the next 31 days; with a due date it stops that day.
+      const windowEnd = dueDate
+        ? new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate())
+        : new Date(todayStart.getFullYear(), todayStart.getMonth(), todayStart.getDate() + 31);
+
+      if (rem.frequency === "before_due" && dueDate) {
+        const at = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate(), hour, minute);
+        at.setDate(at.getDate() - (rem.beforeDays ?? 0));
+        if (at.getTime() > now.getTime()) {
+          push(at, `📅 ${dueDate.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" })}`, 0);
         }
-      } else if (rem.frequency === "weekly" && rem.days && rem.days.length > 0) {
-        if (dueDate) {
-          const dueUTC = Date.UTC(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
-          if (dueUTC < todayUTC) continue;
+        continue;
+      }
 
-          let cursor = new Date(todayUTC);
-          cursor.setUTCHours(hour, minute, 0, 0);
-          if (cursor.getTime() <= nowMs) cursor.setUTCDate(cursor.getUTCDate() + 1);
+      const daysSet = rem.frequency === "weekly" && rem.days ? new Set(rem.days) : null;
 
-          const dueEnd = new Date(dueUTC);
-          let dayOffset = 0;
-          while (cursor.getTime() <= dueEnd.getTime()) {
-            const uiIdx = cursor.getUTCDay() === 0 ? 6 : cursor.getUTCDay() - 1;
-            if (rem.days.includes(uiIdx)) {
-              const at = new Date(cursor);
-              at.setUTCHours(hour, minute, 0, 0);
-              notifs.push({
-                title: task.title,
-                body: `📅 ${at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
-                id: makeId(task.id, ri, dayOffset),
-                schedule: { at, allowWhileIdle: true },
-                smallIcon: "ic_stat_icon",
-                iconColor: "#14B8A6",
-                extra,
-                ...(actionTypeId ? { actionTypeId } : {}),
-                channelId: "meleflow-default",
-                sound: "default",
-              });
-            }
-            cursor.setUTCDate(cursor.getUTCDate() + 1);
-            cursor.setUTCHours(hour, minute, 0, 0);
-            dayOffset++;
-          }
-        } else {
-          for (let d = 0; d < 30; d++) {
-            const at = new Date(todayUTC);
-            at.setUTCDate(at.getUTCDate() + d);
-            at.setUTCHours(hour, minute, 0, 0);
-            if (at.getTime() <= nowMs) continue;
-            const uiIdx = at.getUTCDay() === 0 ? 6 : at.getUTCDay() - 1;
-            if (rem.days.includes(uiIdx)) {
-              notifs.push({
-                title: task.title,
-                body: `📅 ${at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
-                id: makeId(task.id, ri, d),
-                schedule: { at, allowWhileIdle: true },
-                smallIcon: "ic_stat_icon",
-                iconColor: "#14B8A6",
-                extra,
-                ...(actionTypeId ? { actionTypeId } : {}),
-                channelId: "meleflow-default",
-                sound: "default",
-              });
-            }
-          }
-        }
-      } else if (rem.frequency === "before_due" && task.dueDate) {
-        const due = new Date(task.dueDate);
-        const at = new Date(due.getTime() - (rem.beforeDays ?? 0) * 24 * 60 * 60 * 1000);
-        at.setUTCHours(hour, minute, 0, 0);
-        if (at.getTime() > nowMs) {
-          notifs.push({
-            title: task.title,
-              body: `📅 ${due.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" })}`,
-            id: makeId(task.id, ri, 0),
-            schedule: { at },
-            smallIcon: "ic_stat_icon",
-            iconColor: "#14B8A6",
-            extra,
-            ...(actionTypeId ? { actionTypeId } : {}),
-            channelId: "meleflow-default",
-            sound: "default",
-          });
-        }
+      for (let d = 0; d <= 31; d++) {
+        const day = new Date(todayStart.getFullYear(), todayStart.getMonth(), todayStart.getDate() + d);
+        if (day.getTime() > windowEnd.getTime()) break;
+
+        // UI weekday index: Monday = 0 ... Sunday = 6.
+        const uiIdx = day.getDay() === 0 ? 6 : day.getDay() - 1;
+        if (daysSet && !daysSet.has(uiIdx)) continue;
+
+        const at = new Date(day.getFullYear(), day.getMonth(), day.getDate(), hour, minute);
+        if (at.getTime() <= now.getTime()) continue;
+
+        push(at, `⏰ ${timeLabel}`, d);
       }
     }
   }
@@ -291,7 +213,7 @@ export async function scheduleEventReminders(
 
       if (ev.isAllDay && ev.allDayReminderTime) {
         const [hour, minute] = ev.allDayReminderTime.split(":").map(Number);
-        const at = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate(), hour, minute, 0));
+        const at = new Date(start.getFullYear(), start.getMonth(), start.getDate(), hour, minute, 0);
         if (at.getTime() > now.getTime()) {
           notifs.push({
             title: ev.title,

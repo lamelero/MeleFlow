@@ -39,7 +39,10 @@ export async function setupNotificationActions(): Promise<void> {
       types: [
         {
           id: HABIT_ACTION_TYPE,
-          actions: [{ id: "complete", title: i18n.t("notifications.complete", "Complete") }],
+          actions: [
+            { id: "complete", title: i18n.t("notifications.complete", "Complete") },
+            { id: "skip", title: i18n.t("notifications.skip", "Skip") },
+          ],
         },
       ],
     });
@@ -58,6 +61,16 @@ export async function setupNotificationActions(): Promise<void> {
         await useHabitStore.getState().checkIn(extra.id);
       } catch (err) {
         console.error("[notifications] habit completion from notification failed:", err);
+      }
+      return;
+    }
+
+    if (actionId === "skip" && extra.kind === "habit" && extra.id) {
+      try {
+        const { useHabitStore } = await import("../store/habitStore");
+        await useHabitStore.getState().checkIn(extra.id, undefined, "skipped");
+      } catch (err) {
+        console.error("[notifications] habit skip from notification failed:", err);
       }
       return;
     }
