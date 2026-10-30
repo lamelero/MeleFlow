@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 export interface ConfirmOptions {
   title: string;
@@ -29,6 +30,7 @@ export function showConfirm(opts: ConfirmOptions): Promise<boolean | string> {
 }
 
 export default function ConfirmModal() {
+  const { t } = useTranslation();
   const [state, setState] = useState<ConfirmState | null>(null);
   const [inputVal, setInputVal] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -81,7 +83,7 @@ export default function ConfirmModal() {
         <div className="flex justify-end gap-3">
           <button onClick={() => handleClose(false)}
             className="rounded-xl bg-gray-100 px-4 py-2.5 font-urbanist text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
-            {state.cancelText || "Cancelar"}
+            {state.cancelText || t("common.cancel", "Cancel")}
           </button>
           <button onClick={() => handleClose(state.input ? inputVal : true)}
             className={`rounded-xl px-4 py-2.5 font-urbanist text-sm font-medium text-white transition-colors ${
@@ -89,7 +91,7 @@ export default function ConfirmModal() {
                 ? "bg-red-600 hover:bg-red-700"
                 : "bg-primary hover:bg-primary-hover"
             }`}>
-            {state.confirmText || "Aceptar"}
+            {state.confirmText || t("common.confirm", "Confirm")}
           </button>
         </div>
       </motion.div>

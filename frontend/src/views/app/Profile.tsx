@@ -14,6 +14,7 @@ import { testBrowserNotification, getDiagnostics } from "../../lib/browserNotifi
 import { reRegisterPushToken } from "../../capacitor/pushNotifications";
 import { showConfirm } from "../../components/ConfirmModal";
 import { logger } from "../../lib/logger";
+import { HexColorPicker } from "react-colorful";
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -67,6 +68,7 @@ export default function Profile() {
   const [icsName, setIcsName] = useState("");
   const [icsUrl, setIcsUrl] = useState("");
   const [icsColor, setIcsColor] = useState(ICS_COLORS[0]);
+  const [icsColorPickerOpen, setIcsColorPickerOpen] = useState(false);
   const [addingIcs, setAddingIcs] = useState(false);
   const [currentFontSize, setCurrentFontSize] = useState("normal");
   const [boldFont, setBoldFontState] = useState(false);
@@ -237,6 +239,7 @@ export default function Profile() {
       setIcsName("");
       setIcsUrl("");
       setIcsColor(ICS_COLORS[0]);
+      setIcsColorPickerOpen(false);
       toast.success("Calendar added");
     } catch {
       toast.error("Failed to add calendar");
@@ -724,15 +727,50 @@ export default function Profile() {
                 <label className="mb-1 block font-urbanist text-xs font-medium text-gray-600 dark:text-gray-400">
                   {t("profile.icsColor")}
                 </label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {ICS_COLORS.map((color) => (
                     <button
                       key={color}
-                      onClick={() => setIcsColor(color)}
+                      onClick={() => { setIcsColor(color); setIcsColorPickerOpen(false); }}
                       className={`h-7 w-7 rounded-full transition-all ${icsColor === color ? "ring-2 ring-offset-2 ring-gray-400 dark:ring-offset-gray-900" : ""}`}
                       style={{ backgroundColor: color }}
+                      aria-label={color}
                     />
                   ))}
+                  {/* Custom color: opens a picker instead of a fixed palette. */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setIcsColorPickerOpen((o) => !o)}
+                      aria-label={t("profile.icsCustomColor", "Custom color")}
+                      title={t("profile.icsCustomColor", "Custom color")}
+                      className={`h-7 w-7 rounded-full border border-gray-300 transition-all dark:border-gray-600 ${
+                        !ICS_COLORS.includes(icsColor) ? "ring-2 ring-offset-2 ring-gray-400 dark:ring-offset-gray-900" : ""
+                      }`}
+                      style={{
+                        background:
+                          "conic-gradient(from 0deg, #ef4444, #f59e0b, #84cc16, #14b8a6, #06b6d4, #6366f1, #8b5cf6, #ec4899, #ef4444)",
+                      }}
+                    />
+                    {icsColorPickerOpen && (
+                      <div
+                        className="absolute left-0 top-9 z-30 rounded-xl border border-gray-200 bg-white p-3 shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <HexColorPicker color={icsColor} onChange={setIcsColor} />
+                        <div className="mt-2 flex items-center justify-between gap-2">
+                          <span className="font-urbanist text-xs text-gray-500 dark:text-gray-400">{icsColor}</span>
+                          <button
+                            type="button"
+                            onClick={() => setIcsColorPickerOpen(false)}
+                            className="rounded-lg bg-primary px-3 py-1 font-urbanist text-xs font-medium text-white transition-colors hover:bg-primary-hover"
+                          >
+                            {t("common.confirm", "OK")}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
               <button
@@ -747,7 +785,7 @@ export default function Profile() {
             {/* List of calendars */}
             <div className="mt-6">
               <h4 className="mb-3 font-urbanist text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                {t("profile.icsAdd")}
+                {t("profile.icsYourCalendars", "Your calendars")}
               </h4>
               {icsCalendars.length === 0 ? (
                 <p className="font-urbanist text-sm text-gray-400 dark:text-gray-500">

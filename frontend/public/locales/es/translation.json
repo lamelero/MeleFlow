@@ -139,7 +139,20 @@
     "notifications": "Notificaciones",
     "notifEmail": "Correo electrónico",
     "notifPush": "Push (APK)",
-    "notifBrowser": "Navegador (Web)"
+    "notifBrowser": "Navegador (Web)",
+    "icsCustomColor": "Color personalizado",
+    "about": "Acerca de",
+    "version": "Versión",
+    "buildDate": "Fecha de compilación",
+    "systemTime": "Hora del sistema",
+    "checkForUpdates": "Buscar actualizaciones",
+    "checkNotifs": "Comprobar notificaciones",
+    "checkPushToken": "Re-registrar token push",
+    "testBrowser": "Probar notificación del navegador",
+    "testPush": "Probar notificación push",
+    "diagBrowser": "Diagnóstico del navegador",
+    "pendingNotifs": "Notificaciones pendientes",
+    "icsYourCalendars": "Tus calendarios"
   },
   "usermenu": {
     "profile": "Perfil",
@@ -505,7 +518,9 @@
     "cancelSettings": "Cancelar",
     "completedToday": "{{count}} hoy",
     "notificationTitle": "¡{{phase}} completado!",
-    "notificationBody": "Sesión de {{duration}} finalizada."
+    "notificationBody": "Sesión de {{duration}} finalizada.",
+    "running": "En marcha",
+    "paused": "En pausa"
   },
   "tags": {
     "title": "Etiquetas",
@@ -656,5 +671,24 @@
     "updateAvailable": "Hay una nueva versión disponible",
     "reload": "Recargar",
     "later": "Más tarde"
+  },
+  "tasks": {
+    "deleteTitle": "¿Eliminar tarea?",
+    "deleteConfirm": "¿Eliminar \"{{title}}\"? Esto no se puede deshacer."
+  },
+  "menu": {
+    "timer": "Temporizador"
+  },
+  "sync": {
+    "offline": "Sin conexión",
+    "offlineHint": "Estás sin conexión. Los cambios se guardan en este dispositivo.",
+    "syncing": "Sincronizando",
+    "syncingHint": "Sincronizando con el servidor",
+    "pending": "{{count}} pendientes",
+    "pendingHint": "Cambios locales pendientes de subir",
+    "error": "Error de sincronización",
+    "errorHint": "Pulsa para reintentar",
+    "never": "Nunca sincronizado",
+    "lastSync": "Última sincronización"
   }
 }

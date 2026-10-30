@@ -8,6 +8,7 @@ import { useListStore } from "../../store/listStore";
 import { ListIcon } from "../lists/listIcons";
 import TagPill from "../tags/TagPill";
 import { isNative } from "../../capacitor/register";
+import { showConfirm } from "../ConfirmModal";
 
 const priorityColors: Record<number, string> = {
   1: "#EF4444",
@@ -65,7 +66,7 @@ const checkVariants = {
 };
 
 export default function TaskCard({ task, onClick }: TaskCardProps) {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { toggleTask, deleteTask } = useTaskStore();
   const lists = useListStore((s) => s.lists);
   const [deleting, setDeleting] = useState(false);
@@ -79,6 +80,17 @@ export default function TaskCard({ task, onClick }: TaskCardProps) {
 
   async function handleDelete(e: React.MouseEvent) {
     e.stopPropagation();
+    // Deleting a task is irreversible, so ask before running it.
+    const confirmed = await showConfirm({
+      title: t("tasks.deleteTitle", "Delete task?"),
+      message: t("tasks.deleteConfirm", {
+        title: task.title,
+        defaultValue: 'Delete "{{title}}"? This cannot be undone.',
+      }),
+      confirmText: t("common.delete", "Delete"),
+      variant: "danger",
+    });
+    if (!confirmed) return;
     setDeleting(true);
     await deleteTask(task.id);
   }

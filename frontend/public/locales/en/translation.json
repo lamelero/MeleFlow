@@ -139,7 +139,20 @@
     "notifications": "Notification Preferences",
     "notifEmail": "Email",
     "notifPush": "Push (APK)",
-    "notifBrowser": "Browser (Web)"
+    "notifBrowser": "Browser (Web)",
+    "icsCustomColor": "Custom color",
+    "about": "About",
+    "version": "Version",
+    "buildDate": "Build date",
+    "systemTime": "System time",
+    "checkForUpdates": "Check for updates",
+    "checkNotifs": "Check notifications",
+    "checkPushToken": "Re-register push token",
+    "testBrowser": "Test browser notification",
+    "testPush": "Test push notification",
+    "diagBrowser": "Browser diagnostics",
+    "pendingNotifs": "Pending notifications",
+    "icsYourCalendars": "Your calendars"
   },
   "usermenu": {
     "profile": "Profile",
@@ -505,7 +518,9 @@
     "cancelSettings": "Cancel",
     "completedToday": "{{count}} today",
     "notificationTitle": "{{phase}} Complete!",
-    "notificationBody": "{{duration}} session finished."
+    "notificationBody": "{{duration}} session finished.",
+    "running": "Running",
+    "paused": "Paused"
   },
   "tags": {
     "title": "Tags",
@@ -656,5 +671,24 @@
     "updateAvailable": "A new version is available",
     "reload": "Reload",
     "later": "Later"
+  },
+  "tasks": {
+    "deleteTitle": "Delete task?",
+    "deleteConfirm": "Delete \"{{title}}\"? This cannot be undone."
+  },
+  "menu": {
+    "timer": "Timer"
+  },
+  "sync": {
+    "offline": "Offline",
+    "offlineHint": "You are offline. Changes are saved on this device.",
+    "syncing": "Syncing",
+    "syncingHint": "Synchronizing with the server",
+    "pending": "{{count}} pending",
+    "pendingHint": "Local changes waiting to be uploaded",
+    "error": "Sync failed",
+    "errorHint": "Tap to retry",
+    "never": "Never synced",
+    "lastSync": "Last sync"
   }
 }
