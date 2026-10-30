@@ -1,6 +1,5 @@
 import { prisma } from "../../config/database";
 import createError from "http-errors";
-import { sendReminderSyncNudge } from "../../lib/push-service";
 import type { CreateHabitInput, UpdateHabitInput } from "./habits.schema";
 
 function normalizeDate(d: Date): Date {
@@ -196,7 +195,6 @@ export class HabitService {
       include: { habitCategory: { omit: { syncVersion: true, deletedAt: true } } },
       omit: { syncVersion: true, deletedAt: true },
     });
-    void sendReminderSyncNudge(userId);
     return { ...habit, logs: [] };
   }
 
@@ -223,7 +221,6 @@ export class HabitService {
       include: { habitCategory: { omit: { syncVersion: true, deletedAt: true } } },
       omit: { syncVersion: true, deletedAt: true },
     });
-    void sendReminderSyncNudge(userId);
     return habit;
   }
 
@@ -355,7 +352,6 @@ export class HabitService {
         data: { deletedAt: now },
       }),
     ]);
-    void sendReminderSyncNudge(userId);
   }
 
   private async assertCategory(userId: string, categoryId: string | null | undefined) {

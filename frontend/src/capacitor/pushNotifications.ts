@@ -81,16 +81,6 @@ export async function registerPushNotifications() {
     });
 
     PushNotifications.addListener("pushNotificationReceived", async (notification) => {
-      const data = (notification.data ?? {}) as Record<string, unknown>;
-
-      // Silent "sync nudge": re-arm reminders by syncing, show nothing.
-      if (data.type === "sync") {
-        logger.debug("[push] sync nudge received");
-        const { useSyncStore } = await import("../sync/syncStore");
-        void useSyncStore.getState().syncNow();
-        return;
-      }
-
       logger.debug("[push] received in foreground:", notification);
       try {
         await LocalNotifications.schedule({

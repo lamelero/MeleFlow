@@ -1,6 +1,5 @@
 import type { Prisma, Task, List, Tag, ChecklistItem, TaskTag, Habit, HabitCategoryModel, HabitLog } from "@prisma/client";
 import { prisma } from "../../config/database";
-import { sendReminderSyncNudge } from "../../lib/push-service";
 import type { PushBody, SyncOperationInput } from "./sync.schema";
 import {
   checklistItemCreateData,
@@ -278,13 +277,8 @@ export class SyncService {
   // ── PUSH ────────────────────────────────────────
   async push(userId: string, body: PushBody) {
     const results: SyncOperationResult[] = [];
-    // Reminder-bearing entities: a change here should prompt other devices
-    // (e.g. the phone) to sync and re-arm their local notifications.
-    let touchesReminders = false;
 
     for (const op of body.operations) {
-      if (op.entity === "habit" || op.entity === "task") touchesReminders = true;
-
       // Fast path: operation already processed in a previous request.
       const existing = await prisma.syncOperation.findUnique({
         where: { userId_operationId: { userId, operationId: op.operationId } },
@@ -299,8 +293,6 @@ export class SyncService {
     }
 
     await this.touchDevice(userId, body.deviceId);
-
-    if (touchesReminders) void sendReminderSyncNudge(userId);
 
     return {
       protocolVersion: SYNC_PROTOCOL_VERSION,

@@ -1,7 +1,6 @@
 import * as admin from "firebase-admin";
 import { getMessaging } from "firebase-admin/messaging";
 import { prisma } from "../config/database";
-import { redis } from "../config/redis";
 import fs from "fs";
 
 let initialized = false;
@@ -47,14 +46,6 @@ function getMessagingInstance() {
 
 export type PushData = Record<string, string>;
 
-/** Deletes device tokens that FCM reports as invalid. */
-async function pruneInvalidTokens(tokens: string[], responses: { success: boolean }[]) {
-  const invalid = tokens.filter((_, idx) => !responses[idx]?.success);
-  if (invalid.length === 0) return;
-  await prisma.deviceToken.deleteMany({ where: { token: { in: invalid } } });
-  console.log(`[push] removed ${invalid.length} invalid tokens`);
-}
-
 export async function sendPushToUser(userId: string, title: string, body: string, data?: PushData) {
   const messaging = getMessagingInstance();
   if (!messaging) return;
@@ -98,52 +89,6 @@ export async function sendPushToUser(userId: string, title: string, body: string
   } catch (err) {
     console.error("[push] send error:", err);
   }
-}
-
-/**
- * Silent, data-only push. Shows nothing by itself; the app uses it to react
- * (e.g. trigger a sync). Works while the app process is alive (foreground or
- * background); a force-stopped app will not receive it.
- */
-export async function sendDataPushToUser(userId: string, data: PushData) {
-  const messaging = getMessagingInstance();
-  if (!messaging) return;
-
-  try {
-    const tokens = await prisma.deviceToken.findMany({ where: { userId }, select: { token: true } });
-    const tokenList = tokens.map((t) => t.token);
-    if (tokenList.length === 0) return;
-
-    const response = await messaging.sendEachForMulticast({
-      tokens: tokenList,
-      data,
-      android: { priority: "high" },
-    });
-
-    if (response.failureCount > 0) {
-      await pruneInvalidTokens(tokenList, response.responses);
-    }
-  } catch (err) {
-    console.error("[push] data push error:", err);
-  }
-}
-
-const NUDGE_TTL_SECONDS = 60;
-
-/**
- * Asks the user's devices to sync (and therefore re-arm local reminders) after
- * a reminder changed server-side. Throttled per user so a burst of edits only
- * sends one push.
- */
-export async function sendReminderSyncNudge(userId: string) {
-  try {
-    const key = `push:sync-nudge:${userId}`;
-    const acquired = await redis.set(key, "1", "EX", NUDGE_TTL_SECONDS, "NX");
-    if (acquired !== "OK") return; // nudged recently
-  } catch {
-    // Redis unavailable: fall through and send anyway.
-  }
-  await sendDataPushToUser(userId, { type: "sync" });
 }
 
 export async function sendPushToAll(title: string, body: string) {
