@@ -8,7 +8,6 @@ import cron from "node-cron";
 import { prisma } from "./config/database";
 import { redis } from "./config/redis";
 import { sendEmail, buildReminderEmail, buildHabitReminderEmail } from "./lib/email-service";
-import { sendPushToUser } from "./lib/push-service";
 import { t } from "./lib/email-i18n";
 import { HabitService } from "./modules/habits/habits.service";
 import { runScheduledBackup } from "./modules/admin/backup.service";
@@ -104,9 +103,8 @@ cron.schedule("* * * * *", async () => {
           }
         }
 
-        if (await shouldNotify(task.user, "push")) {
-          await sendPushToUser(task.user.id, task.title, t(lang, "taskBody") || "This task is due today", { kind: "task", id: task.id });
-        }
+        // Task reminders are scheduled locally on the device (same as habits) so
+        // they don't duplicate the server push.
 
         await redis.set(reminderKey, "1", "EX", 86400);
       }
@@ -211,9 +209,7 @@ cron.schedule("* * * * *", async () => {
               }
             }
 
-            if (await shouldNotify(task.user, "push")) {
-              await sendPushToUser(task.user.id, task.title, t(lang, "taskRecurringBody") || "Recurring task reminder", { kind: "task", id: task.id });
-            }
+            // Task reminders are local-only (see above).
 
             await redis.set(dedupKey, "1", "EX", 86400);
           }
