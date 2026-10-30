@@ -38,14 +38,23 @@ interface ReminderItem {
   beforeDays?: number;
 }
 
-function makeId(taskId: string, ri: number, day: number): number {
+// Notification ids live in separate numeric bands so task / habit / event
+// schedulers only cancel their own notifications. Each scheduler runs on its
+// own store update; cancelling everything wiped the others.
+const ID_BAND = 1_000_000;
+const TASK_BASE = 0;
+const HABIT_BASE = 1_000_000;
+const EVENT_BASE = 2_000_000;
+
+function makeId(base: number, itemId: string, ri: number, day: number): number {
   let h = 0;
-  for (let i = 0; i < taskId.length; i++) h = ((h << 5) - h) + taskId.charCodeAt(i);
-  return (Math.abs(h) % 900000) + ri * 100 + day + 100;
+  for (let i = 0; i < itemId.length; i++) h = ((h << 5) - h) + itemId.charCodeAt(i);
+  return base + (Math.abs(h) % 900000) + ri * 100 + day + 100;
 }
 
 export async function scheduleTaskReminders(
-  tasks: { id: string; title: string; dueDate?: string | null; reminderEnabled?: boolean; reminderConfig?: string | null; isCompleted?: boolean; kind?: "task" | "habit" }[]
+  items: { id: string; title: string; dueDate?: string | null; reminderEnabled?: boolean; reminderConfig?: string | null; isCompleted?: boolean }[],
+  source: "task" | "habit" = "task",
 ) {
   if (!isNative()) return;
   if (!(await hasPermission())) {
@@ -55,13 +64,13 @@ export async function scheduleTaskReminders(
 
   await ensureChannel();
 
-  // Cancel all existing to force clean reschedule
+  // Cancel only this source's previous notifications (see ID_BAND above).
+  const base = source === "habit" ? HABIT_BASE : TASK_BASE;
   const pending = await LocalNotifications.getPending();
-  if (pending.notifications.length > 0) {
-    await LocalNotifications.cancel({
-      notifications: pending.notifications.map((n) => ({ id: n.id })),
-    });
-    logger.debug(`[localNotifications] cancelled ${pending.notifications.length} existing`);
+  const toCancel = pending.notifications.filter((n) => n.id >= base && n.id < base + ID_BAND);
+  if (toCancel.length > 0) {
+    await LocalNotifications.cancel({ notifications: toCancel.map((n) => ({ id: n.id })) });
+    logger.debug(`[localNotifications] cancelled ${toCancel.length} ${source} notifications`);
   }
 
   const notifs: LocalNotificationSchema[] = [];
@@ -70,15 +79,14 @@ export async function scheduleTaskReminders(
   const now = new Date();
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  for (const task of tasks) {
+  for (const task of items) {
     if (task.isCompleted) continue;
     if (!task.reminderEnabled || !task.reminderConfig) continue;
 
     // Reminders are tagged so a tap can route to the right section, and habit
     // reminders get action buttons (complete / skip).
-    const kind: "task" | "habit" = task.kind === "habit" ? "habit" : "task";
-    const extra = { kind, id: task.id };
-    const actionTypeId = kind === "habit" ? HABIT_ACTION_TYPE : undefined;
+    const extra = { kind: source, id: task.id };
+    const actionTypeId = source === "habit" ? HABIT_ACTION_TYPE : undefined;
 
     let reminders: ReminderItem[];
     try {
@@ -114,7 +122,7 @@ export async function scheduleTaskReminders(
         notifs.push({
           title: task.title,
           body,
-          id: makeId(task.id, ri, dayOffset),
+          id: makeId(base, task.id, ri, dayOffset),
           schedule: { at, allowWhileIdle: true },
           smallIcon: "ic_stat_icon",
           iconColor: "#14B8A6",
@@ -184,7 +192,7 @@ export async function clearAllNotifications() {
 function eventNotifId(eventId: string): number {
   let h = 0;
   for (let i = 0; i < eventId.length; i++) h = ((h << 5) - h) + eventId.charCodeAt(i);
-  return (Math.abs(h) % 900000) + 90000;
+  return EVENT_BASE + (Math.abs(h) % 900000);
 }
 
 export async function scheduleEventReminders(
@@ -195,10 +203,9 @@ export async function scheduleEventReminders(
 
   await ensureChannel();
 
-  // Cancel existing event notifications
+  // Cancel previous event notifications (only the event id band).
   const pending = await LocalNotifications.getPending();
-  const eventIds = new Set(events.map((e) => eventNotifId(e.id)));
-  const toCancel = pending.notifications.filter((n) => eventIds.has(n.id));
+  const toCancel = pending.notifications.filter((n) => n.id >= EVENT_BASE && n.id < EVENT_BASE + ID_BAND);
   if (toCancel.length > 0) {
     await LocalNotifications.cancel({ notifications: toCancel.map((n) => ({ id: n.id })) });
   }

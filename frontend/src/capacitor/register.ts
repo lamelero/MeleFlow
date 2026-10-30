@@ -49,15 +49,20 @@ export async function createNotificationChannel() {
   }
 }
 
-export async function requestExactAlarmPermission() {
-  if (!isNative()) return;
+export async function requestExactAlarmPermission(): Promise<boolean> {
+  if (!isNative()) return false;
   try {
-    const perm = await LocalNotifications.checkPermissions();
-    if (perm.display === "granted") {
-      logger.debug("[notifications] exact alarm permission: granted");
+    const status = await LocalNotifications.checkExactNotificationSetting();
+    if (status.exact_alarm === "granted") {
+      logger.debug("[notifications] exact alarms granted");
+      return true;
     }
-  } catch {
-    // SCHEDULE_EXACT_ALARM is declared in manifest
+    logger.debug("[notifications] exact alarms not granted, opening settings");
+    const after = await LocalNotifications.changeExactNotificationSetting();
+    return after?.exact_alarm === "granted";
+  } catch (err) {
+    logger.debug("[notifications] exact alarm check failed:", err);
+    return false;
   }
 }
 

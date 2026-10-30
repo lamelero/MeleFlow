@@ -26,15 +26,15 @@ function scheduleHabitReminders(habits: HabitView[]) {
   setTimeout(() => {
     scheduleTaskReminders(
       habits
-        .filter((h) => h.frequency)
+        .filter((h) => h.frequency && !h.isArchived)
         .map((h) => ({
           id: h.id,
           title: h.name,
           dueDate: null,
           reminderEnabled: true,
           reminderConfig: h.frequency,
-          kind: "habit" as const,
         })),
+      "habit",
     );
   }, 0);
 }
@@ -143,7 +143,9 @@ export const useHabitStore = create<HabitState>((set, get) => ({
       },
     });
     useSyncStore.getState().scheduleSync();
-    set({ habits: await selectHabits() });
+    const habits = await selectHabits();
+    set({ habits });
+    scheduleHabitReminders(habits);
     toast.success("Habit created");
   },
 
@@ -165,7 +167,9 @@ export const useHabitStore = create<HabitState>((set, get) => ({
     await putRow("habits", { ...existing, ...data, updatedAt: new Date().toISOString() });
     await coalesceUpdate("habit", id, data, knownBaseVersion(existing.version));
     useSyncStore.getState().scheduleSync();
-    set({ habits: await selectHabits() });
+    const habits = await selectHabits();
+    set({ habits });
+    scheduleHabitReminders(habits);
     toast.success("Habit updated");
   },
 
@@ -178,7 +182,9 @@ export const useHabitStore = create<HabitState>((set, get) => ({
     await removePendingWhere("habitLog", (op) => op.data?.habitId === id);
     await enqueueDelete("habit", id, knownBaseVersion(existing?.version));
     useSyncStore.getState().scheduleSync();
-    set({ habits: await selectHabits() });
+    const habits = await selectHabits();
+    set({ habits });
+    scheduleHabitReminders(habits);
     toast.success("Habit deleted");
   },
 
