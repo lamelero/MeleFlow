@@ -105,7 +105,7 @@ cron.schedule("* * * * *", async () => {
         }
 
         if (await shouldNotify(task.user, "push")) {
-          await sendPushToUser(task.user.id, task.title, t(lang, "taskBody") || "This task is due today");
+          await sendPushToUser(task.user.id, task.title, t(lang, "taskBody") || "This task is due today", { kind: "task", id: task.id });
         }
 
         await redis.set(reminderKey, "1", "EX", 86400);
@@ -212,7 +212,7 @@ cron.schedule("* * * * *", async () => {
             }
 
             if (await shouldNotify(task.user, "push")) {
-              await sendPushToUser(task.user.id, task.title, t(lang, "taskRecurringBody") || "Recurring task reminder");
+              await sendPushToUser(task.user.id, task.title, t(lang, "taskRecurringBody") || "Recurring task reminder", { kind: "task", id: task.id });
             }
 
             await redis.set(dedupKey, "1", "EX", 86400);
@@ -270,7 +270,7 @@ cron.schedule("* * * * *", async () => {
         }
 
         if (await shouldNotify(habit.user, "push")) {
-          await sendPushToUser(habit.user.id, habit.name, t(lang, "habitBody") || "Habit reminder");
+          await sendPushToUser(habit.user.id, habit.name, t(lang, "habitBody") || "Habit reminder", { kind: "habit", id: habit.id });
         }
 
         await redis.set(reminderKey, "1", "EX", 86400);

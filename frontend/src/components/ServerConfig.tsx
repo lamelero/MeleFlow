@@ -48,7 +48,7 @@ export default function ServerConfig({ onConfigured }: Props) {
               type="text"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="192.168.100.10:33800"
+              placeholder="https://meleflow.example.com"
               className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none transition-colors focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-purple-500"
               autoFocus
             />

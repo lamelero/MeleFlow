@@ -208,7 +208,7 @@ export default function Login() {
                     type="text"
                     value={serverUrlInput}
                     onChange={(e) => setServerUrlInput(e.target.value)}
-                    placeholder="192.168.100.210:3001"
+                    placeholder="https://meleflow.example.com"
                     className="w-40 rounded-lg border border-gray-200 bg-white px-2 py-1 font-urbanist text-xs outline-none focus:border-primary dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
                     autoFocus
                   />

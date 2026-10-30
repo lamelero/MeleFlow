@@ -44,7 +44,9 @@ function getMessagingInstance() {
   return getMessaging();
 }
 
-export async function sendPushToUser(userId: string, title: string, body: string) {
+export type PushData = Record<string, string>;
+
+export async function sendPushToUser(userId: string, title: string, body: string, data?: PushData) {
   const messaging = getMessagingInstance();
   if (!messaging) return;
 
@@ -59,6 +61,8 @@ export async function sendPushToUser(userId: string, title: string, body: string
     const response = await messaging.sendEachForMulticast({
       tokens: tokens.map((t) => t.token),
       notification: { title, body },
+      // Routing hint consumed by the app to open the right section on tap.
+      ...(data ? { data } : {}),
       android: {
         priority: "high",
         notification: {
