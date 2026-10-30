@@ -18,6 +18,11 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
       - meleflow-net
 
@@ -36,6 +41,11 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
       - meleflow-net
 
@@ -64,7 +74,7 @@ services:
       LOGIN_LOCKOUT_MINUTES: ${LOGIN_LOCKOUT_MINUTES:-15}
       CORS_ORIGIN: ${CORS_ORIGIN:-}
     volumes:
-      - ./uploads:/usr/src/app/uploads
+      - uploads:/usr/src/app/uploads
       - ./backups:/usr/src/app/backups
     depends_on:
       postgres:
@@ -77,6 +87,11 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
       - meleflow-net
 
@@ -97,15 +112,20 @@ services:
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
       FRONTEND_URL: ${FRONTEND_URL}
+    volumes:
+      - ./backups:/usr/src/app/backups
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
       - meleflow-net
-    volumes:
-      - ./backups:/usr/src/app/backups
 
   nginx:
     image: ${DOCKER_USER:-meleflow}/meleflow-frontend:${TAG:-latest}
@@ -116,7 +136,7 @@ services:
     ports:
       - "${NGINX_PORT:-3001}:80"
     volumes:
-      - ./uploads:/var/www/uploads:ro
+      - uploads:/var/www/uploads:ro
     depends_on:
       backend:
         condition: service_started
@@ -126,6 +146,11 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
       - meleflow-net
 
@@ -137,4 +162,6 @@ volumes:
   postgres_data:
     driver: local
   redis_data:
+    driver: local
+  uploads:
     driver: local
