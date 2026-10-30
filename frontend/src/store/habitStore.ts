@@ -259,6 +259,9 @@ useSyncStore.subscribe((state, prev) => {
     void selectHabits().then((habits) => {
       useHabitStore.setState({ habits });
       updateHabitData(habits);
+      // Re-arm local reminders so changes made elsewhere (e.g. on the web)
+      // take effect as soon as they are pulled.
+      scheduleHabitReminders(habits);
     });
   }
 });

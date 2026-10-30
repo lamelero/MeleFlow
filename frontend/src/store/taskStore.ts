@@ -387,6 +387,7 @@ useSyncStore.subscribe((state, prev) => {
       const tasks = withAttachments(rows);
       useTaskStore.setState({ tasks });
       updateTaskData(tasks);
+      scheduleReminders(tasks);
     });
   }
 });
