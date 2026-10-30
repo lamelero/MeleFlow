@@ -6,7 +6,6 @@ import AuthLayout from "./AuthLayout";
 import LanguageSwitcher from "../../components/LanguageSwitcher";
 import ThemeToggle from "../../components/ThemeToggle";
 import { translateAuthError } from "../../lib/translate-error";
-import { registerPushNotifications } from "../../capacitor/pushNotifications";
 import { isNative } from "../../capacitor/register";
 
 export default function Register() {
@@ -47,7 +46,6 @@ export default function Register() {
     setSubmitting(true);
     try {
       await register(email, username, password);
-      if (isNative()) await registerPushNotifications();
       navigate("/app");
     } catch {
       // error is set in store

@@ -5,7 +5,6 @@ import { useAuthStore } from "../../store/authStore";
 import AuthLayout from "./AuthLayout";
 import LanguageSwitcher from "../../components/LanguageSwitcher";
 import ThemeToggle from "../../components/ThemeToggle";
-import { registerPushNotifications } from "../../capacitor/pushNotifications";
 import { isNative } from "../../capacitor/register";
 
 const RESEND_COOLDOWN = 60;
@@ -90,7 +89,6 @@ export default function TwoFactorVerify() {
     setSubmitting(true);
     try {
       await verify2FA(twoFactorToken, fullCode, trustDevice);
-      if (isNative()) await registerPushNotifications();
       navigate("/app");
     } catch {
       setCode(["", "", "", "", "", ""]);

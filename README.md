@@ -7,7 +7,7 @@
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Stack](https://img.shields.io/badge/stack-React%2019%20%7C%20Fastify%205%20%7C%20PostgreSQL%2016%20%7C%20Redis%207-14B8A6)
 
-Self-hosted task management web app with tasks, lists, tags, habits, Pomodoro timer, ICS calendar feeds, Kanban/Eisenhower views, NLP input, admin panel, push notifications (FCM + browser + email), and i18n (EN/ES).
+Self-hosted task management web app with tasks, lists, tags, habits, Pomodoro timer, ICS calendar feeds, Kanban/Eisenhower views, NLP input, admin panel, notifications (local on device + browser + email), and i18n (EN/ES).
 
 ## Screenshots
 
@@ -58,7 +58,7 @@ Self-hosted task management web app with tasks, lists, tags, habits, Pomodoro ti
 - **Habit Categories** — Customizable categories with icons and colors, editable via CategoryManager
 - **Pomodoro Timer** — Built-in focus timer with work/break intervals and session history
 - **ICS Calendar Feeds** — Import external calendars via URL, auto-sync every 15 min, event notifications
-- **Notifications** — Email (SMTP), Push (FCM for Android APK), Browser (Web Notification API). Configurable per type in Profile
+- **Notifications** — Email (SMTP), Local (Android device reminders with actions), Browser (Web Notification API). Configurable per type in Profile
 - **Two-Factor Auth (2FA)** — TOTP-based 2FA with recovery codes and trusted devices
 - **Admin Panel** — User management, system settings, SMTP config, logo upload, security logs, backups (create/download/restore/upload)
 - **Update Checker** — Checks GitHub releases for new APK versions; direct APK download from the banner
@@ -70,10 +70,10 @@ Self-hosted task management web app with tasks, lists, tags, habits, Pomodoro ti
 
 ## Stack
 
-- **Backend**: Node.js 20, Fastify 5 (ZodTypeProvider + http-errors + sensible), TypeScript, Prisma ORM (PostgreSQL 16), Redis 7, JWT auth, firebase-admin (FCM)
+- **Backend**: Node.js 20, Fastify 5 (ZodTypeProvider + http-errors + sensible), TypeScript, Prisma ORM (PostgreSQL 16), Redis 7, JWT auth
 - **Frontend**: React 19, Vite, Tailwind CSS v4, Zustand, react-router-dom, i18next, framer-motion, lucide-react
 - **Infra**: Docker Compose (PostgreSQL, Redis, Backend, Worker, Frontend/Nginx)
-- **Mobile**: Capacitor v7 Android APK (FCM push, local notifications, Preferences)
+- **Mobile**: Capacitor v7 Android APK (local notifications, Preferences)
 
 ## Prerequisites
 
@@ -121,9 +121,8 @@ JWT_SECRET=$(openssl rand -base64 32)
 JWT_REFRESH_SECRET=$(openssl rand -base64 32)
 ENCRYPTION_KEY=$(openssl rand -hex 16)
 
-# 4. Create the data folders, placeholder for Firebase (optional), and .env file
+# 4. Create the data folders and .env file
 mkdir -p uploads backups
-echo '{}' > firebase-key.json          # placeholder for push notifications (see guide below)
 
 # ⚠️ IMPORTANT: replace YOUR_SERVER_IP with your server's IP or domain
 #    Example: http://192.168.1.100:3001 or https://meleflow.tudominio.com
@@ -253,7 +252,6 @@ See `.env.example` for defaults:
 | `MAX_UPLOAD_SIZE`           | `50` (MB)                                      |
 | `MAX_LOGIN_ATTEMPTS`        | `5`                                            |
 | `LOGIN_LOCKOUT_MINUTES`     | `15`                                           |
-| `FIREBASE_SERVICE_ACCOUNT_PATH` | (path to firebase-key.json for push notifications) |
 
 ## Backups
 
@@ -353,10 +351,6 @@ volumes:
 - `DELETE /api/ics-calendars/:id`
 - `POST /api/ics-calendars/:id/sync` — Force re-sync
 - `GET /api/ics-calendars/:id/events` — Cached events
-
-### Notifications
-- `POST /api/notifications/register-token` — `{ token, platform? }` (FCM)
-- `POST /api/notifications/unregister-token` — `{ token }`
 
 ### Settings (public)
 - `GET /api/settings/logo` — Logo URLs (light/dark)
@@ -465,20 +459,9 @@ MeleFlow supports English and Spanish. Language can be changed from the profile 
 
 SMTP settings are configurable from the admin panel under "Email Configuration". Once configured and enabled, the worker sends task and habit reminder emails. You can also send a test email from the admin panel to verify your setup.
 
-## Push Notifications (Android APK)
+## Notifications
 
-MeleFlow supports **push notifications** via Firebase Cloud Messaging (FCM) for the Android APK, plus **browser notifications** (Web Notification API) for the web version. Notification preferences (email/push/browser) are configurable per user in Profile → General.
-
-
-### One-time Firebase Setup
-
-1. Go to [Firebase Console](https://console.firebase.google.com) and create a project
-2. Add an **Android app** with package name `com.meleflow.app`
-3. Add the **SHA-1 fingerprint** of your debug keystore:
-   ```bash
-   keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android | grep SHA1
-   ```
-4. Download `google-services.json` and place it at `frontend/android/app/google-services.json`
+MeleFlow has **no Firebase dependency**. Reminders (habits and tasks) are scheduled **locally on the device** with Android's `AlarmManager`, so they fire with the app closed and offer **Complete** / **Skip** actions. The web app also supports browser notifications (Web Notification API). Per-user preferences live in Profile → General.
 
 ### Building the APK
 
@@ -492,43 +475,22 @@ cd android
 
 # Normal flavor (com.meleflow.app)
 ./gradlew assembleNormalDebug
-
-# Trabajo flavor (com.meleflow.app.trabajo)
-./gradlew assembleTrabajoDebug
 ```
 
-APK outputs:
-- `android/app/build/outputs/apk/normal/debug/meleflow-normal.apk` → renamed as `MeleFlow-v1.2.0.apk`
-- `android/app/build/outputs/apk/trabajo/debug/meleflow-trabajo.apk`
-
-The latest APK can be downloaded from the [GitHub Releases](https://github.com/lamelero/MeleFlow/releases) page.
-
-### Backend: Firebase Admin SDK
-
-The `docker-compose.yml` already mounts `./firebase-key.json` for the backend and worker, and the `.env` already sets `FIREBASE_SERVICE_ACCOUNT_PATH`. The install script creates a **placeholder** (`echo '{}' > firebase-key.json`) so everything works out of the box (push is just disabled).
-
-To enable push notifications, replace the placeholder with a real service account key:
-
-1. In Firebase Console → Project Settings → **Service accounts** → **Generate new private key**
-2. Save the downloaded JSON file as `firebase-key.json` (overwriting the placeholder)
-3. Restart:
-```bash
-docker compose up -d
-```
-
-> ⚠️ **Multiple servers?** Each NAS/VPS needs its own `firebase-key.json`. The APK (`google-services.json`) is universal.
+APK output: `android/app/build/outputs/apk/normal/debug/meleflow-normal.apk`.
+The latest APK is on the [GitHub Releases](https://github.com/lamelero/MeleFlow/releases) page.
 
 ### Update Checker
 
-The app checks GitHub releases for new APK versions (cached for 24h). When a new version is detected, an amber banner appears with **Download** (direct APK download) and **Skip** options. Cached update data is automatically invalidated when the app version changes.
+The app checks GitHub releases for new APK versions (cached for 24h). When a newer version is detected, a banner appears with **Download** (direct APK download) and **Skip** options. Cached update data is invalidated when the app version changes.
 
 ### Troubleshooting
 
 | Symptom | Check |
 |---------|-------|
-| **"Test push" returns success but notification doesn't arrive** | `docker compose exec backend env \| grep FIREBASE` — if empty, service account key not configured |
-| **"Push notifications ready" toast on startup** | FCM token received; check `docker compose logs backend \| grep push` for send errors |
-| **Push tokens: 0** | App hasn't registered the token yet; open the app and wait |
+| **Reminder doesn't fire** | The app must have been opened at least once to schedule it; open Profile → **Diagnose notifications** to see pending reminders and the next one. |
+| **No notification at all** | Grant notifications for the app and enable "Alarms & reminders" in system settings; Profile → **Local test (10s)** verifies the channel. |
+| **Changes made on the web don't apply** | They are pulled when the app is opened/foreground (the sync polls every 60 s while the app is open). |
 
 ## License
 

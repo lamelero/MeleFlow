@@ -18,7 +18,6 @@ import { tagRoutes } from "./modules/tags/tags.routes";
 import { habitRoutes } from "./modules/habits/habits.routes";
 import { habitCategoryRoutes } from "./modules/habits/habit-categories.routes";
 import { pomodoroRoutes } from "./modules/pomodoro/pomodoro.routes";
-import { notificationRoutes } from "./modules/notifications/notifications.routes";
 import { adminRoutes } from "./modules/admin/admin.routes";
 import { settingsRoutes } from "./modules/settings/settings.routes";
 import { icsCalendarRoutes } from "./modules/ics-calendars/ics-calendars.routes";
@@ -167,11 +166,6 @@ export async function buildApp(opts: Record<string, unknown> = {}) {
   await app.register(tagRoutes, { prefix: "/api/tags" });
   await app.register(habitRoutes, { prefix: "/api/habits" });
   await app.register(habitCategoryRoutes, { prefix: "/api" });
-  try {
-    await app.register(notificationRoutes, { prefix: "/api" });
-  } catch (err) {
-    console.error("[app] failed to register notification routes:", err);
-  }
   await app.register(pomodoroRoutes, { prefix: "/api/pomodoro" });
   await app.register(adminRoutes, { prefix: "/api/admin" });
   await app.register(settingsRoutes, { prefix: "/api" });

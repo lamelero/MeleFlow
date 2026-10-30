@@ -63,11 +63,9 @@ services:
       MAX_LOGIN_ATTEMPTS: ${MAX_LOGIN_ATTEMPTS:-5}
       LOGIN_LOCKOUT_MINUTES: ${LOGIN_LOCKOUT_MINUTES:-15}
       CORS_ORIGIN: ${CORS_ORIGIN:-}
-      FIREBASE_SERVICE_ACCOUNT_PATH: /usr/src/app/firebase-key.json
     volumes:
       - ./uploads:/usr/src/app/uploads
       - ./backups:/usr/src/app/backups
-      - ./firebase-key.json:/usr/src/app/firebase-key.json:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -99,7 +97,6 @@ services:
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
       FRONTEND_URL: ${FRONTEND_URL}
-      FIREBASE_SERVICE_ACCOUNT_PATH: /usr/src/app/firebase-key.json
     depends_on:
       postgres:
         condition: service_healthy
@@ -109,7 +106,6 @@ services:
       - meleflow-net
     volumes:
       - ./backups:/usr/src/app/backups
-      - ./firebase-key.json:/usr/src/app/firebase-key.json:ro
 
   nginx:
     image: ${DOCKER_USER:-meleflow}/meleflow-frontend:${TAG:-latest}

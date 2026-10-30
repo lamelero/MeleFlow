@@ -20,7 +20,6 @@ import ServerConfig from "./components/ServerConfig";
 import PwaUpdater from "./pwa/PwaUpdater";
 import { isNative, getServerUrl, setupAppListeners, setupStatusBar, getFontSize, getBoldFont, requestNotificationPermission, createNotificationChannel, requestExactAlarmPermission } from "./capacitor/register";
 import { requestBrowserPermission } from "./lib/browserNotifications";
-import { registerPushNotifications } from "./capacitor/pushNotifications";
 import { setupNotificationActions } from "./capacitor/notificationActions";
 import { setNavigator } from "./lib/navigation";
 import { useThemeStore } from "./store/themeStore";
@@ -81,11 +80,6 @@ export default function App() {
           await requestExactAlarmPermission();
         } else {
           console.warn("[notifications] permission denied by user");
-        }
-        try {
-          await registerPushNotifications();
-        } catch (err) {
-          console.error("[app] push registration failed:", err);
         }
         startEventAutoRefresh();
       } else {
