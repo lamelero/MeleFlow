@@ -515,7 +515,6 @@ export default function Profile() {
             <div className="space-y-4">
               {[
                 { key: "email" as const, icon: "📧", label: t("profile.notifEmail") },
-                { key: "push" as const, icon: "📱", label: t("profile.notifPush") },
                 { key: "browser" as const, icon: "🌐", label: t("profile.notifBrowser") },
               ].map((opt) => (
                 <div key={opt.key} className="flex items-center justify-between">

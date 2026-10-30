@@ -70,14 +70,15 @@ Self-hosted task management web app with tasks, lists, tags, habits, Pomodoro ti
 
 ## Stack
 
-- **Backend**: Node.js 20, Fastify 5 (ZodTypeProvider + http-errors + sensible), TypeScript, Prisma ORM (PostgreSQL 16), Redis 7, JWT auth
+- **Backend**: Node.js 22, Fastify 5 (ZodTypeProvider + http-errors + sensible), TypeScript, Prisma ORM (PostgreSQL 16), Redis 7, JWT auth
 - **Frontend**: React 19, Vite, Tailwind CSS v4, Zustand, react-router-dom, i18next, framer-motion, lucide-react
 - **Infra**: Docker Compose (PostgreSQL, Redis, Backend, Worker, Frontend/Nginx)
 - **Mobile**: Capacitor v7 Android APK (local notifications, Preferences)
 
 ## Prerequisites
 
-- Docker + Docker Compose (with Compose V2)
+- Docker + Docker Compose (Compose V2) for deployment.
+- Node.js **22** (see `.nvmrc`) — only needed for local development.
 
 ## Quick Start
 
@@ -122,7 +123,7 @@ JWT_REFRESH_SECRET=$(openssl rand -base64 32)
 ENCRYPTION_KEY=$(openssl rand -hex 16)
 
 # 4. Create the data folders and .env file
-mkdir -p uploads backups
+mkdir -p backups
 
 # ⚠️ IMPORTANT: replace YOUR_SERVER_IP with your server's IP or domain
 #    Example: http://192.168.1.100:3001 or https://meleflow.tudominio.com
@@ -222,12 +223,14 @@ Pre-built images are available on Docker Hub:
 
 | Image | Tags |
 |-------|------|
-| `meleflow/meleflow-backend` | `latest` |
-| `meleflow/meleflow-frontend` | `latest` |
+| `meleflow/meleflow-backend` | `latest`, `1.3.4` |
+| `meleflow/meleflow-frontend` | `latest`, `1.3.4` |
+
+> `latest` always points to the newest release. Pin a version tag (e.g. `TAG=1.3.4` in `.env`) for reproducible installs.
 
 ## Custom Port
 
-By default Nginx listens on `127.0.0.1:3001` (localhost only). To change the port, edit the `NGINX_PORT` env variable.
+Nginx publishes on `${NGINX_PORT:-3001}` (all interfaces by default). To change it, set `NGINX_PORT` in `.env`. To bind to localhost only, prefix the port mapping (e.g. `127.0.0.1:${NGINX_PORT:-3001}:80`).
 
 ## Environment Variables
 
@@ -262,11 +265,11 @@ Backups are managed from the admin panel: **Settings → Backup**.
 - **Restore** — restore from an existing backup or upload a backup file
 - **Encryption** — optional AES-256 encryption using the `ENCRYPTION_KEY`
 
-For persistence across container restarts, the `docker-compose.yml` mounts the backups directory:
+For persistence across container restarts, the compose mounts the backups directory:
 
 ```yaml
 volumes:
-  - ./backend/backups:/usr/src/app/backups
+  - ./backups:/usr/src/app/backups
 ```
 
 ## API Endpoints
@@ -429,7 +432,7 @@ meleflow/
 │       ├── config/          # Env, Prisma, Redis singletons
 │       ├── lib/             # http-errors, format helper, email service, file validator
 │       ├── modules/         # auth, tasks, lists, tags, habits, habit-categories,
-│       │                    # pomodoro, notifications, admin, ics-calendars, settings
+│       │                    # pomodoro, sync, admin, ics-calendars, settings
 │       ├── prisma/          # schema.prisma + migrations
 │       ├── utils/           # file-validator
 │       ├── app.ts           # Fastify factory (ZodTypeProvider, http-errors)
