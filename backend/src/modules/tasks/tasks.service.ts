@@ -1,6 +1,7 @@
 import { prisma } from "../../config/database";
 import createError from "http-errors";
 import { sendEmail } from "../../lib/email-service";
+import { sendReminderSyncNudge } from "../../lib/push-service";
 import { t } from "../../lib/email-i18n";
 import type { CreateTaskInput, UpdateTaskInput, TaskQuery, AddCollaboratorInput } from "./tasks.schema";
 
@@ -210,6 +211,7 @@ export class TaskService {
       select: taskSelect,
     });
 
+    void sendReminderSyncNudge(userId);
     return { ...task, tags: [], subTasks: [], checklistItems: input.checklistItems ?? [], attachments: [] };
   }
 
@@ -311,6 +313,7 @@ export class TaskService {
       });
     });
 
+    void sendReminderSyncNudge(userId);
     return formatTask(task as unknown as RawTask);
   }
 
@@ -349,6 +352,7 @@ export class TaskService {
         data: { deletedAt: now },
       });
     });
+    void sendReminderSyncNudge(userId);
   }
 
   async addCollaborator(userId: string, taskId: string, input: AddCollaboratorInput) {
