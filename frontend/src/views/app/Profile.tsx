@@ -1065,6 +1065,42 @@ export default function Profile() {
             >
               Local test (10s)
             </button>
+            <button
+              onClick={async () => {
+                try {
+                  const perm = await LocalNotifications.checkPermissions();
+                  if (perm.display !== "granted") {
+                    const req = await LocalNotifications.requestPermissions();
+                    if (req.display !== "granted") {
+                      toast.error("Notification permission denied.", { duration: 5000 });
+                      return;
+                    }
+                  }
+                  // Mirrors a habit reminder exactly: action buttons + idle-friendly.
+                  await LocalNotifications.schedule({
+                    notifications: [{
+                      title: "Test hábito",
+                      body: "20s, con acciones",
+                      id: 99998,
+                      schedule: { at: new Date(Date.now() + 20000), allowWhileIdle: true },
+                      smallIcon: "ic_stat_icon",
+                      iconColor: "#14B8A6",
+                      channelId: "meleflow-default",
+                      sound: "default",
+                      actionTypeId: "habit-reminder",
+                      extra: { kind: "habit", id: "test" },
+                    }],
+                  });
+                  toast.success("Test hábito en 20s", { duration: 3000 });
+                } catch (err) {
+                  toast.error("Habit test failed");
+                  console.error("[profile]", err);
+                }
+              }}
+              className="mt-2 w-full rounded-lg bg-gray-100 px-3 py-2 font-urbanist text-xs text-gray-600 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+            >
+              Test hábito (20s)
+            </button>
           </>)}
           <button
             onClick={() => {
