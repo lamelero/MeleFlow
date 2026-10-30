@@ -690,5 +690,8 @@
     "errorHint": "Pulsa para reintentar",
     "never": "Nunca sincronizado",
     "lastSync": "Última sincronización"
+  },
+  "notifications": {
+    "complete": "Completar"
   }
 }

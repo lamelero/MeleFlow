@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from "react";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, MotionConfig } from "framer-motion";
 import { Toaster } from "react-hot-toast";
 import { useAuthStore } from "./store/authStore";
@@ -21,6 +21,8 @@ import PwaUpdater from "./pwa/PwaUpdater";
 import { isNative, getServerUrl, setupAppListeners, setupStatusBar, getFontSize, getBoldFont, requestNotificationPermission, createNotificationChannel, requestExactAlarmPermission } from "./capacitor/register";
 import { requestBrowserPermission } from "./lib/browserNotifications";
 import { registerPushNotifications } from "./capacitor/pushNotifications";
+import { setupNotificationActions } from "./capacitor/notificationActions";
+import { setNavigator } from "./lib/navigation";
 import { useThemeStore } from "./store/themeStore";
 import { useSyncStore } from "./sync/syncStore";
 import { initClientBaseUrl } from "./api/client";
@@ -37,7 +39,9 @@ function RouteFallback() {
   );
 }
 
-export default function App() {  const location = useLocation();
+export default function App() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const initialize = useAuthStore((s) => s.initialize);
   const user = useAuthStore((s) => s.user);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -50,6 +54,7 @@ export default function App() {  const location = useLocation();
     async function init() {
       if (isNative()) {
         setupAppListeners();
+        void setupNotificationActions();
         await initClientBaseUrl();
         const url = await getServerUrl();
         const size = await getFontSize();
@@ -93,6 +98,12 @@ export default function App() {  const location = useLocation();
     }
     init();
   }, [initialize]);
+
+  // Expose the router's navigate to non-React code (notification taps).
+  useEffect(() => {
+    setNavigator((path) => navigate(path));
+    return () => setNavigator(null);
+  }, [navigate]);
 
   const theme = useThemeStore((s) => s.theme);
 

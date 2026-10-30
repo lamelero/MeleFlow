@@ -7,6 +7,7 @@ import { isNative } from "./register";
 import { ensureChannel } from "./localNotifications";
 import { client } from "../api/client";
 import { logger } from "../lib/logger";
+import { navigateTo } from "../lib/navigation";
 
 const PUSH_TOKEN_KEY = "meleflow_push_token";
 
@@ -91,11 +92,22 @@ export async function registerPushNotifications() {
             iconColor: "#14B8A6",
             channelId: "meleflow-default",
             sound: "default",
+            // Carry the routing hint so a tap opens the right section.
+            extra: notification.data ?? undefined,
           }],
         });
       } catch (err) {
         console.error("[push] foreground display error:", err);
       }
+    });
+
+    PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
+      const kind = (action.notification?.data as { kind?: string } | undefined)?.kind;
+      const route =
+        kind === "habit" ? "/app?view=habits" :
+        kind === "event" ? "/app?view=calendar" :
+        kind === "task" ? "/app?view=tasks" : null;
+      if (route) navigateTo(route);
     });
 
     App.addListener("appStateChange", ({ isActive }) => {

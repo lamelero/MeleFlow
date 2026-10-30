@@ -33,6 +33,7 @@ function scheduleHabitReminders(habits: HabitView[]) {
           dueDate: null,
           reminderEnabled: true,
           reminderConfig: h.frequency,
+          kind: "habit" as const,
         })),
     );
   }, 0);

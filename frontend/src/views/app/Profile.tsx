@@ -737,8 +737,10 @@ export default function Profile() {
                       aria-label={color}
                     />
                   ))}
-                  {/* Custom color: opens a picker instead of a fixed palette. */}
-                  <div className="relative">
+                  {/* Custom color: opens a picker instead of a fixed palette.
+                      `flex` on the wrapper avoids the inline-block baseline gap
+                      that misaligned the swatch with the fixed ones. */}
+                  <div className="relative flex">
                     <button
                       type="button"
                       onClick={() => setIcsColorPickerOpen((o) => !o)}

@@ -690,5 +690,8 @@
     "errorHint": "Tap to retry",
     "never": "Never synced",
     "lastSync": "Last sync"
+  },
+  "notifications": {
+    "complete": "Complete"
   }
 }

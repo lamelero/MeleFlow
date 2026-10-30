@@ -2,6 +2,7 @@ import { LocalNotifications, Weekday } from "@capacitor/local-notifications";
 import type { LocalNotificationSchema } from "@capacitor/local-notifications";
 import { isNative } from "./register";
 import { logger } from "../lib/logger";
+import { HABIT_ACTION_TYPE } from "./notificationActions";
 
 async function hasPermission(): Promise<boolean> {
   try {
@@ -44,7 +45,7 @@ function makeId(taskId: string, ri: number, day: number): number {
 }
 
 export async function scheduleTaskReminders(
-  tasks: { id: string; title: string; dueDate?: string | null; reminderEnabled?: boolean; reminderConfig?: string | null; isCompleted?: boolean }[]
+  tasks: { id: string; title: string; dueDate?: string | null; reminderEnabled?: boolean; reminderConfig?: string | null; isCompleted?: boolean; kind?: "task" | "habit" }[]
 ) {
   if (!isNative()) return;
   if (!(await hasPermission())) {
@@ -68,6 +69,12 @@ export async function scheduleTaskReminders(
   for (const task of tasks) {
     if (task.isCompleted) continue;
     if (!task.reminderEnabled || !task.reminderConfig) continue;
+
+    // Reminders are tagged so a tap can route to the right section, and habit
+    // reminders get a "Complete" action button.
+    const kind: "task" | "habit" = task.kind === "habit" ? "habit" : "task";
+    const extra = { kind, id: task.id };
+    const actionTypeId = kind === "habit" ? HABIT_ACTION_TYPE : undefined;
 
     let reminders: ReminderItem[];
     try {
@@ -121,6 +128,8 @@ export async function scheduleTaskReminders(
                 schedule: { at, allowWhileIdle: true },
               smallIcon: "ic_stat_icon",
               iconColor: "#14B8A6",
+              extra,
+              ...(actionTypeId ? { actionTypeId } : {}),
               channelId: "meleflow-default",
               sound: "default",
             });
@@ -141,6 +150,8 @@ export async function scheduleTaskReminders(
                 schedule: { at, allowWhileIdle: true },
               smallIcon: "ic_stat_icon",
               iconColor: "#14B8A6",
+              extra,
+              ...(actionTypeId ? { actionTypeId } : {}),
               channelId: "meleflow-default",
               sound: "default",
             });
@@ -169,6 +180,8 @@ export async function scheduleTaskReminders(
                 schedule: { at, allowWhileIdle: true },
                 smallIcon: "ic_stat_icon",
                 iconColor: "#14B8A6",
+                extra,
+                ...(actionTypeId ? { actionTypeId } : {}),
                 channelId: "meleflow-default",
                 sound: "default",
               });
@@ -192,6 +205,8 @@ export async function scheduleTaskReminders(
                 schedule: { at, allowWhileIdle: true },
                 smallIcon: "ic_stat_icon",
                 iconColor: "#14B8A6",
+                extra,
+                ...(actionTypeId ? { actionTypeId } : {}),
                 channelId: "meleflow-default",
                 sound: "default",
               });
@@ -210,6 +225,8 @@ export async function scheduleTaskReminders(
             schedule: { at },
             smallIcon: "ic_stat_icon",
             iconColor: "#14B8A6",
+            extra,
+            ...(actionTypeId ? { actionTypeId } : {}),
             channelId: "meleflow-default",
             sound: "default",
           });
@@ -283,6 +300,7 @@ export async function scheduleEventReminders(
             schedule: { at, allowWhileIdle: true },
             smallIcon: "ic_stat_icon",
             iconColor: "#14B8A6",
+            extra: { kind: "event", id: ev.id },
             channelId: "meleflow-default",
             sound: "default",
           });
@@ -297,6 +315,7 @@ export async function scheduleEventReminders(
             schedule: { at, allowWhileIdle: true },
             smallIcon: "ic_stat_icon",
             iconColor: "#14B8A6",
+            extra: { kind: "event", id: ev.id },
             channelId: "meleflow-default",
             sound: "default",
           });
