@@ -968,12 +968,30 @@ export default function Profile() {
             <button
               onClick={async () => {
                 try {
+                  // Reschedule from current data, then report what is pending.
+                  const { useHabitStore } = await import("../../store/habitStore");
+                  await useHabitStore.getState().fetchHabits();
+                  await new Promise((r) => setTimeout(r, 1200));
+
                   const pending = await LocalNotifications.getPending();
+                  const exact = await LocalNotifications.checkExactNotificationSetting().catch(() => null);
+                  const habitsWithFreq = useHabitStore.getState().habits.filter((h) => h.frequency).length;
+                  const next = pending.notifications
+                    .map((n) => n.schedule?.at ? new Date(n.schedule.at).getTime() : 0)
+                    .filter((t) => t > 0)
+                    .sort((a, b) => a - b)[0];
+
                   toast.success(
-                    `${t("profile.pendingNotifs") || "Pending notifications"}: ${pending.notifications.length}`,
-                    { duration: 5000 }
+                    `Pend:${pending.notifications.length} · háb:${habitsWithFreq} · exact:${exact?.exact_alarm ?? "?"}` +
+                      (next ? ` · próx:${new Date(next).toLocaleString()}` : ""),
+                    { duration: 12000 },
                   );
-                  logger.debug("[profile] pending notifications:", pending.notifications);
+                  console.info("[diag] pending", JSON.stringify(
+                    pending.notifications.map((n) => ({ id: n.id, title: n.title, at: n.schedule?.at })),
+                  ));
+                  console.info("[diag] habits", JSON.stringify(
+                    useHabitStore.getState().habits.map((h) => ({ name: h.name, frequency: h.frequency, isArchived: h.isArchived })),
+                  ));
                 } catch (err) {
                   toast.error("Error checking notifications");
                   console.error("[profile]", err);
