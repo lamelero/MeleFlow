@@ -66,6 +66,22 @@ export async function requestExactAlarmPermission(): Promise<boolean> {
   }
 }
 
+/**
+ * Requests notification permission (if needed), creates the channel and checks
+ * exact alarms. Idempotent: safe to call on startup and after login, which is
+ * what guarantees the prompt appears even on a fresh install (where the app
+ * first shows the server-config screen and skips the normal init path).
+ */
+export async function ensureNotificationsReady(): Promise<boolean> {
+  if (!isNative()) return false;
+  const granted = await requestNotificationPermission();
+  if (granted) {
+    await createNotificationChannel();
+    await requestExactAlarmPermission();
+  }
+  return granted;
+}
+
 export async function getServerUrl(): Promise<string | null> {
   const { value } = await Preferences.get({ key: "serverUrl" });
   return value;

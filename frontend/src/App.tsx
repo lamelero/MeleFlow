@@ -18,7 +18,7 @@ const TagManager = lazy(() => import("./views/app/TagManager"));
 import ProtectedRoute from "./components/ProtectedRoute";
 import ServerConfig from "./components/ServerConfig";
 import PwaUpdater from "./pwa/PwaUpdater";
-import { isNative, getServerUrl, setupAppListeners, setupStatusBar, getFontSize, getBoldFont, requestNotificationPermission, createNotificationChannel, requestExactAlarmPermission } from "./capacitor/register";
+import { isNative, getServerUrl, setupAppListeners, setupStatusBar, getFontSize, getBoldFont, ensureNotificationsReady } from "./capacitor/register";
 import { requestBrowserPermission } from "./lib/browserNotifications";
 import { setupNotificationActions } from "./capacitor/notificationActions";
 import { setNavigator } from "./lib/navigation";
@@ -74,13 +74,8 @@ export default function App() {
       }
       await initialize();
       if (isNative()) {
-        const granted = await requestNotificationPermission();
-        if (granted) {
-          await createNotificationChannel();
-          await requestExactAlarmPermission();
-        } else {
-          console.warn("[notifications] permission denied by user");
-        }
+        const granted = await ensureNotificationsReady();
+        if (!granted) console.warn("[notifications] permission denied by user");
         startEventAutoRefresh();
       } else {
         const granted = await requestBrowserPermission();
@@ -98,6 +93,13 @@ export default function App() {
     setNavigator((path) => navigate(path));
     return () => setNavigator(null);
   }, [navigate]);
+
+  // Ask for notification permission after login. This is what guarantees the
+  // prompt on a fresh install, where the app first shows the server-config
+  // screen and the normal init path (before login) is skipped.
+  useEffect(() => {
+    if (isNative() && isAuthenticated) void ensureNotificationsReady();
+  }, [isAuthenticated]);
 
   const theme = useThemeStore((s) => s.theme);
 
