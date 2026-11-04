@@ -324,7 +324,11 @@
     "bajasLaborales": "Bajas laborales",
     "calendario": "Calendario corporativo",
     "modulosTitulo": "Módulos corporativos",
-    "modulosDesc": "Activar o desactivar módulos corporativos por usuario"
+    "modulosDesc": "Activar o desactivar módulos corporativos por usuario",
+    "newPassword": "Nueva contraseña",
+    "newPasswordHint": "Déjalo vacío para mantener la actual",
+    "newPasswordNote": "Al asignar una contraseña se cierra la sesión en todos los dispositivos.",
+    "passwordTooShort": "La contraseña debe tener al menos 8 caracteres"
   },
   "common": {
     "save": "Guardar",

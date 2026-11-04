@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import bcrypt from "bcryptjs";
 import { buildApp } from "../../../app";
 import { prisma } from "../../../config/database";
 import { redis } from "../../../config/redis";
@@ -155,5 +156,30 @@ describe("PUT /api/admin/users/:id", () => {
     });
 
     expect(res.statusCode).toBe(400);
+  });
+
+  it("sets a user password (hashed)", async () => {
+    const target = await prisma.user.findUnique({ where: { email: regularUser.email } });
+    const newPassword = "RotatedPass123!";
+
+    const res = await app.inject({
+      method: "PUT",
+      url: `/api/admin/users/${target!.id}`,
+      ...auth(adminToken),
+      payload: { password: newPassword },
+    });
+    expect(res.statusCode).toBe(200);
+
+    const after = await prisma.user.findUnique({ where: { id: target!.id } });
+    expect(after!.passwordHash).not.toBe(target!.passwordHash);
+    expect(await bcrypt.compare(newPassword, after!.passwordHash)).toBe(true);
+
+    // Restore the original password for the remaining tests.
+    await app.inject({
+      method: "PUT",
+      url: `/api/admin/users/${target!.id}`,
+      ...auth(adminToken),
+      payload: { password: regularUser.password },
+    });
   });
 });

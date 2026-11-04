@@ -11,7 +11,7 @@ export const updateUserSchema = z.object({
   timezone: z.string().optional(),
   sedeId: z.string().nullable().optional(),
   diasVac: z.number().int().nullable().optional(),
-  password: z.string().min(6).max(128).optional(),
+  password: z.string().min(8).max(128).optional(),
 });
 
 export const updateSettingsSchema = z.object({

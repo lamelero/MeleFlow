@@ -17,6 +17,7 @@ interface EditForm {
   username: string;
   displayName: string;
   storageQuota: string;
+  password: string;
 }
 
 function effectiveQuota(user: { storageQuota: string | null }, globalQuota: number): number {
@@ -28,7 +29,7 @@ export default function UsersTable() {
   const { users, updateUser, deleteUser, isLoading, settings } = useAdminStore();
   const [updating, setUpdating] = useState<string | null>(null);
   const [editingUser, setEditingUser] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState<EditForm>({ email: "", username: "", displayName: "", storageQuota: "" });
+  const [editForm, setEditForm] = useState<EditForm>({ email: "", username: "", displayName: "", storageQuota: "", password: "" });
   const [deletingUser, setDeletingUser] = useState<string | null>(null);
 
   function openEdit(user: (typeof users)[0]) {
@@ -37,6 +38,7 @@ export default function UsersTable() {
       username: user.username,
       displayName: user.displayName || "",
       storageQuota: user.storageQuota ? String(Number(user.storageQuota) / (1024 * 1024 * 1024)) : "",
+      password: "",
     });
     setEditingUser(user.id);
   }
@@ -44,6 +46,11 @@ export default function UsersTable() {
   async function handleSaveEdit(userId: string) {
     if (!editForm.email.trim() || !editForm.username.trim()) {
       toast.error(t("admin.emailRequired"));
+      return;
+    }
+    const password = editForm.password.trim();
+    if (password && password.length < 8) {
+      toast.error(t("admin.passwordTooShort", "Password must be at least 8 characters"));
       return;
     }
     setUpdating(userId);
@@ -56,6 +63,7 @@ export default function UsersTable() {
         username: editForm.username.trim(),
         displayName: editForm.displayName.trim() || undefined,
         storageQuota,
+        ...(password ? { password } : {}),
       });
       setEditingUser(null);
       toast.success(t("admin.userUpdated"));
@@ -302,6 +310,22 @@ export default function UsersTable() {
                     placeholder={t("admin.storageQuotaDefault", { gb: Math.round(settings.maxStoragePerUser / (1024 * 1024 * 1024)) })}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                   />
+                </div>
+                <div>
+                  <label className="mb-1 block font-urbanist text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {t("admin.newPassword", "New password")}
+                  </label>
+                  <input
+                    type="password"
+                    value={editForm.password}
+                    onChange={(e) => setEditForm((f) => ({ ...f, password: e.target.value }))}
+                    placeholder={t("admin.newPasswordHint", "Leave blank to keep current")}
+                    autoComplete="new-password"
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-urbanist text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+                  />
+                  <p className="mt-1 font-urbanist text-xs text-gray-400 dark:text-gray-500">
+                    {t("admin.newPasswordNote", "Setting a password signs the user out of all devices.")}
+                  </p>
                 </div>
               </div>
               <div className="mt-6 flex justify-end gap-3">

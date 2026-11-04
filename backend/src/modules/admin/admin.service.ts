@@ -50,7 +50,7 @@ export class AdminService {
       if (existing) throw createError.Conflict( "Username already taken");
     }
 
-    return prisma.user.update({
+    const updated = await prisma.user.update({
       where: { id: targetUserId },
       data: {
         ...(input.email !== undefined && { email: input.email }),
@@ -59,6 +59,7 @@ export class AdminService {
         ...(input.role !== undefined && { role: input.role }),
         ...(input.isActive !== undefined && { isActive: input.isActive }),
         ...(input.storageQuota !== undefined && { storageQuota: input.storageQuota }),
+        ...(input.password ? { passwordHash: await bcrypt.hash(input.password, 12) } : {}),
       },
       select: {
         id: true,
@@ -70,6 +71,13 @@ export class AdminService {
         storageQuota: true,
       },
     });
+
+    // Changing someone's password invalidates their sessions.
+    if (input.password) {
+      await prisma.refreshToken.deleteMany({ where: { userId: targetUserId } });
+    }
+
+    return updated;
   }
 
   async deleteUser(currentUserId: string, targetUserId: string) {

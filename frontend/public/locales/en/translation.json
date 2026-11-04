@@ -324,7 +324,11 @@
     "bajasLaborales": "Sick leave",
     "calendario": "Corporate Calendar",
     "modulosTitulo": "Corporate modules",
-    "modulosDesc": "Enable or disable corporate modules per user"
+    "modulosDesc": "Enable or disable corporate modules per user",
+    "newPassword": "New password",
+    "newPasswordHint": "Leave blank to keep current",
+    "newPasswordNote": "Setting a password signs the user out of all devices.",
+    "passwordTooShort": "Password must be at least 8 characters"
   },
   "common": {
     "save": "Save",
