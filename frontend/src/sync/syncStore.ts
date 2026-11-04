@@ -39,6 +39,7 @@ let startedFor: string | null = null;
 let startGeneration = 0;
 let scheduledTimer: ReturnType<typeof setTimeout> | null = null;
 let intervalTimer: ReturnType<typeof setInterval> | null = null;
+let lastConflictToastAt = 0;
 let unsubscribeEvents: (() => void) | null = null;
 let removeDomListeners: (() => void) | null = null;
 let removeNativeListener: (() => void) | null = null;
@@ -74,7 +75,12 @@ export const useSyncStore = create<SyncState>((set, get) => ({
 
     unsubscribeEvents = onSyncEvent((event) => {
       if (event.type === "conflict") {
-        toast.error("A newer server version replaced one of your offline changes.");
+        // Server-wins: tell the user once, not once per conflicting row.
+        const nowMs = Date.now();
+        if (nowMs - lastConflictToastAt > 5000) {
+          lastConflictToastAt = nowMs;
+          toast.error("A newer server version replaced one of your offline changes.");
+        }
       } else if (event.type === "error") {
         toast.error(event.message || "An offline change could not be synced.");
       } else if (event.type === "reset") {

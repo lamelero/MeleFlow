@@ -347,6 +347,15 @@ async function syncChecklistItems(taskId: string, incoming: ChecklistItem[], now
     const position = item.position ?? i;
     if (item.id && existingById.has(item.id)) {
       const row = existingById.get(item.id) as ChecklistItemRow;
+      // Only enqueue when something actually changed. Re-sending unchanged
+      // rows bumped their server versions and caused spurious baseVersion
+      // conflicts when several items were toggled quickly.
+      const changed =
+        row.text !== item.text ||
+        row.isCompleted !== item.isCompleted ||
+        row.position !== position;
+      if (!changed) continue;
+
       await putRow("checklistItems", {
         ...row,
         text: item.text,
