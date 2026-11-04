@@ -6,7 +6,7 @@ const CACHED_VERSION_KEY = "update_cached_version";
 const CACHED_URL_KEY = "update_cached_url";
 const CACHED_DOWNLOAD_URL_KEY = "update_cached_download_url";
 const APP_VERSION_KEY = "update_app_version";
-const ONE_DAY = 24 * 60 * 60 * 1000;
+const ONE_DAY = 6 * 60 * 60 * 1000; // cache TTL for automatic checks (6h)
 
 // Injected at build time (see `define` in vite.config.ts): the Docker release
 // build passes APP_VERSION (the git tag); local/native builds fall back to the
@@ -127,7 +127,7 @@ function extractDownloadUrl(data: { assets?: { name: string; browser_download_ur
   return `${RAW_APK_BASE}/MeleFlow-v${version}.apk`;
 }
 
-export async function checkForUpdate(): Promise<UpdateInfo> {
+export async function checkForUpdate(options?: { force?: boolean }): Promise<UpdateInfo> {
   // If the app version changed (app was updated), invalidate cache
   const lastAppVersion = (() => {
     try {
@@ -153,8 +153,8 @@ export async function checkForUpdate(): Promise<UpdateInfo> {
     }
   })();
 
-  // Use cache if checked within the last day
-  if (now - lastCheck < ONE_DAY) {
+  // Use cache if checked within the last day, unless a forced refresh is asked.
+  if (!options?.force && now - lastCheck < ONE_DAY) {
     const cachedVersion = getCachedVersion();
     const cachedUrl = getCachedUrl();
     const cachedDownloadUrl = getCachedDownloadUrl();

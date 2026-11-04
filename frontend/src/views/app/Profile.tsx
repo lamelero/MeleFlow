@@ -941,7 +941,7 @@ export default function Profile() {
               onClick={async () => {
                 const { checkForUpdate, clearSkippedVersion } = await import("../../lib/updateChecker");
                 clearSkippedVersion();
-                const info = await checkForUpdate();
+                const info = await checkForUpdate({ force: true });
                 if (info.available) {
                   toast.success(t("update.updateAvailable", { version: info.version }) || `v${info.version} available!`, { duration: 5000 });
                   setTimeout(() => window.open(info.url, "_blank"), 1500);

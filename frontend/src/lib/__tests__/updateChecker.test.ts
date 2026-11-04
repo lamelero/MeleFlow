@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { compareVersions, isNewer, parseVersion } from "../updateChecker";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { compareVersions, isNewer, parseVersion, checkForUpdate } from "../updateChecker";
 
 describe("parseVersion", () => {
   it("parses full, partial and v-prefixed versions", () => {
@@ -44,5 +44,44 @@ describe("isNewer", () => {
     // Downgrade must NOT be offered (the old `!==` check offered it).
     expect(isNewer("1.2.0", "1.3.1")).toBe(false);
     expect(isNewer("dev", "1.3.1")).toBe(false);
+  });
+});
+
+function mockRelease(tag: string) {
+  return vi.fn(async () => ({
+    ok: true,
+    json: async () => ({
+      tag_name: tag,
+      html_url: `https://github.com/lamelero/MeleFlow/releases/tag/${tag}`,
+      assets: [{ name: `MeleFlow-${tag}.apk`, browser_download_url: `https://example.com/${tag}.apk` }],
+    }),
+  })) as unknown as typeof fetch;
+}
+
+describe("checkForUpdate cache", () => {
+  beforeEach(() => localStorage.clear());
+  afterEach(() => {
+    localStorage.clear();
+    vi.restoreAllMocks();
+  });
+
+  it("caches the result and a forced check bypasses the cache", async () => {
+    const first = mockRelease("v99.0.0");
+    vi.stubGlobal("fetch", first);
+    const a = await checkForUpdate({ force: true });
+    expect(a.version).toBe("99.0.0");
+    expect(a.available).toBe(true);
+
+    // Second (cached) call must not hit the network.
+    const second = mockRelease("v1.0.0");
+    vi.stubGlobal("fetch", second);
+    const b = await checkForUpdate();
+    expect(b.version).toBe("99.0.0");
+    expect(second).not.toHaveBeenCalled();
+
+    // Forced call refreshes.
+    const c = await checkForUpdate({ force: true });
+    expect(c.version).toBe("1.0.0");
+    expect(second).toHaveBeenCalled();
   });
 });
