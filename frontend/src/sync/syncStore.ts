@@ -28,6 +28,7 @@ interface SyncState {
   stop: () => void;
   syncNow: () => Promise<void>;
   scheduleSync: (delayMs?: number) => void;
+  scheduleLoadSync: (delayMs?: number) => void;
   refreshPending: () => Promise<void>;
   clearLocalData: () => Promise<void>;
 }
@@ -40,6 +41,7 @@ let startGeneration = 0;
 let scheduledTimer: ReturnType<typeof setTimeout> | null = null;
 let intervalTimer: ReturnType<typeof setInterval> | null = null;
 let lastConflictToastAt = 0;
+let lastLoadSyncAt = 0;
 let unsubscribeEvents: (() => void) | null = null;
 let removeDomListeners: (() => void) | null = null;
 let removeNativeListener: (() => void) | null = null;
@@ -163,6 +165,7 @@ export const useSyncStore = create<SyncState>((set, get) => ({
     removeNativeListener?.();
     removeNativeListener = null;
     startedFor = null;
+    lastLoadSyncAt = 0;
     set({ initialized: false, status: "idle", pending: 0, lastError: null });
   },
 
@@ -206,6 +209,15 @@ export const useSyncStore = create<SyncState>((set, get) => ({
       scheduledTimer = null;
       void get().syncNow();
     }, delayMs);
+  },
+
+  // Throttled variant for "pull on screen load" callers. Those may run on every
+  // store update; without a throttle they re-schedule a sync each time and loop.
+  scheduleLoadSync: (delayMs = 300) => {
+    const now = Date.now();
+    if (now - lastLoadSyncAt < 15000) return;
+    lastLoadSyncAt = now;
+    get().scheduleSync(delayMs);
   },
 
   refreshPending: async () => {

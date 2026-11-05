@@ -44,8 +44,8 @@ export const useHabitCategoryStore = create<HabitCategoryStore>((set, get) => ({
     set({ isLoading: true });
     try {
       set({ categories: await selectCategories(), isLoading: false });
-      const { initialized, online, scheduleSync } = useSyncStore.getState();
-      if (initialized && online) scheduleSync(300);
+      const { initialized, online, scheduleLoadSync } = useSyncStore.getState();
+      if (initialized && online) scheduleLoadSync(300);
     } catch {
       set({ isLoading: false });
     }

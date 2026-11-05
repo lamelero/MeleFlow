@@ -122,8 +122,8 @@ export const useTaskStore = create<TaskState>((set, get) => {
       set({ isLoading: true, error: null, lastFilter: filters ?? null });
       try {
         await reload(filters);
-        const { initialized, online, scheduleSync } = useSyncStore.getState();
-        if (initialized && online) scheduleSync(300);
+        const { initialized, online, scheduleLoadSync } = useSyncStore.getState();
+        if (initialized && online) scheduleLoadSync(300);
       } catch {
         set({ error: "Failed to load tasks", isLoading: false });
       }

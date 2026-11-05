@@ -111,7 +111,7 @@ export default function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps)
 
   useEffect(() => {
     if (t) { fetchTags(); fetchLists(); }
-  }, [t, fetchTags, fetchLists]);
+  }, [t?.id, fetchTags, fetchLists]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {

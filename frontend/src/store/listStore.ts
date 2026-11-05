@@ -41,8 +41,8 @@ export const useListStore = create<ListState>((set) => ({
     set({ isLoading: true, error: null });
     try {
       set({ lists: await selectLists(), isLoading: false });
-      const { initialized, online, scheduleSync } = useSyncStore.getState();
-      if (initialized && online) scheduleSync(300);
+      const { initialized, online, scheduleLoadSync } = useSyncStore.getState();
+      if (initialized && online) scheduleLoadSync(300);
     } catch {
       set({ error: "Failed to load lists", isLoading: false });
     }

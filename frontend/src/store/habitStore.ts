@@ -90,8 +90,8 @@ export const useHabitStore = create<HabitState>((set, get) => ({
       set({ habits, isLoading: false });
       updateHabitData(habits);
       scheduleHabitReminders(habits);
-      const { initialized, online, scheduleSync } = useSyncStore.getState();
-      if (initialized && online) scheduleSync(300);
+      const { initialized, online, scheduleLoadSync } = useSyncStore.getState();
+      if (initialized && online) scheduleLoadSync(300);
     } catch {
       set({ isLoading: false });
     }

@@ -47,8 +47,8 @@ export const useTagStore = create<TagState>((set) => ({
     set({ isLoading: true });
     try {
       set({ tags: await selectTags(), isLoading: false });
-      const { initialized, online, scheduleSync } = useSyncStore.getState();
-      if (initialized && online) scheduleSync(300);
+      const { initialized, online, scheduleLoadSync } = useSyncStore.getState();
+      if (initialized && online) scheduleLoadSync(300);
     } catch {
       set({ isLoading: false });
     }
