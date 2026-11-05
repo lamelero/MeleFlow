@@ -293,8 +293,20 @@ export async function sync(): Promise<SyncResult> {
   if (!userId) throw new Error("Sync not initialized");
 
   inFlight = (async () => {
-    await push();
-    await pull();
+    // Push first, but always attempt the pull: a transient push failure (e.g.
+    // a 429) must not leave the client without remote changes.
+    let firstError: unknown = null;
+    try {
+      await push();
+    } catch (err) {
+      firstError = err;
+    }
+    try {
+      await pull();
+    } catch (err) {
+      if (firstError === null) firstError = err;
+    }
+    if (firstError !== null) throw firstError;
     return { pulled: true, pushed: true };
   })();
 

@@ -21,6 +21,7 @@ export const SYNC_ACTIONS = ["create", "update", "delete"] as const;
 
 export const MAX_PUSH_OPERATIONS = 200;
 
-// Rate limits (per client/IP in v1; the route is user-authenticated).
-export const PUSH_RATE_LIMIT = { max: 30, timeWindow: "1 minute" } as const;
-export const PULL_RATE_LIMIT = { max: 60, timeWindow: "1 minute" } as const;
+// Rate limits (per client/IP in v1; the route is user-authenticated). Generous
+// enough that several devices behind the same NAT don't trip them.
+export const PUSH_RATE_LIMIT = { max: 60, timeWindow: "1 minute" } as const;
+export const PULL_RATE_LIMIT = { max: 120, timeWindow: "1 minute" } as const;

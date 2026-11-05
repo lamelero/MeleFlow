@@ -93,14 +93,15 @@ export const useSyncStore = create<SyncState>((set, get) => ({
     if (typeof window !== "undefined") {
       const onOnline = () => {
         set({ online: true, status: "idle" });
-        void get().syncNow();
+        get().scheduleSync(500);
       };
       const onOffline = () => {
         set({ online: false, status: "offline" });
       };
       const onVisible = () => {
         if (typeof document !== "undefined" && document.visibilityState === "visible") {
-          void get().syncNow();
+          // Debounced: rapid focus/visibility changes must not each fire a sync.
+          get().scheduleSync(1500);
         }
       };
       window.addEventListener("online", onOnline);
@@ -120,7 +121,7 @@ export const useSyncStore = create<SyncState>((set, get) => ({
     // Capacitor: sync when the app returns to the foreground.
     try {
       const handle = await App.addListener("appStateChange", ({ isActive }) => {
-        if (isActive) void get().syncNow();
+        if (isActive) get().scheduleSync(1500);
       });
       removeNativeListener = () => {
         void handle.remove();
@@ -179,14 +180,22 @@ export const useSyncStore = create<SyncState>((set, get) => ({
       const [pending, lastSyncedAt] = await Promise.all([pendingCount(), getLastSyncedAt()]);
       set({ pending, lastSyncedAt, status: "idle", online: true });
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Sync failed";
+      const status = (err as { response?: { status?: number } })?.response?.status;
       const online = isOnline();
+      const message =
+        status === 429
+          ? "Demasiadas peticiones; se reintentará."
+          : err instanceof Error
+            ? err.message
+            : "Sync failed";
       set({
         status: online ? "error" : "offline",
         online,
         lastError: message,
       });
       if (!online) set({ pending: await pendingCount() });
+      // Rate-limited: back off and retry automatically.
+      if (status === 429) get().scheduleSync(30_000);
     }
   },
 
