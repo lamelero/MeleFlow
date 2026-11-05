@@ -7,8 +7,8 @@ android {
         applicationId "com.meleflow.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 11
-        versionName "1.3.8"
+        versionCode 12
+        versionName "1.3.9"
         // Capacitor's plugin modules don't declare the app's custom `version`
         // flavor dimension; tell AGP which flavor to match them against.
         missingDimensionStrategy "version", "normal"
