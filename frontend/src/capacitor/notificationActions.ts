@@ -62,7 +62,9 @@ export async function setupNotificationActions(): Promise<void> {
       } catch (err) {
         console.error("[notifications] habit completion from notification failed:", err);
       }
-      navigateTo("/app?view=habits");
+      // Note: the plugin opens the app for notification actions (its PendingIntent
+      // targets the activity), so we can't stay closed. We avoid changing the
+      // current screen instead.
       return;
     }
 
@@ -73,7 +75,6 @@ export async function setupNotificationActions(): Promise<void> {
       } catch (err) {
         console.error("[notifications] habit skip from notification failed:", err);
       }
-      navigateTo("/app?view=habits");
       return;
     }
 

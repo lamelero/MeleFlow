@@ -17,7 +17,9 @@ export default function UpdateBanner({ version, url, downloadUrl, onDismiss }: U
 
   function handleDownload() {
     if (isNative() && downloadUrl) {
-      window.location.href = downloadUrl;
+      // Hand the APK link to the system browser/download manager; navigating the
+      // in-app WebView to a binary does nothing.
+      window.open(downloadUrl, "_system");
     } else {
       window.open(url, "_blank");
     }

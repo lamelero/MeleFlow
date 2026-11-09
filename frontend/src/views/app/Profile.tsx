@@ -944,7 +944,7 @@ export default function Profile() {
                 const info = await checkForUpdate({ force: true });
                 if (info.available) {
                   toast.success(t("update.updateAvailable", { version: info.version }) || `v${info.version} available!`, { duration: 5000 });
-                  setTimeout(() => window.open(info.url, "_blank"), 1500);
+                  setTimeout(() => window.open(info.url, isNative() ? "_system" : "_blank"), 1500);
                 } else {
                   toast.success(t("update.upToDate") || "Up to date");
                 }
